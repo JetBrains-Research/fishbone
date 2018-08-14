@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <!--v2.7.15-->
+    <script src="//cdn.rawgit.com/cytoscape/cytoscape.js/891e17e/dist/cytoscape.js"></script>
+    <!--v1.3.8-->
+    <script src="//cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/c7f7f74/cytoscape-cose-bilkent.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+
+    <!-- jquery-ui after bootstrap as a workaround for missing close icon.
+    http://stackoverflow.com/questions/17367736/jquery-ui-dialog-missing-close-icon-->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!--Spinner-->
+    <script src="spin.js"></script>
+    <!-- NotifyJS-->
+    <script src="lib/notify.min.js"></script>
+
+    <script src="util.js"></script>
+    <script src="fishbone.js"></script>
+    <script src="rules_graph.js"></script>
+    <script>
+        <!-- Init jQuery UI dialog-->
+        $(function () {
+            $("#dialog").dialog({autoOpen: false});
+        });
+    </script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body onload="initialize()">
+
+<div id="dialog" title="Information">
+    <div id="dialog-pane"></div>
+</div>
+<nav id="navbar" class="navbar navbar-default">
+    <form class="navbar-form navbar-left">
+        <label id="filename"></label>
+    </form>
+    <form class="navbar-form navbar-right">
+        <label for="visualize-method">Type</label>
+        <select id="visualize-method">
+            <option value="Fishbone">Fishbone</option>
+            <option value="Graph">Graph</option>
+        </select>&nbsp;&nbsp;&nbsp;
+
+        <label for="target-filter">Target</label>
+        <input disabled id="target-filter" class="form-control" placeholder="filter"/>&nbsp;
+
+        <input disabled id="correlation-filter-min" class="form-control" type="number" min="0" max="1" step="0.1"
+               value="0"/>
+        <label for="correlation-filter-min">≤ Correlation ≤</label>
+        <input disabled id="correlation-filter-max" class="form-control" type="number" min="0" max="1" step="0.1"
+               value="1"/>&nbsp;
+
+        <label for="support-filter">Support ≥</label>
+        <input disabled id="support-filter" class="form-control" type="number" min="0" max="1" step="0.1" value="0"/>&nbsp;
+
+        <label for="confidence-filter">Confidence ≥</label>
+        <input disabled id="confidence-filter" class="form-control" type="number" min="0" max="1" step="0.1" value="0"/>&nbsp;
+
+        <label for="conviction-filter">Conviction ≥</label>
+        <input disabled id="conviction-filter" class="form-control" type="number" min="0" step="0.5" value="1"/>&nbsp;
+
+        <label for="complexity-filter">Complexity ≤</label>
+        <input disabled id="complexity-filter" class="form-control" type="number" min="0" step="1" value="1"/>&nbsp;
+
+        <label for="show-top-filter">Show</label>
+        <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="100"/>&nbsp;
+
+        <input id="file" type="file" accept=".json"/>
+        <input id="file-button" type="button" class="btn btn-primary" value="Load *.json"
+               onclick="$('#file').click();"/>
+    </form>
+</nav>
+<div id="main-panel">
+    <div id="cy"></div>
+</div>
+</body>
+</html>

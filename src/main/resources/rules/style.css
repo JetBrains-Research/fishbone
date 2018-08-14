@@ -1,0 +1,39 @@
+#filename {
+    margin-top: .25em;
+}
+
+#main-panel {
+    padding: 1em;
+    width: 100%;
+    height: 90%;
+    position: absolute;
+}
+
+#cy {
+    width: 100%;
+    height: 100%;
+}
+
+#target-filter {
+    width: 150px;
+}
+
+#support-filter, #confidence-filter, #correlation-filter-min, #correlation-filter-max, #conviction-filter, #complexity-filter {
+    width: 60px;
+}
+#show-top-filter {
+    width: 70px;
+}
+
+#file {
+    display: none;
+}
+
+#navbar {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.navbar {
+    margin-bottom: 0;
+}
