@@ -252,7 +252,16 @@ function buildFishbone() {
         const tailId = addNode(target, "tail",
             xHead + Math.cos(Math.PI) * boneLength,
             fishY + Math.sin(Math.PI) * boneLength);
-        addBone(tailId, lastBoneStartNode, null);
+        nodes[tailId]['style'] = {
+            shape: 'polygon',
+            width: 50,
+            height: 50,
+            'shape-polygon-points': [-1, -1, 1, 0, -1, 1],
+            'background-color': '#f8ac00'
+        };
+
+        const tailBone = addBone(tailId, lastBoneStartNode, null);
+        edges[tailBone]['data']['width'] = getWidth(convictionMax);
         fishY = fishY + boneLength;
     }
 }
