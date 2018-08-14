@@ -29,8 +29,12 @@ function buildFishbone() {
 
     let nodeId = 0;
 
+    function getWidth(conviction) {
+        return Math.round(1 + 10 * conviction / convictionMax);
+    }
+
     function addEdge(start, end, record, classes) {
-        let width = Math.round(1 + 10 * record.conviction / convictionMax);
+        let width = getWidth(record.conviction);
         const id = edgeId(start, end);
         console.info("EDGE: " + id + " [" + classes + " " + width + "] " + record.condition + "=>" + record.target);
         if (id in edges) {
@@ -71,19 +75,22 @@ function buildFishbone() {
                 }
             };
         }
+        return id;
     }
 
     function addBone(start, end, r) {
         if (!r) {
-            let tailEdge = edgeId(start, end);
-            edges[tailEdge] = {
+            let id = edgeId(start, end);
+            edges[id] = {
                 data: {
-                    id: tailEdge,
+                    id: id,
                     source: start,
-                    target: end
-                }
+                    target: end,
+                    width: 1,
+                },
+                classes: CLASS_MISSING_RULE
             };
-            return
+            return id
         }
         if (r.hasOwnProperty("parent_node")) {
             // Show target link in case we don't have any direct path
@@ -91,7 +98,7 @@ function buildFishbone() {
             if (filter_record(r)) {
                 classes = CLASS_PARENT_CHILD;
             }
-            addEdge(start, end, r, classes);
+            return addEdge(start, end, r, classes);
         } else {
             let classes;
             if (filter_record(r)) {
@@ -99,7 +106,7 @@ function buildFishbone() {
             } else {
                 classes = CLASS_MISSING_RULE;
             }
-            addEdge(start, end, r, classes);
+           return addEdge(start, end, r, classes);
         }
     }
 
@@ -165,7 +172,8 @@ function buildFishbone() {
             x = x + Math.cos(boneAngle) * delta;
             y = y + Math.sin(boneAngle) * delta;
             const boneStartNode = addNode(fish, "", x, y);
-            addBone(boneStartNode, lastBoneStartNode, null);
+            const boneId = addBone(boneStartNode, lastBoneStartNode, null);
+            edges[boneId]['data']['width'] = getWidth(bone.conviction);
             lastBoneStartNode = boneStartNode;
             let boneEndAngle;
             if (boneAngle === Math.PI) {
