@@ -12,7 +12,7 @@ import org.junit.Test
 import java.awt.Color
 import java.util.*
 
-class RMLongTest : TestCase() {
+class RMTest : TestCase() {
 
     override fun setUp() {
         Logs.addConsoleAppender(Level.INFO)
@@ -84,10 +84,8 @@ class RMLongTest : TestCase() {
     @Test
     fun testCounterExamples() {
         val predicate: Predicate<Int> = RangePredicate(-100, 100).named("T")
-        val attempts = 3
-        val maxTop = 10
+        val maxTop = 5
         val predicates = 10
-
         for (p in 3..predicates) {
             LOG.info("Standard score function and predicates: $p")
             val X0 = RangePredicate(-100, 1000).named("X0")
@@ -104,30 +102,20 @@ class RMLongTest : TestCase() {
             val bestRule = Rule(solutionX, predicate, database)
             LOG.info("Best rule ${bestRule.name}")
             val correctOrderRule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
-                    topResults = 100, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
+                    topResults = 100, convictionDelta = 1e-6, klDelta = 1e-6).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
-                LOG.error("Best rule is not optimal.")
-                return
+                fail("Best rule is not optimal.")
             }
 
             LOG.time(level = Level.INFO, message = "RM") {
-                var succeeded = 0
-                for (attempt in 1..attempts) {
-                    for (top in 1..maxTop) {
-                        val rule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
-                                topResults = maxTop, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
-                        LOG.debug("RuleNode (top=$top): ${rule.name}")
-                        if (rule.conviction >= bestRule.conviction) {
-                            succeeded++
-                            break
-                        }
-                    }
+                for (top in 1..maxTop) {
+                    val rule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
+                            topResults = maxTop, convictionDelta = 1e-6, klDelta = 1e-6).first().rule
+                    LOG.debug("RuleNode (top=$top): ${rule.name}")
+                    assertTrue(rule.conviction >= bestRule.conviction)
                 }
-                LOG.info("Result: $succeeded/$attempts")
-                assertEquals(attempts, succeeded)
             }
-
         }
     }
 
@@ -218,7 +206,7 @@ class RMLongTest : TestCase() {
 
 
     companion object {
-        internal val LOG = Logger.getLogger(RMLongTest::class.java)
+        internal val LOG = Logger.getLogger(RMTest::class.java)
     }
 }
 
@@ -238,7 +226,7 @@ class RangePredicate(private val start: Int, private val end: Int) : Predicate<I
 }
 
 fun <T> Predicate<T>.named(name: String): Predicate<T> {
-    RMLongTest.LOG.info("$name = ${this.name()}")
+    RMTest.LOG.info("$name = ${this.name()}")
     return object : Predicate<T>() {
         override fun test(item: T) = this@named.test(item)
         override fun name() = name

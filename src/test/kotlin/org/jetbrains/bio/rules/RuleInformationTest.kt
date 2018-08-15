@@ -13,7 +13,7 @@ class RuleInformationTest {
      * delta in information obtained by learning new rule is the same.
      * The same is true for delta in KL.
      * This is the main idea of information based rule mining.
-     * See [RMLongTest.testKL] for check that predicates reduce KL divergence.
+     * See [RMTest.testKL] for check that predicates reduce KL divergence.
      */
     @Test fun testIndependenceRuleLearning() {
         val ps = listOf(
