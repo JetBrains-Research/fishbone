@@ -196,7 +196,7 @@ function filterAndRender() {
     }
     if ($('#visualize-method').val() === "Fishbone") {
         renderFishBone();
-    }   else {
+    } else {
         renderGraph();
     }
 }
@@ -314,9 +314,10 @@ function showInfo(edge) {
         return
     }
     highlightEdge(edge);
+    const dialog = $('#dialog');
     let html = "";
-    if ($('#dialog').dialog('isOpen') === true) {
-        html = $('#dialog').html() + "<br/>";
+    if (dialog.dialog('isOpen') === true) {
+        html = dialog.html() + "<br/>";
     }
     const metrics = ["support", "confidence", "correlation", "conviction"];
     const processed = new Set();
@@ -347,7 +348,8 @@ function showInfo(edge) {
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
-    $('#dialog').dialog('open');
+    dialog.dialog("option", "width", 800);
+    dialog.dialog('open');
 }
 
 

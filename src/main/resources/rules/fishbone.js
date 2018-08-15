@@ -247,6 +247,12 @@ function buildFishbone() {
         });
         const fish = buildFish(target, fishRecords);
         const headId = addNode(target, target, xHead, fishY);
+        nodes[headId]['style'] = {
+            shape: 'polygon',
+            width: 50,
+            height: 50,
+            'shape-polygon-points': [-1, 0.5, -0.8, 0.8, 0.4, 0.8, 1, 0.2, 1, -0.2, 0.4, -0.8, -0.8, -0.8, -1, -0.5],
+        };
         let boneLength = xHead - xTail;
         const lastBoneStartNode = renderFish(fish, boneLength, headId, xHead, fishY, Math.PI);
         const tailId = addNode(target, "tail",
