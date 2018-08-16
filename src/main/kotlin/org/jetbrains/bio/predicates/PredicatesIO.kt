@@ -91,8 +91,10 @@ object PredicatesIO {
         val dataFrameSpec = DataFrameSpec()
         dataFrameSpec.strings(INDEX_KEY)
         names.forEach { dataFrameSpec.bools(it) }
-
+        LOG.debug("Loading data frame $path")
         val df = DataFrameMapper.TSV.load(path, spec = dataFrameSpec, header = true)
+        LOG.debug("DONE loading data frame $path")
+
         val progress = Progress {
             title = "Predicates from data frame"
         }.bounded(negatesInfo.size.toLong())
