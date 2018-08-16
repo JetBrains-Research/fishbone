@@ -202,7 +202,6 @@ class RMTest : TestCase() {
     "[20;35)": "#ffffff"
   }
 }""", logger.getJson { Color.WHITE })
-        Logs.addConsoleAppender(Level.DEBUG)
     }
 
 
