@@ -102,7 +102,7 @@ class RMTest : TestCase() {
             val bestRule = Rule(solutionX, predicate, database)
             LOG.info("Best rule ${bestRule.name}")
             val correctOrderRule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
-                    topResults = 100, convictionDelta = 1e-6, klDelta = 1e-6).first().rule
+                    topResults = 100, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
                 fail("Best rule is not optimal.")
@@ -111,7 +111,7 @@ class RMTest : TestCase() {
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
                     val rule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
-                            topResults = maxTop, convictionDelta = 1e-6, klDelta = 1e-6).first().rule
+                            topResults = maxTop, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
                     LOG.debug("RuleNode (top=$top): ${rule.name}")
                     assertTrue(rule.conviction >= bestRule.conviction)
                 }
@@ -202,6 +202,7 @@ class RMTest : TestCase() {
     "[20;35)": "#ffffff"
   }
 }""", logger.getJson { Color.WHITE })
+        Logs.addConsoleAppender(Level.DEBUG)
     }
 
 
@@ -209,6 +210,8 @@ class RMTest : TestCase() {
         internal val LOG = Logger.getLogger(RMTest::class.java)
     }
 }
+
+
 
 class RangePredicate(private val start: Int, private val end: Int) : Predicate<Int>() {
 

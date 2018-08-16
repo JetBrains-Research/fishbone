@@ -154,8 +154,8 @@ object RM {
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
                  topResults: Int = 100,
-                 convictionDelta: Double = 1E-6,
-                 klDelta: Double = 1E-6) {
+                 convictionDelta: Double = 1E-3,
+                 klDelta: Double = 1E-3) {
         val progress = Progress {
             this.title = title
         }.unbounded()
