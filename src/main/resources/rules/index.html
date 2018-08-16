@@ -76,7 +76,7 @@
         <input disabled id="complexity-filter" class="form-control" type="number" min="0" step="1" value="1"/>&nbsp;
 
         <label for="show-top-filter">Show</label>
-        <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="100"/>&nbsp;
+        <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="5"/>&nbsp;
 
         <input id="file" type="file" accept=".json"/>
         <input id="file-button" type="button" class="btn btn-primary" value="Load *.json"
@@ -87,8 +87,12 @@
     <div id="cy">
         <div id="about">
             <h1>Fishbone</h1>
+            <p>
+                <a href="https://en.wikipedia.org/wiki/Association_rule_learning">Associated
+                    Rules Learning</a> + <a href="https://en.wikipedia.org/wiki/Information_theory">Information
+                Theory</a> = <a href="https://en.wikipedia.org/wiki/Ishikawa_diagram">Fishbone (Ishikawa) diagram</a>.
+            </p>
             <pre>
-        ```
         |\    \ \ \ \ \ \ \      __           ___
         |  \    \ \ \ \ \ \ \   | O~-_    _-~~   ~~-_
         |   >----|-|-|-|-|-|-|--|  __/   /  BELIEVE  )
@@ -96,13 +100,6 @@
         |/     / / / / / / /             \_   ME !  _)
                                            ~--___--~
             </pre>
-            <p>
-                Hybrid algorithms combining <a href="https://en.wikipedia.org/wiki/Association_rule_learning">Associated
-                Rules Learning</a> technique and <a href="https://en.wikipedia.org/wiki/Information_theory">Information
-                Theory</a> for automated building <a href="https://en.wikipedia.org/wiki/Ishikawa_diagram">Ishikawa
-                diagram</a>. <br>
-                This allowed to find causation-like associations in data. <br>
-            </p>
             <p>
                 Developed by <a
                     href="https://research.jetbrains.org/groups/biolabs/projects?project_id=25">JetBrains Research</a>.
