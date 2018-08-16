@@ -40,7 +40,7 @@ class RMTest : TestCase() {
         val probes = (0 until (conditions.size * 0.1).toInt()).map { ProbePredicate("probe_$it", database) }
         return RM.optimize(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
-                topResults = 100, convictionDelta = 1e-3, klDelta = 1e-3).first().rule.conditionPredicate
+                topResults = 10, convictionDelta = 1e-3, klDelta = 1e-3).first().rule.conditionPredicate
     }
 
     private fun predicates(number: Int, dataSize: Int): List<Predicate<Int>> {

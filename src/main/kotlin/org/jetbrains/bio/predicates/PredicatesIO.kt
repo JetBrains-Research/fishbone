@@ -1,9 +1,8 @@
 package org.jetbrains.bio.predicates
 
+import gnu.trove.map.TObjectIntMap
+import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.log4j.Logger
-import org.jetbrains.bio.genome.GeneResolver
-import org.jetbrains.bio.genome.GenomeQuery
-import org.jetbrains.bio.genome.Transcript
 import org.jetbrains.bio.statistics.data.BitterSet
 import org.jetbrains.bio.statistics.data.DataFrame
 import org.jetbrains.bio.statistics.data.DataFrameMapper
@@ -12,6 +11,7 @@ import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter
 import java.nio.file.Path
+import java.util.*
 
 object PredicatesIO {
     private val LOG = Logger.getLogger(PredicatesIO::class.java)
@@ -60,17 +60,17 @@ object PredicatesIO {
     }
 
     /**
-     * Loads predicates saved by [savePredicates]
+     * Loads database and predicates saved by [savePredicates]
      */
     fun <T> loadPredicates(path: Path,
-                           resolver: (String) -> T?): List<Predicate<T>> {
+                           resolver: (String) -> T?): Pair<List<T>, List<Predicate<T>>> {
         val comments = path.bufferedReader().useLines { lines ->
             lines.filter { it.startsWith(COMMENT) }.map { it.substringAfter(COMMENT).trim() }.toList()
         }
         check(comments.size == 1) { "Unexpected file format:\n${comments.joinToString("\n") { "#$it" }}" }
         val negatesInfo = comments.first().substringAfter(NOT).map { it == true.mark() }
         if (negatesInfo.isEmpty()) {
-            return emptyList()
+            return emptyList<T>() to emptyList<Predicate<T>>()
         }
         val names = path.bufferedReader().useLines {
             val header = it.take(2).last().split('\t')
@@ -82,67 +82,71 @@ object PredicatesIO {
         val dataFrameSpec = DataFrameSpec()
         dataFrameSpec.strings(INDEX_KEY)
         names.forEach { dataFrameSpec.bools(it) }
-        val predicates = names.zip(negatesInfo).map {
-            LoadedPredicate<T>(it.first, it.second)
-        }
 
         val df = DataFrameMapper.TSV.load(path, spec = dataFrameSpec, header = true)
         val progress = Progress {
             title = "Predicates from data frame"
         }.bounded(negatesInfo.size.toLong())
-        val index = df.sliceAsObj<String>(INDEX_KEY).map {
-            val value = resolver(it)
-            if (value == null) {
-                LOG.warn("Unknown: $it")
+
+        // Common index for all the predicates
+        val database = arrayListOf<T>()
+        val indexMap = TObjectIntHashMap<T>()
+
+        df.sliceAsObj<String>(INDEX_KEY).forEachIndexed { i, s ->
+            val value = resolver(s)
+            check(value != null) {
+                LOG.error("Failed to resolve $s at line ${i + 2}")
             }
-            value
+            indexMap.put(value, i)
+            database.add(i, value!!)
         }
-        predicates.forEach {
-            val result = df.sliceAsBool(it.name().intern())
-            val positives = it.positives
-            result.iterator().forEach {
-                val value = index[it]
-                if (value != null) {
-                    positives.add(value)
+        val predicates = names.zip(negatesInfo).map { (name, negate) ->
+            val positives = df.sliceAsBool(name.intern())
+            LoadedPredicate<T>(name, negate, database, positives, indexMap).apply {
+                // Check loaded predicates
+                val cardinality = positives.cardinality()
+                if (cardinality == 0 || cardinality == positives.size()) {
+                    LOG.warn("Predicate $name is constantly ${positives[0]}!")
                 }
+                progress.report()
             }
-            progress.report()
         }
         progress.done()
-
-        // Check loaded predicates
-        predicates.forEach {
-            if (it.positives.isEmpty()) {
-                LOG.warn("Predicate ${it.name()} is always false!")
-            }
-        }
         LOG.debug("Loaded ${predicates.size} predicates $path")
-        return predicates
+        return database to predicates
     }
 
 
     /**
-     * Loads predicates saved by [savePredicates]
-     */
-    fun loadPredicates(path: Path, genomeQuery: GenomeQuery): List<Predicate<Transcript>> {
-        return loadPredicates(path, { GeneResolver.getAny(genomeQuery.build, it) })
-    }
-
-    /**
-     * Predicate with [name], [canNegate], stores positive [test] results in the set.
+     * Predicate with [name], [canNegate], stores positive results in bitset and database indexes in map.
      * Is created by [loadPredicates] method.
      */
     class LoadedPredicate<T>(private val originalName: String,
-                             private val originalCanNegate: Boolean) : Predicate<T>() {
-        val positives = hashSetOf<T>()
-
+                             private val originalCanNegate: Boolean,
+                             private val database: List<T>,
+                             private val positives: BitterSet,
+                             private val indexMap: TObjectIntMap<T>) : Predicate<T>() {
         override fun name() = originalName
 
         override fun defined() = true
 
         override fun canNegate() = originalCanNegate
 
-        override fun test(item: T) = item in positives
+        override fun test(item: T): Boolean {
+            if (!indexMap.containsKey(item)) {
+                throw NoSuchElementException("$item missing in loaded predicate ${toString()}")
+            }
+            return positives[indexMap[item]]
+        }
+
+        @Synchronized
+        override fun test(items: List<T>): BitSet {
+            if (items == database) {
+                return positives
+            }
+            return super.test(items)
+        }
+
 
         override fun toString() = "Loaded[${name()}]"
     }

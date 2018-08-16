@@ -22,7 +22,8 @@ class PredicatesIOTest {
         val database = listOf(1, 2, 3, 4, 5)
         withTempFile("predicates", ".tsv") {
             PredicatesIO.savePredicates(it, database, predicates, Int::toString)
-            val loaded = PredicatesIO.loadPredicates(it, String::toInt)
+            val (loadedDataBase, loaded) = PredicatesIO.loadPredicates(it, String::toInt)
+            assertEquals(database, loadedDataBase)
             assertEquals("[True, FalseNegate]", loaded.map { it.name() }.toString())
             database.forEach { assertEquals(predicates[0].test(it), loaded[0].test(it)) }
             database.forEach { assertEquals(predicates[1].test(it), loaded[1].test(it)) }
@@ -35,7 +36,7 @@ class PredicatesIOTest {
         val database = listOf(1, 2, 3, 4, 5)
         withTempFile("predicates", ".tsv") {
             PredicatesIO.savePredicates(it, database, predicates, Int::toString)
-            val loaded = PredicatesIO.loadPredicates(it, String::toInt)
+            val (_, loaded) = PredicatesIO.loadPredicates(it, String::toInt)
             assertTrue(loaded.isEmpty())
         }
     }

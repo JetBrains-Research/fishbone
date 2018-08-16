@@ -153,7 +153,7 @@ object RM {
                  toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
-                 topResults: Int = 1000,
+                 topResults: Int = 100,
                  convictionDelta: Double = 1E-6,
                  klDelta: Double = 1E-6) {
         val progress = Progress {

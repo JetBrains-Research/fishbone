@@ -51,7 +51,8 @@ abstract class Predicate<T> {
      * Please use [.testUncached] to implement custom behavior.
      * NOTE: we don't use Cache here, because items is the same object, so that cache miss should be quite rare.
      */
-    @Synchronized fun test(items: List<T>): BitSet {
+    @Synchronized
+    open fun test(items: List<T>): BitSet {
         var result: BitSet?
         if (cachedDataBase !== items) {
             result = null
