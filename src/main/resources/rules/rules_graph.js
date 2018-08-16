@@ -59,7 +59,8 @@ function buildGraph() {
                     data: {
                         id: n,
                         label: n,
-                        color: palette[not_n],
+                        text_color: textColor(palette[not_n]),
+                        background_color: palette[not_n],
                         parent: n_group_id
                     },
                     classes: classes

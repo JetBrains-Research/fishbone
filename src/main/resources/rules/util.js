@@ -109,6 +109,7 @@ function groupRecordsByConditionTarget() {
 
 function load(content) {
     showProgress();
+    $('#visualize-method').removeAttr('disabled');
     $('#target-filter').removeAttr('disabled');
     $('#correlation-filter-min').removeAttr('disabled');
     $('#correlation-filter-max').removeAttr('disabled');
@@ -215,7 +216,7 @@ function RULE_GRAPH_STYLE(line_type) {
                 "label": "data(label)",
                 "padding-top": ".25em", "padding-bottom": ".25em",
                 "padding-left": ".5em", "padding-right": ".5em",
-                "font-size": 11,
+                "font-size": 10,
                 "width": "label",
                 "height": "label",
                 "text-valign": "center",
@@ -235,7 +236,8 @@ function RULE_GRAPH_STYLE(line_type) {
         {
             selector: "node.colored",
             style: {
-                "background-color": "data(color)",
+                "color": "data(text_color)",
+                "background-color": "data(background_color)",
                 "border-color": "black",
                 "shape": "ellipse"
             }
@@ -243,7 +245,8 @@ function RULE_GRAPH_STYLE(line_type) {
         {
             selector: "node.colored_not",
             style: {
-                "background-color": "data(color)",
+                "color": "data(text_color)",
+                "background-color": "data(background_color)",
                 "border-color": "red",
             }
         },
@@ -303,6 +306,17 @@ function RULE_GRAPH_STYLE(line_type) {
             }
         }
     ];
+}
+
+/**
+ * See https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+ */
+function textColor(background) {
+    const color = (background.charAt(0) === '#') ? background.substring(1, 7) : background;
+    const r = parseInt(color.substring(0, 2), 16); // hexToR
+    const g = parseInt(color.substring(2, 4), 16); // hexToG
+    const b = parseInt(color.substring(4, 6), 16); // hexToB
+    return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 186) ? "black" : "white";
 }
 
 /**
