@@ -64,21 +64,30 @@ object PredicatesIO {
      */
     fun <T> loadPredicates(path: Path,
                            resolver: (String) -> T?): Pair<List<T>, List<Predicate<T>>> {
-        val comments = path.bufferedReader().useLines { lines ->
-            lines.filter { it.startsWith(COMMENT) }.map { it.substringAfter(COMMENT).trim() }.toList()
-        }
-        check(comments.size == 1) { "Unexpected file format:\n${comments.joinToString("\n") { "#$it" }}" }
-        val negatesInfo = comments.first().substringAfter(NOT).map { it == true.mark() }
-        if (negatesInfo.isEmpty()) {
-            return emptyList<T>() to emptyList<Predicate<T>>()
-        }
-        val names = path.bufferedReader().useLines {
-            val header = it.take(2).last().split('\t')
+        LOG.debug("Processing header $path")
+        var names = emptyList<String>()
+        var negatesInfo = emptyList<Boolean>()
+        path.bufferedReader().use { reader ->
+            val commentLine = reader.readLine()
+            if (commentLine != null && commentLine.startsWith(COMMENT)) {
+                negatesInfo = commentLine.substringAfter(NOT).map { it == true.mark() }
+            } else {
+
+                return@use
+            }
+            val headerLine = reader.readLine()
+            if (headerLine == null || headerLine.startsWith(COMMENT)) {
+                LOG.error("Unexpected file format $path, index $headerLine")
+                return@use
+            }
+            val header = headerLine.split('\t')
             require(header.first() == INDEX_KEY) {
                 "Unexpected file format: $INDEX_KEY required"
+                return@use
             }
-            header.subList(1, header.size)
+            names = header.subList(1, header.size)
         }
+
         val dataFrameSpec = DataFrameSpec()
         dataFrameSpec.strings(INDEX_KEY)
         names.forEach { dataFrameSpec.bools(it) }
