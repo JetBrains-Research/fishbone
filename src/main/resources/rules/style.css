@@ -37,3 +37,8 @@
 .navbar {
     margin-bottom: 0;
 }
+
+#about {
+    width: 900px;
+    margin: 20px auto;
+}

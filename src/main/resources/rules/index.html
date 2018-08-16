@@ -2,31 +2,27 @@
 <html>
 <head>
     <meta charset="utf-8"/>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="lib/jquery.min.js"></script>
     <!--v2.7.15-->
-    <script src="//cdn.rawgit.com/cytoscape/cytoscape.js/891e17e/dist/cytoscape.js"></script>
+    <script src="lib/cytoscape.js"></script>
     <!--v1.3.8-->
-    <script src="//cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/c7f7f74/cytoscape-cose-bilkent.js"></script>
+    <script src="lib/cytoscape-cose-bilkent.js"></script>
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="lib/bootstrap.min.css"/>
 
     <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
-          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <link rel="stylesheet" href="lib/bootstrap-theme.min.css"/>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
+    <script src="lib/bootstrap.min.js"></script>
 
     <!-- jquery-ui after bootstrap as a workaround for missing close icon.
     http://stackoverflow.com/questions/17367736/jquery-ui-dialog-missing-close-icon-->
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="lib/jquery-ui.css"/>
+    <script src="lib/jquery-ui.js"></script>
 
     <!--Spinner-->
-    <script src="spin.js"></script>
+    <script src="lib/spin.js"></script>
     <!-- NotifyJS-->
     <script src="lib/notify.min.js"></script>
 
@@ -88,7 +84,31 @@
     </form>
 </nav>
 <div id="main-panel">
-    <div id="cy"></div>
+    <div id="cy">
+        <div id="about">
+            <h1>Fishbone</h1>
+            <pre>
+        ```
+        |\    \ \ \ \ \ \ \      __           ___
+        |  \    \ \ \ \ \ \ \   | O~-_    _-~~   ~~-_
+        |   >----|-|-|-|-|-|-|--|  __/   /  BELIEVE  )
+        |  /    / / / / / / /   |__\   <              )
+        |/     / / / / / / /             \_   ME !  _)
+                                           ~--___--~
+            </pre>
+            <p>
+                Hybrid algorithms combining <a href="https://en.wikipedia.org/wiki/Association_rule_learning">Associated
+                Rules Learning</a> technique and <a href="https://en.wikipedia.org/wiki/Information_theory">Information
+                Theory</a> for automated building <a href="https://en.wikipedia.org/wiki/Ishikawa_diagram">Ishikawa
+                diagram</a>. <br>
+                This allowed to find causation-like associations in data. <br>
+            </p>
+            <p>
+                More information is available at JetBrains Research group <a
+                    href="https://research.jetbrains.org/groups/biolabs/projects?project_id=25">website</a>.
+            </p>
+        </div>
+    </div>
 </div>
 </body>
 </html>
