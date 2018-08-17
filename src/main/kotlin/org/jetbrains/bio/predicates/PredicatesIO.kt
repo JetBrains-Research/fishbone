@@ -60,11 +60,11 @@ object PredicatesIO {
     }
 
     /**
-     * Loads database and predicates saved by [savePredicates]
+     * Load database and predicates saved by [savePredicates]
      */
     fun <T> loadPredicates(path: Path,
                            resolver: (String) -> T?): Pair<List<T>, List<Predicate<T>>> {
-        LOG.debug("Processing header $path")
+        LOG.info("Loading predicates $path")
         var names = emptyList<String>()
         var negatesInfo = emptyList<Boolean>()
         path.bufferedReader().use { reader ->
@@ -77,23 +77,24 @@ object PredicatesIO {
             }
             val headerLine = reader.readLine()
             if (headerLine == null || headerLine.startsWith(COMMENT)) {
-                LOG.error("Unexpected file format $path, index $headerLine")
+                LOG.error("Unexpected file format $path: index $headerLine")
                 return@use
             }
             val header = headerLine.split('\t')
             require(header.first() == INDEX_KEY) {
-                "Unexpected file format: $INDEX_KEY required"
+                "Unexpected file format $path: $INDEX_KEY required"
                 return@use
             }
             names = header.subList(1, header.size)
+            LOG.info("Found predicates $path: ${if (names.size > 10) names.size.toString() else names.joinToString(", ")}")
         }
 
         val dataFrameSpec = DataFrameSpec()
         dataFrameSpec.strings(INDEX_KEY)
         names.forEach { dataFrameSpec.bools(it) }
-        LOG.debug("Loading data frame $path")
+        LOG.info("Loading data frame $path")
         val df = DataFrameMapper.TSV.load(path, spec = dataFrameSpec, header = true)
-        LOG.debug("DONE loading data frame $path")
+        LOG.info("DONE loading data frame $path")
 
         val progress = Progress {
             title = "Predicates from data frame"
