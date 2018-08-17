@@ -82,7 +82,7 @@ open class Distribution<T>(val database: List<T>,
     fun probabilityIndependent(v: BitterSet): Double =
             empiricalMarginals(atomics, database)
                     .mapIndexed { i, p -> if (v[i]) p else 1.0 - p }
-                    .fold(1.0, { a, b -> a * b })
+                    .fold(1.0) { a, b -> a * b }
 
 
     /**
