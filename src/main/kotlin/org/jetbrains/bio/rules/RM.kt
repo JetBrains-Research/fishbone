@@ -68,12 +68,12 @@ object RM {
      */
     data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?) {
         companion object {
-            fun <T> comparator() = Comparator<Node<T>> {
-                (r1, _), (r2, _) -> -Doubles.compare(r1.conviction, r2.conviction)
+            fun <T> comparator() = Comparator<Node<T>> { (r1, _), (r2, _) ->
+                -Doubles.compare(r1.conviction, r2.conviction)
             }
         }
     }
-    
+
 
     /**
      * Result of optimization is a graph, [Node] represents a single node of a graph.
@@ -88,6 +88,9 @@ object RM {
                               topResults: Int,
                               convictionDelta: Double,
                               klDelta: Double): List<Node<T>> {
+        if (klDelta <= 0) {
+            LOG.debug("Information criterion check ignored")
+        }
         val comparator = Node.comparator<T>()
         // Invariant: best[k] - best predicates with complexity = k
         val best = Array(maxComplexity + 1) { BPQ(topResults, comparator) }
@@ -105,6 +108,7 @@ object RM {
                  * conviction(A => C) < conviction(A & B => C) and conviction(B => C) > conviction (A & B => C)
                  * We reject (A & B => C) at node (B => C).
                  */
+                val rejected = hashSetOf<Predicate<T>>()
                 best[k - 1].flatMap { parent ->
                     val startConviction = parent.rule.conviction
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
@@ -113,6 +117,7 @@ object RM {
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
                                         .filter(Predicate<T>::defined)
+                                        .filter { it !in rejected }
                                         .map {
                                             Node(Rule(it, target, database), p, parent)
                                         }
@@ -121,32 +126,41 @@ object RM {
                                             // NOTE: we cannot use such a comparison in comparator,
                                             // because this can break TimSort assumptions of triangle rule
                                             if (Precision.compareTo(newConviction, startConviction, convictionDelta) <= 0) {
+                                                rejected.add(it.rule.conditionPredicate)
                                                 return@filter false
                                             }
-                                            val atomics = (startAtomics + p.collectAtomics()).distinct()
-                                            val empirical = EmpiricalDistribution(database, atomics)
-                                            val independent = Distribution(database, atomics)
-                                            val KL = KL(empirical, independent.learn(parent.rule))
-                                            val newKL = KL(empirical, independent.learn(it.rule))
-                                            // Avoid small fluctuations
-                                            val result = Precision.compareTo(newKL, KL, klDelta) < 0
-                                            if (!result) {
-                                                return@filter false
+                                            // If klDelta <= 0 ignore information check
+                                            if (klDelta > 0) {
+                                                val atomics = (startAtomics + p.collectAtomics()).distinct()
+                                                val empirical = EmpiricalDistribution(database, atomics)
+                                                val independent = Distribution(database, atomics)
+                                                val KL = KL(empirical, independent.learn(parent.rule))
+                                                val newKL = KL(empirical, independent.learn(it.rule))
+                                                // Avoid small fluctuations
+                                                val result = Precision.compareTo(newKL, KL, klDelta) < 0
+                                                if (!result) {
+                                                    rejected.add(it.rule.conditionPredicate)
+                                                    return@filter false
+                                                }
+                                                LOG.debug("C: $newConviction | $startConviction\t" +
+                                                        "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
+                                                        "KL(empirical, rule): $newKL | $KL\t" +
+                                                        "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                                            } else {
+                                                LOG.debug("C: $newConviction | $startConviction\t" +
+                                                        "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
+                                                        "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
+
                                             }
-                                            LOG.debug("C: $newConviction | $startConviction\t" +
-                                                    "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
-                                                    "KL(empirical, rule): $newKL | $KL\t" +
-                                                    "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
                                             return@filter true
                                         }
 
                             }
-                }.forEach { queue.add(it) }
+                }.filter { it.rule.conditionPredicate !in rejected }.forEach { queue.add(it) }
             }
         }
         return best.flatMap { it }.sortedWith(comparator).take(topResults)
     }
-
 
 
     fun <T> mine(title: String, database: List<T>,
