@@ -178,7 +178,8 @@ object RM {
         val executor = Executors.newWorkStealingPool(parallelismLevel())
         executor.awaitAll(
                 toMine.map { (conditions, target) ->
-                    MultitaskProgress.addTask(target.name(), conditions.size * maxComplexity.toLong())
+                    MultitaskProgress.addTask(target.name(),
+                            conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topResults)
                     Callable {
                         logFunction(optimize(conditions, target, database, maxComplexity, topResults, convictionDelta, klDelta))
                     }
