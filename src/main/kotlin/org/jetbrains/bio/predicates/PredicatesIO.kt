@@ -10,6 +10,7 @@ import org.jetbrains.bio.statistics.data.DataFrameSpec
 import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter
+import org.jetbrains.bio.util.size
 import java.nio.file.Path
 import java.util.*
 
@@ -64,7 +65,7 @@ object PredicatesIO {
      */
     fun <T> loadPredicates(path: Path,
                            resolver: (String) -> T?): Pair<List<T>, List<Predicate<T>>> {
-        LOG.info("Loading predicates $path")
+        LOG.info("Loading predicates $path ${path.size}")
         var names = emptyList<String>()
         var negatesInfo = emptyList<Boolean>()
         path.bufferedReader().use { reader ->
