@@ -7,7 +7,7 @@ import org.apache.commons.math3.util.Precision
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RM.optimize
-import org.jetbrains.bio.util.Progress
+import org.jetbrains.bio.util.MultitaskProgress
 import org.jetbrains.bio.util.awaitAll
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.parallelismLevel
@@ -98,6 +98,7 @@ object RM {
             val queue = best[k]
             if (k == 1) {
                 predicates.forEach { p ->
+                    MultitaskProgress.reportTask(target.name())
                     (if (p.canNegate()) listOf(p, p.negate()) else listOf(p))
                             .filter { it.complexity() == k }
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
@@ -112,7 +113,7 @@ object RM {
                 best[k - 1].flatMap { parent ->
                     val startConviction = parent.rule.conviction
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
-                    predicates.filter { it !in startAtomics }
+                    predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
                             .flatMap { p -> if (p.canNegate()) listOf(p, p.negate()) else listOf(p) }
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
@@ -159,7 +160,9 @@ object RM {
                 }.filter { it.rule.conditionPredicate !in rejected }.forEach { queue.add(it) }
             }
         }
-        return best.flatMap { it }.sortedWith(comparator).take(topResults)
+        val result = best.flatMap { it }.sortedWith(comparator).take(topResults)
+        MultitaskProgress.finishTask(target.name())
+        return result
     }
 
 
@@ -170,20 +173,18 @@ object RM {
                  topResults: Int = 100,
                  convictionDelta: Double = 1E-3,
                  klDelta: Double = 1E-3) {
-        val progress = Progress {
-            this.title = title
-        }.unbounded()
+        LOG.info("RM processing: $title")
         // Mine each target separately
         val executor = Executors.newWorkStealingPool(parallelismLevel())
         executor.awaitAll(
                 toMine.map { (conditions, target) ->
+                    MultitaskProgress.addTask(target.name(), conditions.size * maxComplexity.toLong())
                     Callable {
                         logFunction(optimize(conditions, target, database, maxComplexity, topResults, convictionDelta, klDelta))
-                        progress.report()
                     }
                 })
         check(executor.shutdownNow().isEmpty())
-        progress.done()
+        LOG.info("DONE RM processing: $title")
     }
 
     fun loadRules(path: Path): List<RuleRecord<Any>> {

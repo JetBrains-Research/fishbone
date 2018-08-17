@@ -83,7 +83,7 @@ class RMTest : TestCase() {
 
     @Test
     fun testCounterExamples() {
-        val predicate: Predicate<Int> = RangePredicate(-100, 100).named("T")
+        val target: Predicate<Int> = RangePredicate(-100, 100).named("T")
         val maxTop = 5
         val predicates = 10
         for (p in 3..predicates) {
@@ -99,9 +99,9 @@ class RMTest : TestCase() {
             }
             order.add(RangePredicate(-120, 120).named("Z"))
             val solutionX = AndPredicate.of(ORDER.subList(0, ORDER.size - 1))
-            val bestRule = Rule(solutionX, predicate, database)
+            val bestRule = Rule(solutionX, target, database)
             LOG.info("Best rule ${bestRule.name}")
-            val correctOrderRule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
+            val correctOrderRule = RM.optimize(ORDER, target, database, maxComplexity = 20,
                     topResults = 100, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
@@ -110,7 +110,7 @@ class RMTest : TestCase() {
 
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
-                    val rule = RM.optimize(ORDER, predicate, database, maxComplexity = 20,
+                    val rule = RM.optimize(ORDER, target, database, maxComplexity = 20,
                             topResults = maxTop, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
                     LOG.debug("RuleNode (top=$top): ${rule.name}")
                     assertTrue(rule.conviction >= bestRule.conviction)
