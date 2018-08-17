@@ -23,27 +23,41 @@ class RMLoggerTest {
   "records": [
     {
       "id": "id",
-      "target": "[0;20)",
       "condition": "[0;10) OR [10;20)",
-      "node": "[10;20)",
-      "parent_node": "[0;10)",
-      "parent_condition": "[0;10)",
+      "target": "[0;20)",
+      "database_count": 100,
+      "condition_count": 20,
+      "target_count": 20,
+      "intersection_count": 20,
+      "error_type_1_count": 0,
+      "error_type_2_count": 0,
       "support": 0.2,
       "confidence": 1.0,
       "correlation": 1.0,
+      "lift": 5.0,
       "conviction": 16.0,
-      "complexity": 2
+      "complexity": 2,
+      "node": "[10;20)",
+      "parent_node": "[0;10)",
+      "parent_condition": "[0;10)"
     },
     {
       "id": "id",
-      "target": "[0;20)",
       "condition": "[0;10)",
-      "node": "[0;10)",
+      "target": "[0;20)",
+      "database_count": 100,
+      "condition_count": 10,
+      "target_count": 20,
+      "intersection_count": 10,
+      "error_type_1_count": 0,
+      "error_type_2_count": 10,
       "support": 0.1,
       "confidence": 1.0,
       "correlation": 0.6666666666666666,
+      "lift": 5.0,
       "conviction": 8.0,
-      "complexity": 1
+      "complexity": 1,
+      "node": "[0;10)"
     }
   ],
   "palette": {

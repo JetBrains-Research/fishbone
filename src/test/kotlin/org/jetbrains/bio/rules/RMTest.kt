@@ -9,7 +9,6 @@ import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.statistics.distribution.Sampling
 import org.jetbrains.bio.util.time
 import org.junit.Test
-import java.awt.Color
 import java.util.*
 
 class RMTest : TestCase() {
@@ -125,83 +124,11 @@ class RMTest : TestCase() {
         val predicates = listOf(RangePredicate(20, 35), RangePredicate(35, 48)) +
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
         val database = 0.until(100).toList()
-        val logger = RMLogger(null)
+        val result = arrayListOf<String>()
         RM.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
-                { logger.log("id", it) }, maxComplexity = 3, topResults = 3)
-        assertEquals("""{
-  "records": [
-    {
-      "id": "id",
-      "target": "[20;50)",
-      "condition": "[20;35) OR [35;48) OR [40;50)",
-      "node": "[40;50)",
-      "parent_node": "[35;48)",
-      "parent_condition": "[20;35) OR [35;48)",
-      "support": 0.3,
-      "confidence": 1.0,
-      "correlation": 1.0,
-      "conviction": 21.0,
-      "complexity": 3
-    },
-    {
-      "id": "id",
-      "target": "[20;50)",
-      "condition": "[20;35) OR [35;48)",
-      "node": "[35;48)",
-      "parent_node": "[20;35)",
-      "parent_condition": "[20;35)",
-      "support": 0.28,
-      "confidence": 1.0,
-      "correlation": 0.9525793444156804,
-      "conviction": 19.6,
-      "complexity": 2
-    },
-    {
-      "id": "id",
-      "target": "[20;50)",
-      "condition": "[20;35)",
-      "node": "[20;35)",
-      "support": 0.15,
-      "confidence": 1.0,
-      "correlation": 0.641688947919748,
-      "conviction": 10.5,
-      "complexity": 1
-    },
-    {
-      "id": "id",
-      "target": "[20;50)",
-      "condition": "[20;35) OR [30;40) OR [40;50)",
-      "node": "[30;40)",
-      "parent_node": "[40;50)",
-      "parent_condition": "[20;35) OR [40;50)",
-      "support": 0.3,
-      "confidence": 1.0,
-      "correlation": 1.0,
-      "conviction": 21.0,
-      "complexity": 3
-    },
-    {
-      "id": "id",
-      "target": "[20;50)",
-      "condition": "[20;35) OR [40;50)",
-      "node": "[40;50)",
-      "parent_node": "[20;35)",
-      "parent_condition": "[20;35)",
-      "support": 0.25,
-      "confidence": 1.0,
-      "correlation": 0.8819171036881969,
-      "conviction": 17.5,
-      "complexity": 2
-    }
-  ],
-  "palette": {
-    "[35;48)": "#ffffff",
-    "[30;40)": "#ffffff",
-    "[20;50)": "#ffffff",
-    "[40;50)": "#ffffff",
-    "[20;35)": "#ffffff"
-  }
-}""", logger.getJson { Color.WHITE })
+                { it.forEach { result.add(it.rule.conditionPredicate.name()) } }, maxComplexity = 3, topResults = 3)
+        assertEquals(listOf("[20;35) OR [35;48) OR [40;50)", "[20;35) OR [30;40) OR [40;50)", "[20;35) OR [35;48)"),
+                result)
     }
 
 

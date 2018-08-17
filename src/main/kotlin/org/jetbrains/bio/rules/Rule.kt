@@ -38,6 +38,17 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
     }
 
     /**
+     * Lift measures how many times more often X and Y occur together than expected if they were statistically independent.
+
+     * See: http://michael.hahsler.net/research/association_rules/measures.html#lift
+     */
+    val lift: Double = if (condition == 0 || target == 0)
+        0.0
+    else
+        1.0 * database * intersection / (condition * target)
+
+
+    /**
      * Conviction was developed as an alternative to confidence which was found to
      * not capture direction of associations adequately. Conviction compares the probability that X
      * appears without Y if they were dependent with the actual frequency of the appearance of X without Y.
@@ -79,13 +90,13 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
     override fun toString(): String = name
 
     /**
-     * These are consistent with [RuleRecord.PARAMS]
+     * These are consistent with [RuleRecord.toMap]
      */
     fun toRecord(id: String = ""): RuleRecord<T> =
             RuleRecord(id, conditionPredicate, targetPredicate,
                     database, condition, target, intersection, errorType1, errorType2,
                     condition.toDouble() / database, intersection.toDouble() / condition,
-                    correlation, conviction,
+                    correlation, lift, conviction,
                     conditionPredicate.complexity())
 
     override fun equals(other: Any?): Boolean {
@@ -110,42 +121,80 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
 class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val targetPredicate: Predicate<T>,
                     val database: Int, val condition: Int, val target: Int, val intersection: Int,
                     val errorType1: Int, val errorType2: Int,
-                    support: Double, confidence: Double,
-                    correlation: Double, conviction: Double,
+                    val support: Double, val confidence: Double,
+                    val correlation: Double,
+                    val lift: Double,
+                    val conviction: Double,
                     val complexity: Int) {
-    val support: Double = if (!support.isNaN()) support else 0.0
-    val confidence: Double = if (!confidence.isNaN()) confidence else 0.0
-    val correlation: Double = if (!correlation.isNaN()) correlation else 0.0
-    val conviction: Double = if (!conviction.isNaN()) conviction else 0.0
 
-    fun toCSV() =
-            listOf(id,
-                    conditionPredicate.name(), targetPredicate.name(),
-                    database.toString(), condition.toString(), target.toString(), intersection.toString(),
-                    errorType1.toString(), errorType2.toString(),
-                    "%.6f".format(support), "%.6f".format(confidence),
-                    "%.6f".format(correlation), "%.6f".format(conviction),
-                    conditionPredicate.complexity().toString())
+    fun toCSV() = listOf(
+            id,
+            conditionPredicate.name(),
+            targetPredicate.name(),
+            database,
+            condition,
+            target,
+            intersection,
+            errorType1,
+            errorType2,
+            support,
+            confidence,
+            correlation,
+            lift,
+            conviction,
+            complexity)
+
+
+    fun toMap() = PARAMS.zip(toCSV()).toMap()
 
     companion object {
-        val PARAMS = listOf("id",
-                "condition_name", "target_name",
-                "database", "condition", "target", "intersection",
-                "error_type_1", "error_type_2",
-                "support", "confidence",
-                "correlation", "conviction",
-                "complexity")
+        private const val KEY_ID = "id"
+        private const val KEY_CONDITION = "condition"
+        private const val KEY_TARGET = "target"
+        private const val KEY_DATABASE_COUNT = "database_count"
+        private const val KEY_CONDITION_COUNT = "condition_count"
+        private const val KEY_TARGET_COUNT = "target_count"
+        private const val KEY_INTERSECTION_COUNT = "intersection_count"
+        private const val KEY_ERROR_TYPE1_COUNT = "error_type_1_count"
+        private const val KEY_ERROR_TYPE2_COUNT = "error_type_2_count"
+        private const val KEY_SUPPORT = "support"
+        private const val KEY_CONFIDENCE = "confidence"
+        private const val KEY_CORRELATION = "correlation"
+        private const val KEY_LIFT = "lift"
+        private const val KEY_CONVICTION = "conviction"
+        private const val KEY_COMPLEXITY = "complexity"
+
+        val PARAMS = listOf(
+                KEY_ID,
+                KEY_CONDITION,
+                KEY_TARGET,
+                KEY_DATABASE_COUNT,
+                KEY_CONDITION_COUNT,
+                KEY_TARGET_COUNT,
+                KEY_INTERSECTION_COUNT,
+                KEY_ERROR_TYPE1_COUNT,
+                KEY_ERROR_TYPE2_COUNT,
+                KEY_SUPPORT,
+                KEY_CONFIDENCE,
+                KEY_CORRELATION,
+                KEY_LIFT,
+                KEY_CONVICTION,
+                KEY_COMPLEXITY)
+
 
         fun <T> fromCSV(it: CSVRecord, function: (String) -> Predicate<T>): RuleRecord<T> {
-            return RuleRecord(id = s(it, "id"),
-                    conditionPredicate = PredicateParser.parse(s(it, "condition_name"), function)!!,
-                    targetPredicate = PredicateParser.parse(s(it, "target_name"), function)!!,
-                    database = i(it, "database"), condition = i(it, "condition"), target = i(it, "target"),
-                    intersection = i(it, "intersection"),
-                    errorType1 = i(it, "error_type_1"), errorType2 = i(it, "error_type_2"),
-                    support = d(it, "support"), confidence = d(it, "confidence"),
-                    correlation = d(it, "correlation"), conviction = d(it, "conviction"),
-                    complexity = i(it, "complexity"))
+            return RuleRecord(id = s(it, KEY_ID),
+                    conditionPredicate = PredicateParser.parse(s(it, KEY_CONDITION), function)!!,
+                    targetPredicate = PredicateParser.parse(s(it, KEY_TARGET), function)!!,
+                    database = i(it, KEY_DATABASE_COUNT),
+                    condition = i(it, KEY_CONDITION_COUNT), target = i(it, KEY_TARGET_COUNT),
+                    intersection = i(it, KEY_INTERSECTION_COUNT),
+                    errorType1 = i(it, KEY_ERROR_TYPE1_COUNT), errorType2 = i(it, KEY_ERROR_TYPE2_COUNT),
+                    support = d(it, KEY_SUPPORT), confidence = d(it, KEY_CONFIDENCE),
+                    correlation = d(it, KEY_CORRELATION),
+                    lift = d(it, KEY_LIFT),
+                    conviction = d(it, KEY_CONVICTION),
+                    complexity = i(it, KEY_COMPLEXITY))
         }
 
         private fun s(it: CSVRecord, s: String) = if (it.isMapped(s)) it[s] else ""

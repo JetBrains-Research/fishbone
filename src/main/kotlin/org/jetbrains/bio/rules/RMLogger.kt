@@ -47,17 +47,10 @@ class RMLogger(val path: Path?, vararg params: String) {
                 // Log to csv
                 log(r)
                 // Json based visualization
-                graphRecords.add(mapOf("id" to id,
-                        "target" to r.targetPredicate.name(),
-                        "condition" to r.conditionPredicate.name(),
+                graphRecords.add(r.toMap() + mapOf(
                         "node" to node.element.name(),
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
-                        "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
-                        "support" to r.support,
-                        "confidence" to r.confidence,
-                        "correlation" to r.correlation,
-                        "conviction" to r.conviction,
-                        "complexity" to r.complexity))
+                        "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null))
                 node = node.parent
             }
         }
