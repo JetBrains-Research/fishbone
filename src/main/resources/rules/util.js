@@ -351,9 +351,9 @@ function showInfo(edge) {
                 groupedRecordsMap[id].map(r =>
                     `<tr>
 <td>${r.id} (${r.database_count})</td>
-<td>${r.support.toFixed(2)} (${r.condition_count})</td>
-<td>${r.confidence.toFixed(2)} (${r.intersection_count} / ${r.target_count})</td>
-<td>${r.correlation.toFixed(2)}</td>
+<td>${r.support.toFixed(2)}</td>
+<td>${r.confidence.toFixed(2)}</td>
+<td>${r.correlation.toFixed(2)} (${r.condition_count}, ${r.target_count}, ${r.intersection_count})</td>
 <td>${r.conviction.toFixed(2)}</td>
 </tr>`).join("") +
                 `</tbody></table>`;
