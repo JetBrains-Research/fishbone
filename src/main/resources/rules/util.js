@@ -333,7 +333,6 @@ function showInfo(edge) {
     if (dialog.dialog('isOpen') === true) {
         html = dialog.html() + "<br/>";
     }
-    const metrics = ["support", "confidence", "correlation", "conviction"];
     const processed = new Set();
     for (let r of edge.records) {
         const id = edgeId(r.condition, r.target);
@@ -347,14 +346,17 @@ function showInfo(edge) {
             // Build html table
             const table = `<table class="table table-striped">
                 <thead class="thead-default">` +
-                "<tr><th></th>" + metrics.map(m => `<th>${m}</th>`).join("") + "</tr>" +
+                "<tr><th>db</th><th>support</th><th>confidence</th><th>correlation</th><th>conviction</th></tr>" +
                 `</thead><tbody>` +
-                groupedRecordsMap[id].map(r => `<tr><td>${r.id}</td>` +
-                    metrics.map(m => m in r
-                        ? `<td>${r[m].toFixed(2)}</td>`
-                        : `<td class="danger"></td>`)
-                        .join("") +
-                    "</tr>").join("") + `</tbody></table>`;
+                groupedRecordsMap[id].map(r =>
+                    `<tr>
+<td>${r.id} (${r.database_count})</td>
+<td>${r.support.toFixed(2)} (${r.condition_count})</td>
+<td>${r.confidence.toFixed(2)} (${r.intersection_count} / ${r.target_count})</td>
+<td>${r.correlation.toFixed(2)}</td>
+<td>${r.conviction.toFixed(2)}</td>
+</tr>`).join("") +
+                `</tbody></table>`;
             html += `<div>${r.condition} => ${r.target}${table}</div>`;
         }
     }
