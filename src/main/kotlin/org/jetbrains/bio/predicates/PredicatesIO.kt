@@ -10,7 +10,6 @@ import org.jetbrains.bio.statistics.data.DataFrameSpec
 import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter
-import org.jetbrains.bio.util.size
 import java.nio.file.Path
 import java.util.*
 
@@ -65,7 +64,7 @@ object PredicatesIO {
      */
     fun <T> loadPredicates(path: Path,
                            resolver: (String) -> T?): Pair<List<T>, List<Predicate<T>>> {
-        LOG.info("Loading predicates $path ${path.size}")
+        LOG.info("Loading predicates $path")
         var names = emptyList<String>()
         var negatesInfo = emptyList<Boolean>()
         path.bufferedReader().use { reader ->
@@ -87,7 +86,7 @@ object PredicatesIO {
                 return@use
             }
             names = header.subList(1, header.size)
-            LOG.info("Found predicates $path: ${if (names.size > 10) names.size.toString() else names.joinToString(", ")}")
+            LOG.info("Found predicates ${if (names.size > 10) names.size.toString() else names.joinToString(", ")}")
         }
 
         val dataFrameSpec = DataFrameSpec()
