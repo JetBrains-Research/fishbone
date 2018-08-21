@@ -4,7 +4,7 @@ import junit.framework.TestCase
 
 class PredicateTest : TestCase() {
 
-    val predicates: List<Predicate<Int>> =
+    private val predicates: List<Predicate<Int>> =
             namedRangePredicates(10, 10000) +
                     listOf(TruePredicate(), FalsePredicate())
 
@@ -12,8 +12,8 @@ class PredicateTest : TestCase() {
     @Throws(Exception::class)
     fun testCollectAtomicFormulas() {
         val predicates = namedRangePredicates(4, 10000)
-        val set = ParenthesesPredicate.of(OrPredicate.of(predicates[0].negate(),
-                AndPredicate.of(predicates[1], predicates[2]))).collectAtomics()
+        val set = ParenthesesPredicate.of(Predicate.or(predicates[0].negate(),
+                Predicate.and(predicates[1], predicates[2]))).collectAtomics()
         assertTrue(set.contains(predicates[0]))
         assertTrue(set.contains(predicates[1]))
         assertTrue(set.contains(predicates[2]))
@@ -32,9 +32,9 @@ class PredicateTest : TestCase() {
         assertEquals("0 OR 1 OR 2 OR 3", p("0 OR 2").or(p("1 OR 3")).toString())
         assertEquals("0 OR 1 OR 2 AND 3", p("0 OR 1").or(p("2 AND 3")).toString())
         assertEquals("0 OR 1 OR 2", p("0 OR 1").or(p("(2)")).toString())
-        assertEquals(p("1"), OrPredicate.of(p("1")))
-        assertEquals(p("0"), OrPredicate.of(p("FALSE"), p("0")))
-        assertEquals(p("TRUE"), OrPredicate.of(p("TRUE"), p("0")))
+        assertEquals(p("1"), Predicate.or(p("1")))
+        assertEquals(p("0"), Predicate.or(p("FALSE"), p("0")))
+        assertEquals(p("TRUE"), Predicate.or(p("TRUE"), p("0")))
     }
 
     @Throws(Exception::class)
@@ -44,9 +44,9 @@ class PredicateTest : TestCase() {
         assertEquals("0 AND 1 AND 2", p("1").and(p("0 AND 2")).toString())
         assertEquals("0 AND 1 AND 2 AND 3", p("0 AND 2").and(p("1 AND 3")).toString())
         assertEquals("(2 OR 3) AND 0 AND 1", p("0 AND 1").and(p("2 OR 3")).toString())
-        assertEquals(p("1"), AndPredicate.of(p("1")))
-        assertEquals(p("0"), AndPredicate.of(p("TRUE"), p("0")))
-        assertEquals(p("FALSE"), AndPredicate.of(p("FALSE"), p("0")))
+        assertEquals(p("1"), Predicate.and(p("1")))
+        assertEquals(p("0"), Predicate.and(p("TRUE"), p("0")))
+        assertEquals(p("FALSE"), Predicate.and(p("FALSE"), p("0")))
     }
 
     @Throws(Exception::class)
@@ -86,20 +86,20 @@ class PredicateTest : TestCase() {
     @Throws(Exception::class)
     fun testOrNegate() {
         assertEquals("NOT (0 OR 1 OR 2)", p("0 OR 1 OR 2").negate().name())
-        assertFalse(OrPredicate.of(p("0"), UndefinedPredicate<Int>()).negate().defined())
+        assertFalse(Predicate.or(p("0"), UndefinedPredicate<Int>()).negate().defined())
     }
 
     @Throws(Exception::class)
     fun testAndNegate() {
         assertEquals("NOT (0 AND 1 AND 2)", p("0 AND 1 AND 2").negate().name())
-        assertFalse(AndPredicate.of(p("0"), UndefinedPredicate<Int>()).negate().defined())
+        assertFalse(Predicate.and(p("0"), UndefinedPredicate<Int>()).negate().defined())
     }
 
     @Throws(Exception::class)
     fun testGetNameOrder() {
         val predicates = namedRangePredicates(4, 10000)
-        assertEquals("0 OR 1 OR 2", OrPredicate.of(predicates[1], predicates[0], predicates[2]).name())
-        assertEquals("0 AND 1 AND 2", AndPredicate.of(predicates[1], predicates[0], predicates[2]).name())
+        assertEquals("0 OR 1 OR 2", Predicate.or(predicates[1], predicates[0], predicates[2]).name())
+        assertEquals("0 AND 1 AND 2", Predicate.and(predicates[1], predicates[0], predicates[2]).name())
     }
 
     fun testEquals() {
@@ -114,21 +114,21 @@ class PredicateTest : TestCase() {
         assertEquals(UndefinedPredicate<Any>(), UndefinedPredicate<Any>().negate())
 
 
-        assertEquals(OrPredicate.of(predicates[0], predicates[1], predicates[2]),
-                OrPredicate.of(predicates[0], predicates[1], predicates[2]))
+        assertEquals(Predicate.or(predicates[0], predicates[1], predicates[2]),
+                Predicate.or(predicates[0], predicates[1], predicates[2]))
         // Check operands get sorted
-        assertEquals(OrPredicate.of(predicates[0], predicates[1], predicates[2]),
-                OrPredicate.of(predicates[1], predicates[2], predicates[0]))
-        assertNotSame(OrPredicate.of(predicates[0], predicates[1]),
-                OrPredicate.of(predicates[0], predicates[1], predicates[2]))
+        assertEquals(Predicate.or(predicates[0], predicates[1], predicates[2]),
+                Predicate.or(predicates[1], predicates[2], predicates[0]))
+        assertNotSame(Predicate.or(predicates[0], predicates[1]),
+                Predicate.or(predicates[0], predicates[1], predicates[2]))
 
-        assertEquals(AndPredicate.of(predicates[0], predicates[1], predicates[2]),
-                AndPredicate.of(predicates[0], predicates[1], predicates[2]))
+        assertEquals(Predicate.and(predicates[0], predicates[1], predicates[2]),
+                Predicate.and(predicates[0], predicates[1], predicates[2]))
         // Check operands get sorted
-        assertEquals(AndPredicate.of(predicates[0], predicates[1], predicates[2]),
-                AndPredicate.of(predicates[1], predicates[0], predicates[2]))
-        assertNotSame(AndPredicate.of(predicates[0], predicates[1]),
-                AndPredicate.of(predicates[0], predicates[1], predicates[2]))
+        assertEquals(Predicate.and(predicates[0], predicates[1], predicates[2]),
+                Predicate.and(predicates[1], predicates[0], predicates[2]))
+        assertNotSame(Predicate.and(predicates[0], predicates[1]),
+                Predicate.and(predicates[0], predicates[1], predicates[2]))
 
         assertEquals(predicates[0].negate(), predicates[0].negate())
         assertEquals(ParenthesesPredicate.of(predicates[0]), ParenthesesPredicate.of(predicates[0]))
@@ -138,8 +138,8 @@ class PredicateTest : TestCase() {
     fun testUndefined() {
         val predicates = namedRangePredicates(4, 10000)
         assertFalse(UndefinedPredicate<Any>().defined())
-        assertFalse(OrPredicate.of(predicates[1],
-                AndPredicate.of(predicates[0], UndefinedPredicate<Int>())).defined())
+        assertFalse(Predicate.or(predicates[1],
+                Predicate.and(predicates[0], UndefinedPredicate<Int>())).defined())
     }
 
 

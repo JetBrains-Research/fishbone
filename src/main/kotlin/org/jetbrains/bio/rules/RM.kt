@@ -3,7 +3,6 @@ package org.jetbrains.bio.rules
 import com.google.common.collect.Maps
 import com.google.common.primitives.Doubles
 import org.apache.commons.csv.CSVFormat
-import org.apache.commons.math3.util.Precision
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RM.optimize
@@ -78,8 +77,8 @@ object RM {
     /**
      * Result of optimization is a graph, [Node] represents a single node of a graph.
      * For each edge A -> B, the following invariant is hold:
-     *      score(B) >= score(A) + [SCORE_DELTA]
-     *      KL(empirical, B) <= KL(empirical, A) + [KL_DELTA]
+     * 1. conviction(B) >= conviction(A) + [convictionDelta]
+     * 2. klDelta < 0 OR KL(empirical, B) <= KL(empirical, A) - [klDelta]
      */
     internal fun <T> optimize(predicates: List<Predicate<T>>,
                               target: Predicate<T>,
@@ -91,10 +90,13 @@ object RM {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
+        check(klDelta <= 1) {
+            "Expected klDelta <= 1 (100%), got: $klDelta"
+        }
         val comparator = Node.comparator<T>()
         // Invariant: best[k] - best predicates with complexity = k
         val best = Array(maxComplexity + 1) { BPQ(topResults, comparator) }
-        (1..maxComplexity).forEach { k ->
+        (1..Math.min(maxComplexity, predicates.size)).forEach { k ->
             val queue = best[k]
             if (k == 1) {
                 predicates.forEach { p ->
@@ -104,12 +106,6 @@ object RM {
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
             } else {
-                /** Rejected predicates, i.e.
-                 * Consider predicates A, B, C. In case if:
-                 * conviction(A => C) < conviction(A & B => C) and conviction(B => C) > conviction (A & B => C)
-                 * We reject (A & B => C) at node (B => C).
-                 */
-                val rejected = hashSetOf<Predicate<T>>()
                 best[k - 1].flatMap { parent ->
                     val startConviction = parent.rule.conviction
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
@@ -118,16 +114,12 @@ object RM {
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
                                         .filter(Predicate<T>::defined)
-                                        .filter { it !in rejected }
                                         .map {
                                             Node(Rule(it, target, database), p, parent)
                                         }
                                         .filter {
                                             val newConviction = it.rule.conviction
-                                            // NOTE: we cannot use such a comparison in comparator,
-                                            // because this can break TimSort assumptions of triangle rule
-                                            if (Precision.compareTo(newConviction, startConviction, convictionDelta) <= 0) {
-                                                rejected.add(it.rule.conditionPredicate)
+                                            if (newConviction < startConviction + convictionDelta) {
                                                 return@filter false
                                             }
                                             // If klDelta <= 0 ignore information check
@@ -137,10 +129,8 @@ object RM {
                                                 val independent = Distribution(database, atomics)
                                                 val KL = KL(empirical, independent.learn(parent.rule))
                                                 val newKL = KL(empirical, independent.learn(it.rule))
-                                                // Avoid small fluctuations
-                                                val result = Precision.compareTo(newKL, KL, klDelta) < 0
-                                                if (!result) {
-                                                    rejected.add(it.rule.conditionPredicate)
+                                                // Check that we gained at least klDelta improvement
+                                                if (newKL >= KL - klDelta) {
                                                     return@filter false
                                                 }
                                                 LOG.debug("C: $newConviction | $startConviction\t" +
@@ -155,9 +145,8 @@ object RM {
                                             }
                                             return@filter true
                                         }
-
                             }
-                }.filter { it.rule.conditionPredicate !in rejected }.forEach { queue.add(it) }
+                }.forEach { queue.add(it) }
             }
         }
         val result = best.flatMap { it }.sortedWith(comparator).take(topResults)
@@ -171,8 +160,8 @@ object RM {
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
                  topResults: Int = 100,
-                 convictionDelta: Double = 1E-3,
-                 klDelta: Double = 1E-3) {
+                 convictionDelta: Double = 1E-2,
+                 klDelta: Double = 1E-2) {
         LOG.info("RM processing: $title")
         // Mine each target separately
         val executor = Executors.newWorkStealingPool(parallelismLevel())

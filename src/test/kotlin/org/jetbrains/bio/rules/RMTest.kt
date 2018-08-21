@@ -4,9 +4,7 @@ import junit.framework.TestCase
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.jetbrains.bio.Logs
-import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.statistics.distribution.Sampling
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import java.util.*
@@ -17,29 +15,21 @@ class RMTest : TestCase() {
         Logs.addConsoleAppender(Level.INFO)
     }
 
-    /**
-     * Probe predicate is used as an evaluation of rule mining algorithm as an effective feature selection
-     * “Causal Feature Selection” I. Guyon et al., "Computational Methods of Feature Selection", 2007.
-     * http://clopinet.com/isabelle/Papers/causalFS.pdf
-     */
-    private class ProbePredicate<T>(private val name: String, database: List<T>) : Predicate<T>() {
-        // 0.5 probability is a good idea, because of zero information,
-        // each subset is going to have similar coverage fraction.
-        private val trueSet = database.filter { Sampling.sampleBernoulli(0.5) }.toSet()
 
-        override fun test(item: T): Boolean = item in trueSet
-        override fun name() = name
-    }
-
-    private fun <T> optimize(target: Predicate<T>,
-                             database: List<T>,
-                             conditions: List<Predicate<T>>,
-                             maxComplexity: Int = 10): Predicate<T> {
-        // 10% of predicates are probes
-        val probes = (0 until (conditions.size * 0.1).toInt()).map { ProbePredicate("probe_$it", database) }
+    private fun <T> optimizeWithProbes(target: Predicate<T>,
+                                       database: List<T>,
+                                       conditions: List<Predicate<T>>,
+                                       maxComplexity: Int = 10,
+                                       topResults: Int = 10,
+                                       convictionDelta: Double = 1e-2,
+                                       klDelta: Double = 1e-2): Predicate<T> {
+        // 20% of predicates are probes
+        val probes = (0..conditions.size / 5).map { ProbePredicate("probe_$it", database) }
         return RM.optimize(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
-                topResults = 10, convictionDelta = 1e-3, klDelta = 1e-3).first().rule.conditionPredicate
+                topResults = topResults,
+                convictionDelta = convictionDelta,
+                klDelta = klDelta).first().rule.conditionPredicate
     }
 
     private fun predicates(number: Int, dataSize: Int): List<Predicate<Int>> {
@@ -55,7 +45,7 @@ class RMTest : TestCase() {
             val empiricalDistribution = EmpiricalDistribution(database, allAtomics)
             var kl = Double.MAX_VALUE
             for (c in 1..5) {
-                val condition = optimize(target, database, predicates, maxComplexity = c)
+                val condition = optimizeWithProbes(target, database, predicates, maxComplexity = c)
                 val rule = Rule(condition, target, database)
                 val newKL = KL(empiricalDistribution, Distribution(database, allAtomics).learn(rule))
                 LOG.info("Complexity: $c\tRule: ${rule.name}\tKL: $newKL\tDelta KL: ${newKL - kl}")
@@ -66,16 +56,43 @@ class RMTest : TestCase() {
         }
     }
 
+    fun testOptimizeConvictionDelta() {
+        val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
+        val database = (0..100).toList()
+        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = -1.0).name())
+        assertEquals("[16;32) OR [32;64) OR [8;16)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0).name())
+        assertEquals("[16;32) OR [32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 5.0, klDelta = -1.0).name())
+        assertEquals("[32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 10.0, klDelta = -1.0).name())
+    }
+
+    fun testOptimizeKLDelta() {
+        val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
+        val database = (0..100).toList()
+        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.0).name())
+        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 1e-2).name())
+        assertEquals("[16;32) OR [32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).name())
+        assertEquals("[32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.2).name())
+    }
+
+
     fun testOptimize() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
             val database = 0.until(size).toList()
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50)",
-                    optimize(RangePredicate(20, 50), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 50), database, predicates).name())
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50) OR [50;60)",
-                    optimize(RangePredicate(20, 60), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 60), database, predicates).name())
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50)",
-                    optimize(RangePredicate(20, 51), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 51), database, predicates).name())
         }
     }
 
@@ -90,18 +107,17 @@ class RMTest : TestCase() {
             val X0 = RangePredicate(-100, 1000).named("X0")
             val order = arrayListOf(X0)
             val database = IntRange(-10000, 10000).toList()
-            val ORDER = order
             for (i in 0 until p - 1) {
                 order.add(RangePredicate(-10000 + 100 * i, -10000 + predicates * 100 + 100 * i)
                         .or(RangePredicate(-120, 100))
                         .or(RangePredicate(100 + 100 * i, 200 + 100 * i)).named("X${i + 1}"))
             }
             order.add(RangePredicate(-120, 120).named("Z"))
-            val solutionX = AndPredicate.of(ORDER.subList(0, ORDER.size - 1))
+            val solutionX = Predicate.and(order.subList(0, order.size - 1))
             val bestRule = Rule(solutionX, target, database)
             LOG.info("Best rule ${bestRule.name}")
-            val correctOrderRule = RM.optimize(ORDER, target, database, maxComplexity = 20,
-                    topResults = 100, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
+            val correctOrderRule = RM.optimize(order, target, database, maxComplexity = 20,
+                    topResults = 100, convictionDelta = 1e-1, klDelta = 1e-1).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
                 fail("Best rule is not optimal.")
@@ -109,8 +125,8 @@ class RMTest : TestCase() {
 
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
-                    val rule = RM.optimize(ORDER, target, database, maxComplexity = 20,
-                            topResults = maxTop, convictionDelta = 1e-3, klDelta = 1e-3).first().rule
+                    val rule = RM.optimize(order, target, database, maxComplexity = 20,
+                            topResults = maxTop, convictionDelta = 1e-1, klDelta = 1e-2).first().rule
                     LOG.debug("RuleNode (top=$top): ${rule.name}")
                     assertTrue(rule.conviction >= bestRule.conviction)
                 }
@@ -136,7 +152,6 @@ class RMTest : TestCase() {
         internal val LOG = Logger.getLogger(RMTest::class.java)
     }
 }
-
 
 
 class RangePredicate(private val start: Int, private val end: Int) : Predicate<Int>() {

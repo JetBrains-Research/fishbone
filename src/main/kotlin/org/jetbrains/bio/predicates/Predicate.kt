@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions.checkState
 import com.google.common.collect.Sets
 import java.lang.ref.WeakReference
 import java.util.*
-import java.util.function.Function
 
 /**
  * Predicate, used in predicates mining.
@@ -40,12 +39,14 @@ abstract class Predicate<T> {
         return NotPredicate.of(this)
     }
 
-    fun and(other: Predicate<T>): Predicate<T> = AndPredicate.of(this, other)
+    fun and(other: Predicate<T>): Predicate<T> = and(this, other)
 
-    fun or(other: Predicate<T>): Predicate<T> = OrPredicate.of(this, other)
+    fun or(other: Predicate<T>): Predicate<T> = or(this, other)
 
-    @Volatile private var cachedDataBase: List<T>? = null
-    @Volatile private var cache = WeakReference<BitSet>(null)
+    @Volatile
+    private var cachedDataBase: List<T>? = null
+    @Volatile
+    private var cache = WeakReference<BitSet>(null)
 
     /**
      * Please use [.testUncached] to implement custom behavior.
@@ -96,7 +97,72 @@ abstract class Predicate<T> {
     }
 
     companion object {
-        val NAMES_COMPARATOR: Comparator<Predicate<*>> =
-                Comparator.comparing(Function<Predicate<*>, String> { it.name() })
+
+        /**
+         * Returns [OrPredicate] if all operands are defined and the
+         * number of operands >= 2. If there's only one defined operand,
+         * returns it unchanged. Otherwise returns [UndefinedPredicate].
+         */
+        fun <T> or(operands: List<Predicate<T>>): Predicate<T> {
+            check(operands.isNotEmpty())
+            if (!operands.all { it.defined() }) {
+                return UndefinedPredicate()
+            }
+            val processedOperands = operands
+                    // Remove unnecessary ()
+                    .map { o -> if (o is ParenthesesPredicate<*>) (o as ParenthesesPredicate<T>).operand else o }
+                    // Open underlying Or operands
+                    .flatMap { o -> if (o is OrPredicate<*>) (o as OrPredicate<T>).operands else listOf(o) }
+                    // Filter FALSE operands
+                    .filter { o -> o != FalsePredicate<T>() }
+                    .sortedBy { it.name() }
+            if (processedOperands.any { it == TruePredicate<T>() }) {
+                return TruePredicate()
+            }
+            return if (processedOperands.size == 1) processedOperands[0] else OrPredicate(processedOperands)
+        }
+
+
+        @SafeVarargs
+        fun <T> or(vararg operands: Predicate<T>): Predicate<T> {
+            return or(Arrays.asList(*operands))
+        }
+
+        /**
+         * Returns [AndPredicate] if all operands are defined and the
+         * number of operands >= 2. If there's only one defined operand,
+         * returns it unchanged. Otherwise returns [UndefinedPredicate].
+         */
+        fun <T> and(operands: List<Predicate<T>>): Predicate<T> {
+            check(operands.isNotEmpty())
+            if (!operands.all { it.defined() }) {
+                return UndefinedPredicate()
+            }
+            val processedOperands = operands
+                    // Insert parenthesis within Or operands
+                    .map { o -> if (o is OrPredicate<*>) ParenthesesPredicate.of(o) else o }
+                    // Remove unnecessary ()
+                    .map { o ->
+                        if (o is ParenthesesPredicate<*> && o.operand !is OrPredicate<*>)
+                            (o as ParenthesesPredicate<T>).operand
+                        else
+                            o
+                    }
+                    // Open underlying And predicates
+                    .flatMap { o -> if (o is AndPredicate<*>) (o as AndPredicate<T>).operands else listOf(o) }
+                    // Filter TRUE operands
+                    .filter { o -> o != TruePredicate<T>() }
+                    .sortedBy { it.name() }
+            // Check FALSE inside operands
+            if (processedOperands.any { it == FalsePredicate<T>() }) {
+                return FalsePredicate()
+            }
+            return if (processedOperands.size == 1) processedOperands[0] else AndPredicate(processedOperands)
+        }
+
+        @SafeVarargs
+        fun <T> and(vararg operands: Predicate<T>): Predicate<T> {
+            return and(Arrays.asList(*operands))
+        }
     }
 }

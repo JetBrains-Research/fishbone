@@ -31,53 +31,54 @@ class PredicateParserTest : TestCase() {
 
     @Throws(Exception::class)
     fun testParseNotRule() {
-        assertEquals("NOT p1", PredicateParser.parse<Any>("NOT p1", { testPredicate(it) })!!.name())
+        assertEquals("NOT p1", PredicateParser.parse("NOT p1") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseParenthesisRule() {
-        assertEquals("(p1)", PredicateParser.parse<Any>("(p1)", { testPredicate(it) })!!.name())
+        assertEquals("(p1)", PredicateParser.parse("(p1)") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseRuleAnd() {
-        assertEquals("p1 AND p2", PredicateParser.parse<Any>("p1 AND p2", { testPredicate(it) })!!.name())
+        assertEquals("p1 AND p2", PredicateParser.parse("p1 AND p2") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseRuleAnd3() {
         assertEquals("p1 AND p2 AND NOT p3",
-                PredicateParser.parse<Any>("p1 AND p2 AND NOT p3", { testPredicate(it) })!!.name())
+                PredicateParser.parse("p1 AND p2 AND NOT p3") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseRuleOr() {
-        assertEquals("p1 OR p2", PredicateParser.parse<Any>("p1 OR p2", { testPredicate(it) })!!.name())
+        assertEquals("p1 OR p2", PredicateParser.parse("p1 OR p2") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseRuleOr3() {
         assertEquals("p1 OR p2 OR NOT p3",
-                PredicateParser.parse<Any>("p1 OR p2 OR NOT p3", { testPredicate(it) })!!.name())
+                PredicateParser.parse("p1 OR p2 OR NOT p3") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseComplex() {
         assertEquals("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3",
-                PredicateParser.parse<Any>("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3",
-                        { testPredicate(it) })!!.name())
+                PredicateParser.parse("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3") {
+                    testPredicate(it)
+                }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseComplexOr() {
         assertEquals("Insulator AND exons_except_first_H3K36me3",
-                PredicateParser.parse<Any>("Insulator AND exons_except_first_H3K36me3", { testPredicate(it) })!!.name())
+                PredicateParser.parse("Insulator AND exons_except_first_H3K36me3") { testPredicate(it) }!!.name())
     }
 
     @Throws(Exception::class)
     fun testParseTrueFalse() {
-        assertTrue(PredicateParser.parse<Any>("TRUE", { null }) is TruePredicate<*>)
-        assertTrue(PredicateParser.parse<Any>("FALSE", { null }) is FalsePredicate<*>)
+        assertTrue(PredicateParser.parse<Any>("TRUE") { null } is TruePredicate<*>)
+        assertTrue(PredicateParser.parse<Any>("FALSE") { null } is FalsePredicate<*>)
     }
 
     @Throws(Exception::class)
