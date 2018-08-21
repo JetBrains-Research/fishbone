@@ -23,8 +23,8 @@ class RMTest : TestCase() {
                                        topResults: Int = 10,
                                        convictionDelta: Double = 1e-2,
                                        klDelta: Double = 1e-2): Predicate<T> {
-        // 20% of predicates are probes
-        val probes = (0..conditions.size / 5).map { ProbePredicate("probe_$it", database) }
+        // 10% of predicates are probes
+        val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
         return RM.optimize(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
                 topResults = topResults,
@@ -61,7 +61,7 @@ class RMTest : TestCase() {
         val database = (0..100).toList()
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = -1.0).name())
-        assertEquals("[16;32) OR [32;64) OR [8;16)",
+        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0).name())
         assertEquals("[16;32) OR [32;64)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 5.0, klDelta = -1.0).name())
