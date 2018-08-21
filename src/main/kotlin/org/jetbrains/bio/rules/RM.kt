@@ -76,9 +76,21 @@ object RM {
 
     /**
      * Result of optimization is a graph, [Node] represents a single node of a graph.
-     * For each edge A -> B, the following invariant is hold:
-     * 1. conviction(B) >= conviction(A) + [convictionDelta]
-     * 2. klDelta < 0 OR KL(empirical, B) <= KL(empirical, A) - [klDelta]
+     * For each edge Parent -> Child, the following invariant is hold:
+     * 1. conviction(Child) >= conviction(Parent) + [convictionDelta]
+     * 2. klDelta < 0 OR KL(dEmpirical, dChild) <= KL(dEmpirical, dParent) - [klDelta]
+     * How information is used?
+     * Consider all the atomics in Parent and Child, [EmpiricalDistribution] dEmpirical
+     * is experimental joint distribution on all the atomics.
+     * Starting with independent [Distribution] we can estimate how many information we get by rules:
+     *  learn(dIndependent, Parent rule) = dParent
+     *  learn(dIndependent, Child rule) = dChild
+     *  KL(dEmpirical, dParent) - "distance left" to empirical distribution
+     *  KL(dEmpirical, dChild) - "distance left" to empirical distribution
+     * If "distance step" becomes too small, stop optimization.
+     *
+     * Important: KL(dEmpirical, dIndependent) - KL(dEmpirical) is a constant value, independent on adding extra atomics.
+     * This allows us to talk about learning "enough" information about the system.
      */
     internal fun <T> optimize(predicates: List<Predicate<T>>,
                               target: Predicate<T>,
@@ -127,15 +139,19 @@ object RM {
                                                 val atomics = (startAtomics + p.collectAtomics()).distinct()
                                                 val empirical = EmpiricalDistribution(database, atomics)
                                                 val independent = Distribution(database, atomics)
-                                                val KL = KL(empirical, independent.learn(parent.rule))
-                                                val newKL = KL(empirical, independent.learn(it.rule))
+                                                val kl = KL(empirical, independent)
+                                                val klParent = KL(empirical, independent.learn(parent.rule))
+                                                val klRule = KL(empirical, independent.learn(it.rule))
+                                                check(klRule < kl) {
+                                                    "KL after learning rule should be closer to empirical than independent"
+                                                }
                                                 // Check that we gained at least klDelta improvement
-                                                if (newKL >= KL - klDelta) {
+                                                if (klRule >= klParent - klDelta * kl) {
                                                     return@filter false
                                                 }
                                                 LOG.debug("C: $newConviction | $startConviction\t" +
                                                         "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
-                                                        "KL(empirical, rule): $newKL | $KL\t" +
+                                                        "KL(empirical, rule): $klRule | $klParent\t" +
                                                         "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
                                             } else {
                                                 LOG.debug("C: $newConviction | $startConviction\t" +

@@ -74,12 +74,14 @@ class RMTest : TestCase() {
         val database = (0..100).toList()
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.0).name())
-        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 1e-2).name())
-        assertEquals("[16;32) OR [32;64)",
+        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).name())
-        assertEquals("[32;64)",
+        assertEquals("[16;32) OR [32;64) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.2).name())
+        assertEquals("[16;32) OR [32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).name())
+        assertEquals("[32;64)",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.8).name())
     }
 
 
