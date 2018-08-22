@@ -37,6 +37,7 @@ object RM {
             val rule = e.rule
             val parent = e.parent
             val condition = rule.conditionPredicate
+            var convictionAndKLChecked: Boolean? = null
             val oldNode = queue.find { it.rule.conditionPredicate == condition }
             // Compare nodes with same condition, but different parents, compare parents in this case
             if (oldNode != null) {
@@ -44,7 +45,12 @@ object RM {
                     return false
                 }
                 if (parent == null || comparator.compare(parent, oldNode.parent) <= 0) {
-                    remove(oldNode)
+                    convictionAndKLChecked = checkConvictionAndKLThresholds(e, parent)
+                    if (convictionAndKLChecked == true) {
+                        remove(oldNode)
+                    } else {
+                        return false
+                    }
                 } else {
                     return false
                 }
@@ -58,13 +64,13 @@ object RM {
                 if (comparator.compare(e, head) > -1) {
                     return false
                 }
-                if (!checkConvictionAndKLThresholds(e, parent)) {
+                if (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(e, parent)) {
                     return false
                 }
                 poll()
                 return queue.offer(e)
             } else {
-                if (!checkConvictionAndKLThresholds(e, parent)) {
+                if (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(e, parent)) {
                     return false
                 }
                 return queue.offer(e)

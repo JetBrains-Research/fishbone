@@ -5,16 +5,10 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.jetbrains.bio.Logs
 import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.util.Retry
-import org.jetbrains.bio.util.RetryRule
 import org.jetbrains.bio.util.time
-import org.junit.Test
 import java.util.*
 
 class RMTest : TestCase() {
-
-    @get:org.junit.Rule
-    var rule = RetryRule(10)
 
     override fun setUp() {
         Logs.addConsoleAppender(Level.INFO)
@@ -25,16 +19,16 @@ class RMTest : TestCase() {
                                        database: List<T>,
                                        conditions: List<Predicate<T>>,
                                        maxComplexity: Int = 10,
-                                       topResults: Int = 10,
+                                       topResults: Int = 100,
                                        convictionDelta: Double = 1e-2,
-                                       klDelta: Double = 1e-2): Predicate<T> {
+                                       klDelta: Double = 1e-2): RM.Node<T> {
         // 10% of predicates are probes
         val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
         return RM.optimize(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
                 topResults = topResults,
                 convictionDelta = convictionDelta,
-                klDelta = klDelta).first().rule.conditionPredicate
+                klDelta = klDelta).first()
     }
 
     private fun predicates(number: Int, dataSize: Int): List<Predicate<Int>> {
@@ -48,11 +42,12 @@ class RMTest : TestCase() {
             val target = RangePredicate(10, 40)
             val allAtomics = predicates + target
             val empiricalDistribution = EmpiricalDistribution(database, allAtomics)
+            val independent = Distribution(database, allAtomics)
             var kl = Double.MAX_VALUE
             for (c in 1..5) {
-                val condition = optimizeWithProbes(target, database, predicates, maxComplexity = c)
+                val condition = optimizeWithProbes(target, database, predicates, maxComplexity = c).element
                 val rule = Rule(condition, target, database)
-                val newKL = KL(empiricalDistribution, Distribution(database, allAtomics).learn(rule))
+                val newKL = KL(empiricalDistribution, independent.learn(rule))
                 LOG.info("Complexity: $c\tRule: ${rule.name}\tKL: $newKL\tDelta KL: ${newKL - kl}")
                 // Fix floating point errors
                 assert(newKL <= kl + 1e-10)
@@ -61,53 +56,73 @@ class RMTest : TestCase() {
         }
     }
 
-    @Test
-    @Retry
+    private fun <T> RM.Node<T>.structure(database: List<T>): String {
+        val result = arrayListOf<String>()
+        var node: RM.Node<T>? = this
+        val atomics = (rule.conditionPredicate.collectAtomics() + rule.targetPredicate.collectAtomics()).toList()
+        val empirical = EmpiricalDistribution(database, atomics)
+        val independent = Distribution(database, atomics)
+        val kl = KL(empirical, independent)
+        while (node != null) {
+            result.add("<${node.element.name()}+c${String.format("%.2f", if (node.parent != null)
+                node.rule.conviction - node.parent!!.rule.conviction
+            else
+                node.rule.conviction)}kl${
+            String.format("%.2f", KL(empirical, independent.learn(node.rule)) / kl)
+            }>")
+            node = node.parent
+        }
+        return result.reversed().joinToString(",")
+    }
+
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = -1.0).name())
-        assertEquals("[16;32) OR [32;64) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0).name())
-        assertEquals("[16;32) OR [32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 2.0, klDelta = -1.0).name())
-        assertEquals("[32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 10.0, klDelta = -1.0).name())
+        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1E-2, klDelta = 1E-2).structure(database))
+        val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1E-2, klDelta = -1.0)
+        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
+        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+                r0.structure(database))
+        val r1 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0)
+        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r1.rule.conditionPredicate.name())
+        assertEquals("<[4;8)+c0.83kl0.98>,<[32;64)+c6.65kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>", r1.structure(database))
+        val r2 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 2.0, klDelta = -1.0)
+        assertEquals("[16;32) OR [32;64) OR [8;16)", r2.rule.conditionPredicate.name())
+        assertEquals("<[8;16)+c1.66kl0.94>,<[32;64)+c6.65kl0.62>,<[16;32)+c3.33kl0.33>", r2.structure(database))
+        val r5 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 5.0, klDelta = -1.0)
+        assertEquals("[16;32) OR [32;64)", r5.rule.conditionPredicate.name())
+        assertEquals("<[16;32)+c3.33kl0.82>,<[32;64)+c6.65kl0.27>", r5.structure(database))
+        val r10 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 10.0, klDelta = -1.0)
+        assertEquals("[32;64)", r10.rule.conditionPredicate.name())
+        assertEquals("<[32;64)+c6.65kl0.00>", r10.structure(database))
     }
 
-    @Test
-    @Retry
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.0).name())
-        assertEquals("[16;32) OR [32;64) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).name())
-        assertEquals("[16;32) OR [32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.25).name())
-        assertEquals("[32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).name())
+        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 1E-2).structure(database))
+        assertEquals("<[2;4)+c0.42kl0.99>,<[32;64)+c6.65kl0.76>,<[4;8)+c0.83kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).structure(database))
+        assertEquals("<[1;2)+c0.21kl0.99>,<[2;4)+c0.42kl0.97>,<[16;32)+c3.33kl0.81>,<[32;64)+c6.65kl0.30>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
     }
 
-    @Test
-    @Retry
     fun testOptimize() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
             val database = 0.until(size).toList()
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50)",
-                    optimizeWithProbes(RangePredicate(20, 50), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 50), database, predicates).rule.conditionPredicate.name())
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50) OR [50;60)",
-                    optimizeWithProbes(RangePredicate(20, 60), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 60), database, predicates).rule.conditionPredicate.name())
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50)",
-                    optimizeWithProbes(RangePredicate(20, 51), database, predicates).name())
+                    optimizeWithProbes(RangePredicate(20, 51), database, predicates).rule.conditionPredicate.name())
         }
     }
 
 
-    @Test
     fun testCounterExamples() {
         val target: Predicate<Int> = RangePredicate(-100, 100).named("T")
         val maxTop = 5
@@ -145,7 +160,6 @@ class RMTest : TestCase() {
     }
 
 
-    @Test
     fun testCorrectOrder() {
         val predicates = listOf(RangePredicate(20, 35), RangePredicate(35, 48)) +
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
