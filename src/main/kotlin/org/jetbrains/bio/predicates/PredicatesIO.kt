@@ -93,9 +93,6 @@ object PredicatesIO {
         dataFrameSpec.strings(INDEX_KEY)
         names.forEach { dataFrameSpec.bools(it) }
         val df = DataFrameMapper.TSV.load(path, spec = dataFrameSpec, header = true)
-        val progress = Progress {
-            title = "Predicates from data frame"
-        }.bounded(negatesInfo.size.toLong())
 
         // Common index for all the predicates
         val database = arrayListOf<T>()
@@ -117,11 +114,8 @@ object PredicatesIO {
                 if (cardinality == 0 || cardinality == positives.size()) {
                     LOG.warn("Predicate $name is constantly ${positives[0]}!")
                 }
-                progress.report()
             }
         }
-        progress.done()
-        LOG.debug("Loaded ${predicates.size} predicates $path")
         return database to predicates
     }
 
