@@ -13,7 +13,7 @@ class BPQTest : TestCase() {
         val p3 = RangePredicate(0, 4).named("3")
         val t = RangePredicate(0, 10).named("t")
 
-        val queue = RM.BPQ<Int>(1, RM.Node.comparator())
+        val queue = RM.BPQ(1, data, 0.0, 0.0)
         queue.add(RM.Node(Rule(p1, t, data), p1, null))
         assertEquals("[Node(rule=1 => t, element=1, parent=null)]",
                 queue.toList().toString())
@@ -29,7 +29,7 @@ class BPQTest : TestCase() {
         val p2 = RangePredicate(1, 9).named("2")
         val t = RangePredicate(0, 10).named("t")
 
-        val queue = RM.BPQ<Int>(10, RM.Node.comparator())
+        val queue = RM.BPQ(10, data, 0.0, 0.0)
         queue.add(RM.Node(Rule(p1.or(p2), t, data), p2, RM.Node(Rule(p1, t, data), p1, null)))
         assertEquals("[Node(rule=1 OR 2 => t, element=2, parent=Node(rule=1 => t, element=1, parent=null))]",
                 queue.toList().toString())
@@ -46,7 +46,7 @@ class BPQTest : TestCase() {
         val p2 = RangePredicate(1, 9).named("2")
         val t = RangePredicate(0, 10).named("t")
 
-        val queue = RM.BPQ<Int>(10, RM.Node.comparator())
+        val queue = RM.BPQ(10, data, 0.0, 0.0)
         queue.add(RM.Node(Rule(p1.or(p2), t, data), p1, RM.Node(Rule(p2, t, data), p2, null)))
         assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null))]",
                 queue.toList().toString())

@@ -2,6 +2,7 @@ package org.jetbrains.bio.rules
 
 import com.google.common.collect.Maps
 import com.google.common.primitives.Doubles
+import com.google.common.primitives.Ints
 import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
@@ -21,31 +22,35 @@ object RM {
      * Bounded Priority Queue.
      * Stores top [limit] items, prioritized by [comparator]
      * @param limit Max queue size
-     * @param comparator Comparator to maintain desired order
      */
     class BPQ<T>(private val limit: Int,
-                 private val comparator: Comparator<in Node<T>>,
+                 private val database: List<T>,
+                 private val convictionDelta: Double,
+                 private val klDelta: Double,
+                 private val comparator: Comparator<Node<T>> = comparator(),
                  private val queue: Queue<Node<T>> = PriorityQueue(limit, comparator.reversed()))
         : Queue<Node<T>> by queue {
 
         override fun add(element: Node<T>): Boolean = offer(element)
 
         override fun offer(e: Node<T>): Boolean {
-            val condition = e.rule.conditionPredicate
+            val rule = e.rule
+            val parent = e.parent
+            val condition = rule.conditionPredicate
             val oldNode = queue.find { it.rule.conditionPredicate == condition }
-            // Compare nodes with same condition, but different parents. Compare parents in this case
+            // Compare nodes with same condition, but different parents, compare parents in this case
             if (oldNode != null) {
                 if (oldNode.parent == null) {
                     return false
                 }
-                if (e.parent == null || comparator.compare(e.parent, oldNode.parent) <= 0) {
+                if (parent == null || comparator.compare(parent, oldNode.parent) <= 0) {
                     remove(oldNode)
                 } else {
                     return false
                 }
             }
             /**
-             * Main difference with [PriorityQueue], huge optimization!
+             * Note(Shpynov) main difference with [PriorityQueue] - huge optimization!
              */
             if (size >= limit) {
                 val head = peek()
@@ -53,10 +58,65 @@ object RM {
                 if (comparator.compare(e, head) > -1) {
                     return false
                 }
+                if (!checkConvictionAndKLThresholds(e, parent)) {
+                    return false
+                }
                 poll()
+                return queue.offer(e)
+            } else {
+                if (!checkConvictionAndKLThresholds(e, parent)) {
+                    return false
+                }
+                return queue.offer(e)
             }
+        }
 
-            return queue.offer(e)
+
+        /**
+         * See [optimize] for details on thresholds
+         */
+        private fun checkConvictionAndKLThresholds(node: Node<T>, parent: Node<T>?): Boolean {
+            // Check necessary conviction and information gain
+            if (parent != null) {
+                val newConviction = node.rule.conviction
+                if (newConviction < parent.rule.conviction + convictionDelta) {
+                    return false
+                }
+                // If klDelta <= 0 ignore information check
+                if (klDelta > 0) {
+                    val startAtomics = parent.rule.conditionPredicate.collectAtomics() + node.rule.targetPredicate
+                    val atomics = (startAtomics + node.element.collectAtomics()).distinct()
+                    val empirical = EmpiricalDistribution(database, atomics)
+                    val independent = Distribution(database, atomics)
+                    val kl = KL(empirical, independent)
+                    val klParent = KL(empirical, independent.learn(parent.rule))
+                    val klRule = KL(empirical, independent.learn(node.rule))
+                    check(klRule < kl) {
+                        "KL after learning rule should be closer to empirical than independent"
+                    }
+                    // Check that we gained at least klDelta improvement
+                    if (klRule >= klParent - klDelta * kl) {
+                        return false
+                    }
+                    LOG.debug("C: $newConviction | ${parent.rule.conviction}\t" +
+                            "KL(empirical, rule): $klRule | $klParent\t" +
+                            "${node.element.name()} | ${parent.rule.name}")
+                } else {
+                    LOG.debug("C: $newConviction | ${parent.rule.conviction}\t" +
+                            "${node.element.name()} | ${parent.rule.name}")
+                }
+            }
+            return true
+        }
+
+        companion object {
+            fun <T> comparator() = Comparator<Node<T>> { (r1, _), (r2, _) ->
+                val convictionCompare = -Doubles.compare(r1.conviction, r2.conviction)
+                if (convictionCompare != 0) {
+                    return@Comparator convictionCompare
+                }
+                return@Comparator Ints.compare(r1.conditionPredicate.complexity(), r2.conditionPredicate.complexity())
+            }
         }
     }
 
@@ -65,13 +125,7 @@ object RM {
     /**
      * Result of [optimize] procedure.
      */
-    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?) {
-        companion object {
-            fun <T> comparator() = Comparator<Node<T>> { (r1, _), (r2, _) ->
-                -Doubles.compare(r1.conviction, r2.conviction)
-            }
-        }
-    }
+    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?)
 
 
     /**
@@ -105,9 +159,9 @@ object RM {
         check(klDelta <= 1) {
             "Expected klDelta <= 1 (100%), got: $klDelta"
         }
-        val comparator = Node.comparator<T>()
+        val comparator = BPQ.comparator<T>()
         // Invariant: best[k] - best predicates with complexity = k
-        val best = Array(maxComplexity + 1) { BPQ(topResults, comparator) }
+        val best = Array(maxComplexity + 1) { BPQ(topResults, database, convictionDelta, klDelta) }
         (1..Math.min(maxComplexity, predicates.size)).forEach { k ->
             val queue = best[k]
             if (k == 1) {
@@ -119,48 +173,13 @@ object RM {
                 }
             } else {
                 best[k - 1].flatMap { parent ->
-                    val startConviction = parent.rule.conviction
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
                     predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
                             .flatMap { p -> if (p.canNegate()) listOf(p, p.negate()) else listOf(p) }
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
                                         .filter(Predicate<T>::defined)
-                                        .map {
-                                            Node(Rule(it, target, database), p, parent)
-                                        }
-                                        .filter {
-                                            val newConviction = it.rule.conviction
-                                            if (newConviction < startConviction + convictionDelta) {
-                                                return@filter false
-                                            }
-                                            // If klDelta <= 0 ignore information check
-                                            if (klDelta > 0) {
-                                                val atomics = (startAtomics + p.collectAtomics()).distinct()
-                                                val empirical = EmpiricalDistribution(database, atomics)
-                                                val independent = Distribution(database, atomics)
-                                                val kl = KL(empirical, independent)
-                                                val klParent = KL(empirical, independent.learn(parent.rule))
-                                                val klRule = KL(empirical, independent.learn(it.rule))
-                                                check(klRule < kl) {
-                                                    "KL after learning rule should be closer to empirical than independent"
-                                                }
-                                                // Check that we gained at least klDelta improvement
-                                                if (klRule >= klParent - klDelta * kl) {
-                                                    return@filter false
-                                                }
-                                                LOG.debug("C: $newConviction | $startConviction\t" +
-                                                        "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
-                                                        "KL(empirical, rule): $klRule | $klParent\t" +
-                                                        "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
-                                            } else {
-                                                LOG.debug("C: $newConviction | $startConviction\t" +
-                                                        "S: ${it.rule.conviction} | ${parent.rule.conviction}\t" +
-                                                        "${it.rule.conditionPredicate.name()} | ${parent.rule.name}")
-
-                                            }
-                                            return@filter true
-                                        }
+                                        .map { Node(Rule(it, target, database), p, parent) }
                             }
                 }.forEach { queue.add(it) }
             }

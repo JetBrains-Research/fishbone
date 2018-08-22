@@ -5,11 +5,16 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.jetbrains.bio.Logs
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.util.Retry
+import org.jetbrains.bio.util.RetryRule
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import java.util.*
 
 class RMTest : TestCase() {
+
+    @get:org.junit.Rule
+    var rule = RetryRule(10)
 
     override fun setUp() {
         Logs.addConsoleAppender(Level.INFO)
@@ -56,35 +61,38 @@ class RMTest : TestCase() {
         }
     }
 
+    @Test
+    @Retry
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = -1.0).name())
-        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)",
+        assertEquals("[16;32) OR [32;64) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0).name())
         assertEquals("[16;32) OR [32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 5.0, klDelta = -1.0).name())
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 2.0, klDelta = -1.0).name())
         assertEquals("[32;64)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 10.0, klDelta = -1.0).name())
     }
 
+    @Test
+    @Retry
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.0).name())
-        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).name())
         assertEquals("[16;32) OR [32;64) OR [8;16)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.2).name())
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).name())
         assertEquals("[16;32) OR [32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).name())
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.25).name())
         assertEquals("[32;64)",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.8).name())
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).name())
     }
 
-
+    @Test
+    @Retry
     fun testOptimize() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
