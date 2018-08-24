@@ -16,9 +16,9 @@ class ParenthesesPredicate<T> internal constructor(val operand: Predicate<T>) : 
         return operand.canNegate()
     }
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         checkState(canNegate(), "cannot negate")
-        return of(operand.negate())
+        return of(operand.not())
     }
 
     override fun test(item: T): Boolean {

@@ -34,7 +34,7 @@ abstract class Predicate<T> {
      * Return negotiation of predicate.
      * Important: can return [UndefinedPredicate], use [.canNegate] to check
      */
-    open fun negate(): Predicate<T> {
+    open fun not(): Predicate<T> {
         checkState(canNegate(), "cannot negate")
         return NotPredicate.of(this)
     }

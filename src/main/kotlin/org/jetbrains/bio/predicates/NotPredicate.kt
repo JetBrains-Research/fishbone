@@ -13,7 +13,7 @@ class NotPredicate<T>(val operand: Predicate<T>) : Predicate<T>() {
     }
 
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         return (operand as? ParenthesesPredicate<T>)?.operand ?: operand
     }
 
@@ -44,8 +44,8 @@ class NotPredicate<T>(val operand: Predicate<T>) : Predicate<T>() {
     companion object {
 
         /**
-         * Use [Predicate.negate] in general case, because it can have specific implementation,
-         * i.e. CODING_GENE.negate -> NON_CODING_GENE and vise versa
+         * Use [Predicate.not] in general case, because it can have specific implementation,
+         * i.e. CODING_GENE.not -> NON_CODING_GENE and vise versa
          * @return NotPredicate in case when predicate is defined,
          * * P if predicate is NOT(P)
          * * Undefined in case predicate is undefined

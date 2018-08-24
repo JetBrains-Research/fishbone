@@ -16,7 +16,7 @@ class OrPredicate<T>(val operands: List<Predicate<T>>) : Predicate<T>() {
         }
     }
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         return NotPredicate.of(ParenthesesPredicate.of(this))
     }
 

@@ -11,7 +11,7 @@ class TruePredicate<T> : Predicate<T>() {
         return true
     }
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         return FalsePredicate()
     }
 

@@ -21,7 +21,7 @@ class AndPredicate<T>(val operands: List<Predicate<T>>) : Predicate<T>() {
         return operands.all { it.canNegate() }
     }
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         return NotPredicate.of(ParenthesesPredicate.of(this))
     }
 

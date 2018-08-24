@@ -173,7 +173,7 @@ object RM {
             if (k == 1) {
                 predicates.forEach { p ->
                     MultitaskProgress.reportTask(target.name())
-                    (if (p.canNegate()) listOf(p, p.negate()) else listOf(p))
+                    (if (p.canNegate()) listOf(p, p.not()) else listOf(p))
                             .filter { it.complexity() == k }
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
@@ -181,7 +181,7 @@ object RM {
                 best[k - 1].flatMap { parent ->
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
                     predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
-                            .flatMap { p -> if (p.canNegate()) listOf(p, p.negate()) else listOf(p) }
+                            .flatMap { p -> if (p.canNegate()) listOf(p, p.not()) else listOf(p) }
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
                                         .filter(Predicate<T>::defined)

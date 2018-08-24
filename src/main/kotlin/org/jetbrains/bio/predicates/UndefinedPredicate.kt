@@ -24,7 +24,7 @@ class UndefinedPredicate<T> : Predicate<T>() {
         return false
     }
 
-    override fun negate(): Predicate<T> {
+    override fun not(): Predicate<T> {
         return this
     }
 
