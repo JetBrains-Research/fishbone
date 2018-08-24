@@ -18,7 +18,7 @@ class RMLoggerTest {
         val database = 0.until(100).toList()
         val logger = RMLogger(null)
         RM.mine("foo", database, listOf(predicates to RangePredicate(0, 20)),
-                { logger.log("id", it) }, maxComplexity = 10, topResults = 1)
+                { logger.log("id", it) }, maxComplexity = 10, topPerComplexity = 1)
         assertEquals("""{
   "records": [
     {

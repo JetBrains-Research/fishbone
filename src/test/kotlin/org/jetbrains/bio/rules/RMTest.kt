@@ -26,7 +26,7 @@ class RMTest : TestCase() {
         val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
         return RM.optimize(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
-                topResults = topResults,
+                topPerComplexity = topResults,
                 convictionDelta = convictionDelta,
                 klDelta = klDelta).first()
     }
@@ -142,7 +142,7 @@ class RMTest : TestCase() {
             val bestRule = Rule(solutionX, target, database)
             LOG.info("Best rule ${bestRule.name}")
             val correctOrderRule = RM.optimize(order, target, database, maxComplexity = 20,
-                    topResults = 100, convictionDelta = 1e-1, klDelta = 1e-1).first().rule
+                    topPerComplexity = 100, convictionDelta = 1e-1, klDelta = 1e-1).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
                 fail("Best rule is not optimal.")
@@ -151,7 +151,7 @@ class RMTest : TestCase() {
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
                     val rule = RM.optimize(order, target, database, maxComplexity = 20,
-                            topResults = maxTop, convictionDelta = 1e-1, klDelta = 1e-2).first().rule
+                            topPerComplexity = maxTop, convictionDelta = 1e-2, klDelta = 1e-2).first().rule
                     LOG.debug("RuleNode (top=$top): ${rule.name}")
                     assertTrue(rule.conviction >= bestRule.conviction)
                 }
@@ -164,11 +164,11 @@ class RMTest : TestCase() {
         val predicates = listOf(RangePredicate(20, 35), RangePredicate(35, 48)) +
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
         val database = 0.until(100).toList()
-        val result = arrayListOf<String>()
-        RM.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
-                { it.forEach { result.add(it.rule.conditionPredicate.name()) } }, maxComplexity = 3, topResults = 3)
+        val optimize = RM.optimize(predicates, RangePredicate(20, 50), database, maxComplexity = 3, topPerComplexity = 3,
+                convictionDelta = 1e-2, klDelta = 1e-2)
         assertEquals(listOf("[20;35) OR [35;48) OR [40;50)", "[20;35) OR [30;40) OR [40;50)", "[20;35) OR [35;48)"),
-                result)
+                optimize.take(3).map { it.rule.conditionPredicate.name() })
+        assertEquals(3 * 3, optimize.size)
     }
 
 

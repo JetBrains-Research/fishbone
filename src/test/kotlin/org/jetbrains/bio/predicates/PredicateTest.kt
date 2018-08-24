@@ -12,7 +12,7 @@ class PredicateTest : TestCase() {
     @Throws(Exception::class)
     fun testCollectAtomicFormulas() {
         val predicates = namedRangePredicates(4, 10000)
-        val set = ParenthesesPredicate.of(Predicate.or(predicates[0].negate(),
+        val set = ParenthesesPredicate.of(Predicate.or(predicates[0].not(),
                 Predicate.and(predicates[1], predicates[2]))).collectAtomics()
         assertTrue(set.contains(predicates[0]))
         assertTrue(set.contains(predicates[1]))
@@ -71,28 +71,28 @@ class PredicateTest : TestCase() {
 
     @Throws(Exception::class)
     fun testNotNegate() {
-        assertEquals("0", predicates[0].negate().negate().name())
-        assertFalse(UndefinedPredicate<Any>().negate().defined())
+        assertEquals("0", predicates[0].not().not().name())
+        assertFalse(UndefinedPredicate<Any>().not().defined())
     }
 
     @Throws(Exception::class)
     fun testParentsNegate() {
-        assertEquals("0", p("(NOT 0)").negate().name())
-        assertEquals("0", p("NOT (0)").negate().name())
-        assertFalse(ParenthesesPredicate.of(UndefinedPredicate<Any>()).negate().defined())
+        assertEquals("0", p("(NOT 0)").not().name())
+        assertEquals("0", p("NOT (0)").not().name())
+        assertFalse(ParenthesesPredicate.of(UndefinedPredicate<Any>()).not().defined())
     }
 
 
     @Throws(Exception::class)
     fun testOrNegate() {
-        assertEquals("NOT (0 OR 1 OR 2)", p("0 OR 1 OR 2").negate().name())
-        assertFalse(Predicate.or(p("0"), UndefinedPredicate<Int>()).negate().defined())
+        assertEquals("NOT (0 OR 1 OR 2)", p("0 OR 1 OR 2").not().name())
+        assertFalse(Predicate.or(p("0"), UndefinedPredicate<Int>()).not().defined())
     }
 
     @Throws(Exception::class)
     fun testAndNegate() {
-        assertEquals("NOT (0 AND 1 AND 2)", p("0 AND 1 AND 2").negate().name())
-        assertFalse(Predicate.and(p("0"), UndefinedPredicate<Int>()).negate().defined())
+        assertEquals("NOT (0 AND 1 AND 2)", p("0 AND 1 AND 2").not().name())
+        assertFalse(Predicate.and(p("0"), UndefinedPredicate<Int>()).not().defined())
     }
 
     @Throws(Exception::class)
@@ -109,9 +109,9 @@ class PredicateTest : TestCase() {
         assertEquals(FalsePredicate<Any>(), FalsePredicate<Any>())
         assertEquals(UndefinedPredicate<Any>(), UndefinedPredicate<Any>())
 
-        assertEquals(TruePredicate<Any>(), FalsePredicate<Any>().negate())
-        assertEquals(FalsePredicate<Any>(), TruePredicate<Any>().negate())
-        assertEquals(UndefinedPredicate<Any>(), UndefinedPredicate<Any>().negate())
+        assertEquals(TruePredicate<Any>(), FalsePredicate<Any>().not())
+        assertEquals(FalsePredicate<Any>(), TruePredicate<Any>().not())
+        assertEquals(UndefinedPredicate<Any>(), UndefinedPredicate<Any>().not())
 
 
         assertEquals(Predicate.or(predicates[0], predicates[1], predicates[2]),
@@ -130,7 +130,7 @@ class PredicateTest : TestCase() {
         assertNotSame(Predicate.and(predicates[0], predicates[1]),
                 Predicate.and(predicates[0], predicates[1], predicates[2]))
 
-        assertEquals(predicates[0].negate(), predicates[0].negate())
+        assertEquals(predicates[0].not(), predicates[0].not())
         assertEquals(ParenthesesPredicate.of(predicates[0]), ParenthesesPredicate.of(predicates[0]))
     }
 
