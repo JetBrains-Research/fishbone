@@ -156,7 +156,7 @@ object RM {
                               target: Predicate<T>,
                               database: List<T>,
                               maxComplexity: Int,
-                              topResults: Int,
+                              topPerComplexity: Int,
                               convictionDelta: Double,
                               klDelta: Double): List<Node<T>> {
         if (klDelta <= 0) {
@@ -167,7 +167,7 @@ object RM {
         }
         val comparator = BPQ.comparator<T>()
         // Invariant: best[k] - best predicates with complexity = k
-        val best = Array(maxComplexity + 1) { BPQ(topResults, database, convictionDelta, klDelta) }
+        val best = Array(maxComplexity + 1) { BPQ(topPerComplexity, database, convictionDelta, klDelta) }
         (1..Math.min(maxComplexity, predicates.size)).forEach { k ->
             val queue = best[k]
             if (k == 1) {
@@ -190,7 +190,9 @@ object RM {
                 }.forEach { queue.add(it) }
             }
         }
-        val result = best.flatMap { it }.sortedWith(comparator).take(topResults)
+         // Since we use FishBone visualization as an analysis method,
+        // we want all the results available for each complexity level available for inspection
+        val result = best.flatMap { it }.sortedWith(comparator)
         MultitaskProgress.finishTask(target.name())
         return result
     }
@@ -200,7 +202,7 @@ object RM {
                  toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
-                 topResults: Int = 100,
+                 topPerComplexity: Int = 100,
                  convictionDelta: Double = 1E-2,
                  klDelta: Double = 1E-2) {
         LOG.info("RM processing: $title")
@@ -209,9 +211,9 @@ object RM {
         executor.awaitAll(
                 toMine.map { (conditions, target) ->
                     MultitaskProgress.addTask(target.name(),
-                            conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topResults)
+                            conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
                     Callable {
-                        logFunction(optimize(conditions, target, database, maxComplexity, topResults, convictionDelta, klDelta))
+                        logFunction(optimize(conditions, target, database, maxComplexity, topPerComplexity, convictionDelta, klDelta))
                     }
                 })
         check(executor.shutdownNow().isEmpty())
