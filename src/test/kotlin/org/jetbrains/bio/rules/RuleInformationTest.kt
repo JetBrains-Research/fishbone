@@ -1,7 +1,6 @@
 package org.jetbrains.bio.rules
 
 import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.statistics.data.BitterSet
 import org.junit.Assert
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -15,7 +14,8 @@ class RuleInformationTest {
      * This is the main idea of information based rule mining.
      * See [RMTest.testKL] for check that predicates reduce KL divergence.
      */
-    @Test fun testIndependenceRuleLearning() {
+    @Test
+    fun testIndependenceRuleLearning() {
         val predicates = listOf(
                 RangePredicate(10, 20),
                 RangePredicate(10, 40),
@@ -89,7 +89,8 @@ class RuleInformationTest {
         }
     }
 
-    @Test fun testRuleRelearning() {
+    @Test
+    fun testRuleRelearning() {
         val ps = listOf(
                 RangePredicate(10, 20),
                 RangePredicate(10, 40),
@@ -116,14 +117,53 @@ class RuleInformationTest {
         }
     }
 
-}
-
-class BitSetNextTest {
     @Test
-    fun zero() {
-        BitterSet(8).apply {
-            next(this)
-            assertEquals(BitterSet(8) { it == 7 }, this)
+    fun testProbabilities() {
+        val ps = listOf(
+                RangePredicate(0, 2),
+                RangePredicate(1, 4),
+                RangePredicate(1, 10),
+                RangePredicate(2, 4),
+                RangePredicate(3, 6),
+                RangePredicate(4, 8))
+        val database = 0.until(10).toList()
+        val empirical = EmpiricalDistribution(database, ps)
+        assertEquals("0.2, 0.3, 0.9, 0.2, 0.3, 0.4", empirical.marginals().joinToString(", ") { "%.1f".format(it) })
+        Assert.assertEquals(0.0, empirical.probability(mark(0, 1)), 1e-10)
+        Assert.assertEquals(0.1, empirical.probability(mark(0, 1, 2)), 1e-10)
+        Assert.assertEquals(0.0, empirical.probability(mark(0, 1, 2, 3)), 1e-10)
+        Assert.assertEquals(0.2, marginalP(empirical, mapOf(0 to true)), 1e-10)
+        Assert.assertEquals(0.3, marginalP(empirical, mapOf(1 to true)), 1e-10)
+        Assert.assertEquals(0.2, marginalP(empirical, mapOf(1 to true, 3 to true)), 1e-10)
+        Assert.assertEquals(0.1, marginalP(empirical, mapOf(0 to true, 2 to false)), 1e-10)
+
+        val independent = Distribution(database, ps)
+        assertEquals("0.2, 0.3, 0.9, 0.2, 0.3, 0.4", independent.marginals().joinToString(", ") { "%.1f".format(it) })
+        Assert.assertEquals(0.002, independent.probability(mark(0, 1)), 1e-3)
+        Assert.assertEquals(0.2, marginalP(independent, mapOf(0 to true)), 1e-10)
+        Assert.assertEquals(0.3, marginalP(independent, mapOf(1 to true)), 1e-10)
+        Assert.assertEquals(0.06, marginalP(independent, mapOf(1 to true, 3 to true)), 1e-10)
+        Assert.assertEquals(0.02, marginalP(independent, mapOf(0 to true, 2 to false)), 1e-10)
+
+    }
+
+    private fun mark(vararg indices: Int): Long {
+        return indices.fold(0L) { a, b -> a or (1L shl b) }
+    }
+
+    private fun <T> marginalP(distribution: Distribution<T>, indices: Map<Int, Boolean>): Double {
+        var v = 0L
+        var p = 0.0
+        while (v < 1 shl distribution.atomics.size) {
+            var res = true
+            indices.forEach { i, r ->
+                res = res && (r xor (v and (1L shl i) == 0L))
+            }
+            if (res) {
+                p += distribution.probability(v)
+            }
+            v++
         }
+        return p
     }
 }

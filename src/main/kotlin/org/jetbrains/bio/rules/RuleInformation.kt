@@ -1,12 +1,13 @@
 package org.jetbrains.bio.rules
 
-import gnu.trove.map.hash.TObjectDoubleHashMap
+import gnu.trove.map.TLongDoubleMap
+import gnu.trove.map.TObjectIntMap
+import gnu.trove.map.hash.TLongDoubleHashMap
+import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.commons.math3.util.Precision
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.*
-import org.jetbrains.bio.statistics.data.BitterSet
 import org.jetbrains.bio.statistics.distribution.Sampling
-import java.util.*
 
 /**
  * Probe predicate is used as an evaluation of rule mining algorithm as an effective feature selection
@@ -23,7 +24,6 @@ class ProbePredicate<T>(private val name: String, database: List<T>) : Predicate
 }
 
 
-
 /**
  * For discrete probability distributions P and Q, the Kullback–Leibler divergence is
  * the expectation of the logarithmic difference between the probabilities P and Q,
@@ -34,9 +34,9 @@ class ProbePredicate<T>(private val name: String, database: List<T>) : Predicate
 fun <T> KL(p: Distribution<T>, q: Distribution<T>): Double {
     check(p.atomics == q.atomics) { "Different atomics!" }
     check(p.database == q.database) { "Different databased!" }
-    val v = BitterSet(p.atomics.size)
     var kl = 0.0
-    do {
+    var v = 0L
+    while (v < (1L shl p.atomics.size)) {
         val pV = p.probability(v)
         val qV = q.probability(v)
         if (qV == 0.0) {
@@ -46,7 +46,8 @@ fun <T> KL(p: Distribution<T>, q: Distribution<T>): Double {
         if (pV != 0.0) {
             kl += pV * Math.log(pV / qV)
         }
-    } while (next(v))
+        v++
+    }
     return kl
 }
 
@@ -56,49 +57,60 @@ class EmpiricalDistribution<T>(database: List<T>, atomics: List<Predicate<T>>) :
         val tests = atomics.map { it.test(database) }
         val p = 1.0 / database.size
         database.indices.forEach { index ->
-            val v = BitterSet(atomics.size)
-            tests.forEachIndexed { i, test -> if (test[index]) v[i] = true }
+            var v = 0L
+            tests.forEachIndexed { i, test ->
+                if (test[index])
+                    v = v or (1L shl i)
+            }
             probabilities.adjustOrPutValue(v, p, p)
         }
     }
 
-    override fun probability(v: BitterSet): Double {
-        return if (v in probabilities) probabilities.get(v) else 0.0
+    override fun probability(v: Long): Double {
+        return probabilities.get(v)
     }
 
-    override fun marginals(): List<Double> = empiricalMarginals(atomics, database)
+    override fun marginals(): DoubleArray = empiricalMarginals(atomics, database)
 
 }
 
 open class Distribution<T>(val database: List<T>,
                            val atomics: List<Predicate<T>>,
-                           protected val probabilities: TObjectDoubleHashMap<BitterSet> = TObjectDoubleHashMap()) {
+                           private val atomicsIndices: TObjectIntMap<Predicate<T>> = TObjectIntHashMap<Predicate<T>>().apply {
+                               atomics.forEachIndexed { i, p -> this.put(p, i) }
+                           },
+                           protected val probabilities: TLongDoubleMap = TLongDoubleHashMap()) {
+    init {
+        check(atomics.size < 20) {
+            "Maximum number of items which can be encoded as long"
+        }
+    }
 
-    open fun marginals(): List<Double> {
-        val result = atomics.map { 0.0 }.toMutableList()
-        val v = BitterSet(atomics.size)
-        do {
+    open fun marginals(): DoubleArray {
+        val result = DoubleArray(atomics.size)
+        var v = 0L
+        while (v < 1 shl atomics.size) {
             val p = probability(v)
             result.indices.forEach {
-                if (v[it]) {
+                if (v and (1L shl it) != 0L) {
                     result[it] += p
                 }
             }
-        } while (next(v))
+            v++
+        }
         return result
     }
 
-    open fun probability(v: BitterSet): Double {
-        if (v !in probabilities) {
-            // Important, otherwise we change keys.
-            probabilities.put(v.copy(), probabilityIndependent(v))
+    open fun probability(v: Long): Double {
+        if (!probabilities.containsKey(v)) {
+            probabilities.put(v, probabilityIndependent(v))
         }
         return probabilities[v]
     }
 
-    fun probabilityIndependent(v: BitterSet): Double =
+    private fun probabilityIndependent(v: Long): Double =
             empiricalMarginals(atomics, database)
-                    .mapIndexed { i, p -> if (v[i]) p else 1.0 - p }
+                    .mapIndexed { i, p -> if (v and (1L shl i) != 0L) p else 1.0 - p }
                     .fold(1.0) { a, b -> a * b }
 
 
@@ -107,10 +119,11 @@ open class Distribution<T>(val database: List<T>,
      */
     fun H(): Double {
         var info = 0.0
-        val v = BitterSet(atomics.size)
-        do {
+        var v = 0L
+        while (v < 1 shl atomics.size) {
             info += xlog(probability(v))
-        } while (next(v))
+            v++
+        }
         return -info
     }
 
@@ -118,14 +131,14 @@ open class Distribution<T>(val database: List<T>,
      * Update distribution according to given rule, i.e. TP, FP, TN, FN proportions.
      */
     fun learn(rule: Rule<T>): Distribution<T> {
-        var v = BitterSet(atomics.size)
         var fpSum = 0.0
         var fnSum = 0.0
         var tpSum = 0.0
         var tnSum = 0.0
-        do {
-            val cond = eval(rule.conditionPredicate, v, atomics)
-            val targ = eval(rule.targetPredicate, v, atomics)
+        var v = 0L
+        while (v < 1 shl atomics.size) {
+            val cond = eval(rule.conditionPredicate, v, atomicsIndices)
+            val targ = eval(rule.targetPredicate, v, atomicsIndices)
             val p = probability(v)
             if (cond && targ) {
                 tpSum += p
@@ -136,7 +149,8 @@ open class Distribution<T>(val database: List<T>,
             } else {
                 tnSum += p
             }
-        } while (next(v))
+            v++
+        }
 
         // Check that summary probability = 1
         LOG.debug("Prior FP = $fpSum\tTP = $tpSum\tFN = $fnSum\tTN = $tnSum")
@@ -150,41 +164,42 @@ open class Distribution<T>(val database: List<T>,
         val tp = rule.intersection.toDouble() / rule.database
         val tn = 1.0 - (fp + fn + tp)
         LOG.debug("Rule: ${rule.name}\tFP = $fp\tTP = $tp\tFN = $fn\tTN = $tn")
-        val updatedProbabilities = TObjectDoubleHashMap<BitterSet>(probabilities)
-        v = BitterSet(atomics.size)
-        do {
-            val cond = eval(rule.conditionPredicate, v, atomics)
-            val targ = eval(rule.targetPredicate, v, atomics)
+        val updatedProbabilities = TLongDoubleHashMap(probabilities)
+        v = 0L
+        while (v < 1 shl atomics.size) {
+            val cond = eval(rule.conditionPredicate, v, atomicsIndices)
+            val targ = eval(rule.targetPredicate, v, atomicsIndices)
             val p = probability(v)
             if (cond && targ) {
-                updatedProbabilities.put(v.copy(), if (tpSum != 0.0) p * (tp / tpSum) else 0.0)
+                updatedProbabilities.put(v, if (tpSum != 0.0) p * (tp / tpSum) else 0.0)
             } else if (cond && !targ) {
-                updatedProbabilities.put(v.copy(), if (fpSum != 0.0) p * (fp / fpSum) else 0.0)
+                updatedProbabilities.put(v, if (fpSum != 0.0) p * (fp / fpSum) else 0.0)
             } else if (!cond && targ) {
-                updatedProbabilities.put(v.copy(), if (fnSum != 0.0) p * (fn / fnSum) else 0.0)
+                updatedProbabilities.put(v, if (fnSum != 0.0) p * (fn / fnSum) else 0.0)
             } else {
-                updatedProbabilities.put(v.copy(), if (tnSum != 0.0) p * (tn / tnSum) else 0.0)
+                updatedProbabilities.put(v, if (tnSum != 0.0) p * (tn / tnSum) else 0.0)
             }
-        } while (next(v))
-        return Distribution(database, atomics, updatedProbabilities)
+            v++
+        }
+        return Distribution(database, atomics, atomicsIndices, updatedProbabilities)
     }
 
     // Empirical Bayes
     protected fun <T> empiricalMarginals(atomics: List<Predicate<T>>, database: List<T>) =
-            atomics.map { it.test(database).cardinality().toDouble() / database.size }
+            DoubleArray(atomics.size) { atomics[it].test(database).cardinality().toDouble() / database.size }
 
     private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * Math.log(x)
 
     override fun toString(): String {
         var result = "Marginals:\n" +
-                "${atomics.indices.map { "${atomics[it].name()}\t${marginals()[it]}" }.joinToString("\n")}\n" +
+                "${atomics.indices.joinToString("\n") { "${atomics[it].name()}\t${marginals()[it]}" }}\n" +
                 "Probabilities:\n"
-        val v = BitterSet(atomics.size)
-        do {
-            result += "{${atomics.indices.filter { v[it] }
-                    .map { atomics[it].name() }
-                    .joinToString(", ")}}\t${probability(v)}\n"
-        } while (next(v))
+        var v = 0L
+        while (v < 1L shl atomics.size) {
+            result += "{${atomics.indices.filter { v and (1L shl it) != 0L }
+                    .joinToString(", ") { atomics[it].name() }}}\t${probability(v)}\n"
+            v++
+        }
         return result + "H = ${H()}"
     }
 
@@ -194,41 +209,25 @@ open class Distribution<T>(val database: List<T>,
 }
 
 /**
- * Switch to next binary mask if possible.
- */
-fun next(v: BitterSet): Boolean {
-    for (i in (0 until v.size()).reversed()) {
-        if (!v[i]) {
-            v[i] = true
-            for (j in i + 1 until v.size()) {
-                v[j] = false
-            }
-            return true
-        }
-    }
-    return false
-}
-
-/**
  * Evaluate predicate using atomics set to given values.
  */
-private fun <T> eval(p: Predicate<T>, v: BitSet, atomics: List<Predicate<T>>): Boolean {
+private fun <T> eval(p: Predicate<T>, v: Long, atomicsIndices: TObjectIntMap<Predicate<T>>): Boolean {
     var result = false
     p.accept(object : PredicateVisitor<T>() {
         override fun visitNot(predicate: NotPredicate<T>) {
-            result = !eval(predicate.operand, v, atomics)
+            result = !eval(predicate.operand, v, atomicsIndices)
         }
 
         override fun visitAndPredicate(predicate: AndPredicate<T>) {
-            result = predicate.operands.all { eval(it, v, atomics) }
+            result = predicate.operands.all { eval(it, v, atomicsIndices) }
         }
 
         override fun visitOrPredicate(predicate: OrPredicate<T>) {
-            result = predicate.operands.any { eval(it, v, atomics) }
+            result = predicate.operands.any { eval(it, v, atomicsIndices) }
         }
 
         override fun visit(predicate: Predicate<T>) {
-            result = v[atomics.indexOf(predicate)]
+            result = v and (1L shl atomicsIndices.get(predicate)) != 0L
         }
     })
     return result
