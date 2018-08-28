@@ -109,12 +109,13 @@ class RMTest : TestCase() {
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-//        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
-//                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA).structure(database))
+        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA).structure(database))
+        // NOTE that [4;8) is placed before [16;32), this is result of high KL delta
         assertEquals("<[32;64)+c6.65kl0.76>,<[4;8)+c0.83kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).structure(database))
-//        assertEquals("<[32;64)+c6.65kl0.00>",
-//                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
+        assertEquals("<[32;64)+c6.65kl0.00>",
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
     }
 
     fun testOptimize() {

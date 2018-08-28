@@ -11,7 +11,7 @@ class RuleTest : TestCase() {
                      conditionSupport: Int,
                      targetSupport: Int,
                      conditionAndTarget: Int): Rule<Any> {
-        return Rule(TruePredicate<Any>(), TruePredicate<Any>(),
+        return Rule(TruePredicate(), TruePredicate(),
                 size, conditionSupport, targetSupport, conditionAndTarget)
     }
 
@@ -97,26 +97,26 @@ class RuleTest : TestCase() {
 
     @Throws(Exception::class)
     fun testCorrelationMinus1() {
-        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate<Any>(), 20, 10, 10, 0)
+        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 20, 10, 10, 0)
         assertEquals(-1.0, rule.correlation, 1e-2)
     }
 
     @Throws(Exception::class)
     fun testCorrelationNaN() {
-        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate<Any>(), 10, 10, 0, 0)
+        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 10, 10, 0, 0)
         assertTrue(rule.correlation.isNaN())
     }
 
     @Throws(Exception::class)
     fun testCorrelationPlus1() {
-        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate<Any>(), 18, 10, 10, 10)
+        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 18, 10, 10, 10)
         assertEquals(1.0, rule.correlation, 1e-2)
     }
 
     @Throws(Exception::class)
     fun testCorrelationSymmetry() {
-        val rule12 = Rule(UndefinedPredicate<Any>(), UndefinedPredicate<Any>(), 20, 10, 15, 10)
-        val rule21 = Rule(UndefinedPredicate<Any>(), UndefinedPredicate<Any>(), 20, 15, 10, 10)
+        val rule12 = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 20, 10, 15, 10)
+        val rule21 = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 20, 15, 10, 10)
         assertEquals(rule12.correlation, rule21.correlation, 1e-2)
     }
 }
