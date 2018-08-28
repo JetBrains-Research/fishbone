@@ -3,17 +3,11 @@ package org.jetbrains.bio.rules
 import junit.framework.TestCase
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.jetbrains.bio.Logs
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.util.time
 import java.util.*
 
 class RMTest : TestCase() {
-
-    override fun setUp() {
-        Logs.addConsoleAppender(Level.INFO)
-    }
-
 
     private fun <T> optimizeWithProbes(target: Predicate<T>,
                                        database: List<T>,
@@ -75,24 +69,38 @@ class RMTest : TestCase() {
         return result.reversed().joinToString(",")
     }
 
+    fun testOptimizationStructureDefaultParams() {
+        val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
+        val database = (0..100).toList()
+        val o = RM.optimizeByComplexity(predicates, RangePredicate(0, 80), database, maxComplexity = 6, topPerComplexity = 3)
+        assertEquals("[32;64), [16;32), [8;16)",
+                o[1].reversed().joinToString(", ") { it.rule.conditionPredicate.name() })
+        assertEquals("[16;32) OR [32;64), [32;64) OR [8;16), [32;64) OR [4;8)",
+                o[2].reversed().joinToString(", ") { it.rule.conditionPredicate.name() })
+        assertEquals("[16;32) OR [32;64) OR [8;16), [16;32) OR [32;64) OR [4;8), [16;32) OR [2;4) OR [32;64)",
+                o[3].reversed().joinToString(", ") { it.rule.conditionPredicate.name() })
+        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)",
+                o[6].reversed().joinToString(", ") { it.rule.conditionPredicate.name() })
+        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+                o[6].single().structure(database))
+    }
+
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1E-2, klDelta = 1E-2).structure(database))
-        val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1E-2, klDelta = -1.0)
+        val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = RM.CONVICTION_DELTA, klDelta = -1.0)
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
                 r0.structure(database))
+        val r05 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.5, klDelta = -1.0)
+        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r05.rule.conditionPredicate.name())
+        assertEquals("<[32;64)+c6.65kl0.76>,<[16;32)+c3.33kl0.57>,<[8;16)+c1.66kl0.43>,<[4;8)+c0.83kl0.35>", r05.structure(database))
         val r1 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 1.0, klDelta = -1.0)
-        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r1.rule.conditionPredicate.name())
-        assertEquals("<[4;8)+c0.83kl0.98>,<[32;64)+c6.65kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>", r1.structure(database))
+        assertEquals("[16;32) OR [32;64) OR [8;16)", r1.rule.conditionPredicate.name())
+        assertEquals("<[32;64)+c6.65kl0.72>,<[16;32)+c3.33kl0.49>,<[8;16)+c1.66kl0.33>", r1.structure(database))
         val r2 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 2.0, klDelta = -1.0)
-        assertEquals("[16;32) OR [32;64) OR [8;16)", r2.rule.conditionPredicate.name())
-        assertEquals("<[8;16)+c1.66kl0.94>,<[32;64)+c6.65kl0.62>,<[16;32)+c3.33kl0.33>", r2.structure(database))
-        val r5 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 5.0, klDelta = -1.0)
-        assertEquals("[16;32) OR [32;64)", r5.rule.conditionPredicate.name())
-        assertEquals("<[16;32)+c3.33kl0.82>,<[32;64)+c6.65kl0.27>", r5.structure(database))
+        assertEquals("[16;32) OR [32;64)", r2.rule.conditionPredicate.name())
+        assertEquals("<[32;64)+c6.65kl0.60>,<[16;32)+c3.33kl0.27>", r2.structure(database))
         val r10 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 10.0, klDelta = -1.0)
         assertEquals("[32;64)", r10.rule.conditionPredicate.name())
         assertEquals("<[32;64)+c6.65kl0.00>", r10.structure(database))
@@ -101,12 +109,12 @@ class RMTest : TestCase() {
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 1E-2).structure(database))
-        assertEquals("<[2;4)+c0.42kl0.99>,<[32;64)+c6.65kl0.76>,<[4;8)+c0.83kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>",
+//        assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
+//                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA).structure(database))
+        assertEquals("<[32;64)+c6.65kl0.76>,<[4;8)+c0.83kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).structure(database))
-        assertEquals("<[1;2)+c0.21kl0.99>,<[2;4)+c0.42kl0.97>,<[16;32)+c3.33kl0.81>,<[32;64)+c6.65kl0.30>",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
+//        assertEquals("<[32;64)+c6.65kl0.00>",
+//                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
     }
 
     fun testOptimize() {

@@ -21,7 +21,7 @@ object RM {
 
     const val TOP_PER_COMPLEXITY = 100
     const val CONVICTION_DELTA = 0.1
-    const val KL_DELTA = 0.1
+    const val KL_DELTA = 0.01
 
     /**
      * Bounded Priority Queue.
@@ -38,26 +38,29 @@ object RM {
 
         override fun add(element: Node<T>): Boolean = offer(element)
 
-        override fun offer(e: Node<T>): Boolean {
-            val rule = e.rule
-            val parent = e.parent
+        override fun offer(node: Node<T>): Boolean {
+            val rule = node.rule
+            val parent = node.parent
             val condition = rule.conditionPredicate
             var convictionAndKLChecked: Boolean? = null
-            val oldNode = queue.find { it.rule.conditionPredicate == condition }
-            // Compare nodes with same condition, but different parents, compare parents in this case
-            if (oldNode != null) {
-                if (oldNode.parent == null) {
-                    return false
-                }
-                if (parent == null || comparator.compare(parent, oldNode.parent) <= 0) {
-                    convictionAndKLChecked = checkConvictionAndKLThresholds(e, parent)
-                    if (convictionAndKLChecked == true) {
-                        remove(oldNode)
+            if (condition.complexity() > 1) {
+                val oldNode = queue.singleOrNull { it.rule.conditionPredicate == condition }
+                // Compare nodes with same condition, but different parents, compare parents in this case
+                if (oldNode != null) {
+                    if (comparator.compare(parent, oldNode.parent) <= 0) {
+                        convictionAndKLChecked = checkConvictionAndKLThresholds(node, parent)
+                        if (convictionAndKLChecked == true) {
+                            LOG.debug("REMOVING from queue same condition\n" +
+                                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
+                            remove(oldNode)
+                        } else {
+                            return false
+                        }
                     } else {
+                        LOG.debug("FAILED parent check for same condition ${oldNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                         return false
                     }
-                } else {
-                    return false
                 }
             }
             /**
@@ -66,19 +69,25 @@ object RM {
             if (size >= limit) {
                 val head = peek()
                 // NOTE[shpynov] queue is built upon reversed comparator
-                if (comparator.compare(e, head) > -1) {
+                if (comparator.compare(node, head) > -1) {
+                    LOG.debug("FAILED conviction check against smallest in queue  ${rule.conviction} < ${head.rule.conviction}\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
                     return false
                 }
-                if (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(e, parent)) {
+                if (convictionAndKLChecked != true &&
+                        (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(node, parent))) {
                     return false
                 }
+                LOG.debug("REDUCING queue\n" +
+                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
                 poll()
-                return queue.offer(e)
+                return queue.offer(node)
             } else {
-                if (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(e, parent)) {
+                if (convictionAndKLChecked != true &&
+                        (convictionAndKLChecked == false || !checkConvictionAndKLThresholds(node, parent))) {
                     return false
                 }
-                return queue.offer(e)
+                return queue.offer(node)
             }
         }
 
@@ -89,8 +98,16 @@ object RM {
         private fun checkConvictionAndKLThresholds(node: Node<T>, parent: Node<T>?): Boolean {
             // Check necessary conviction and information gain
             if (parent != null) {
-                val newConviction = node.rule.conviction
-                if (newConviction < parent.rule.conviction + convictionDelta) {
+                val convictionElement = Rule(node.element, node.rule.targetPredicate, database).conviction
+                if (convictionElement > parent.rule.conviction) {
+                    LOG.debug("FAILED Conviction element vs parent delta check $convictionElement > ${parent.rule.conviction}\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                    return false
+                }
+                val convictionRule = node.rule.conviction
+                if (convictionRule < parent.rule.conviction + convictionDelta) {
+                    LOG.debug("FAILED Conviction rule vs parent delta check $convictionRule < ${parent.rule.conviction} + $convictionDelta\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                     return false
                 }
                 // If klDelta <= 0 ignore information check
@@ -99,23 +116,22 @@ object RM {
                     val atomics = (startAtomics + node.element.collectAtomics()).distinct()
                     val empirical = EmpiricalDistribution(database, atomics)
                     val independent = Distribution(database, atomics)
-                    val kl = KL(empirical, independent)
                     val klParent = KL(empirical, independent.learn(parent.rule))
+                    val klIndependent = KL(empirical, independent)
                     val klRule = KL(empirical, independent.learn(node.rule))
-                    check(klRule < kl) {
+                    check(klRule < klIndependent) {
                         "KL after learning rule should be closer to empirical than independent"
                     }
                     // Check that we gained at least klDelta improvement
-                    if (klRule >= klParent - klDelta * kl) {
+                    if (klRule >= klParent - klDelta * klIndependent) {
+                        LOG.debug("FAILED Information delta rule vs parent on full check " +
+                                "$klRule >= $klParent - $klDelta * $klIndependent\n" +
+                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                         return false
                     }
-                    LOG.debug("C: $newConviction | ${parent.rule.conviction}\t" +
-                            "KL(empirical, rule): $klRule | $klParent\t" +
-                            "${node.element.name()} | ${parent.rule.name}")
-                } else {
-                    LOG.debug("C: $newConviction | ${parent.rule.conviction}\t" +
-                            "${node.element.name()} | ${parent.rule.name}")
                 }
+                LOG.debug("PASS rule\n" +
+                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
             }
             return true
         }
@@ -164,13 +180,27 @@ object RM {
                               topPerComplexity: Int = TOP_PER_COMPLEXITY,
                               convictionDelta: Double = CONVICTION_DELTA,
                               klDelta: Double = KL_DELTA): List<Node<T>> {
+        val best = optimizeByComplexity(predicates, target, database, maxComplexity, topPerComplexity, convictionDelta, klDelta)
+        // Since we use FishBone visualization as an analysis method,
+        // we want all the results available for each complexity level available for inspection
+        val result = best.flatMap { it }.sortedWith(BPQ.comparator())
+        MultitaskProgress.finishTask(target.name())
+        return result
+    }
+
+    internal fun <T> optimizeByComplexity(predicates: List<Predicate<T>>,
+                                          target: Predicate<T>,
+                                          database: List<T>,
+                                          maxComplexity: Int,
+                                          topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                                          convictionDelta: Double = CONVICTION_DELTA,
+                                          klDelta: Double = KL_DELTA): Array<BPQ<T>> {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
         check(klDelta <= 1) {
             "Expected klDelta <= 1 (100%), got: $klDelta"
         }
-        val comparator = BPQ.comparator<T>()
         // Invariant: best[k] - best predicates with complexity = k
         val best = Array(maxComplexity + 1) { BPQ(topPerComplexity, database, convictionDelta, klDelta) }
         (1..Math.min(maxComplexity, predicates.size)).forEach { k ->
@@ -195,11 +225,7 @@ object RM {
                 }.forEach { queue.add(it) }
             }
         }
-        // Since we use FishBone visualization as an analysis method,
-        // we want all the results available for each complexity level available for inspection
-        val result = best.flatMap { it }.sortedWith(comparator)
-        MultitaskProgress.finishTask(target.name())
-        return result
+        return best
     }
 
 
