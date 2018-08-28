@@ -16,7 +16,12 @@ import java.util.*
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
+
 object RM {
+
+    const val TOP_PER_COMPLEXITY = 100
+    const val CONVICTION_DELTA = 0.1
+    const val KL_DELTA = 0.1
 
     /**
      * Bounded Priority Queue.
@@ -156,9 +161,9 @@ object RM {
                               target: Predicate<T>,
                               database: List<T>,
                               maxComplexity: Int,
-                              topPerComplexity: Int,
-                              convictionDelta: Double,
-                              klDelta: Double): List<Node<T>> {
+                              topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                              convictionDelta: Double = CONVICTION_DELTA,
+                              klDelta: Double = KL_DELTA): List<Node<T>> {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
@@ -190,7 +195,7 @@ object RM {
                 }.forEach { queue.add(it) }
             }
         }
-         // Since we use FishBone visualization as an analysis method,
+        // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
         val result = best.flatMap { it }.sortedWith(comparator)
         MultitaskProgress.finishTask(target.name())
@@ -202,9 +207,9 @@ object RM {
                  toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
-                 topPerComplexity: Int = 100,
-                 convictionDelta: Double = 1E-2,
-                 klDelta: Double = 1E-2) {
+                 topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                 convictionDelta: Double = CONVICTION_DELTA,
+                 klDelta: Double = KL_DELTA) {
         LOG.info("RM processing: $title")
         // Mine each target separately
         val executor = Executors.newWorkStealingPool(parallelismLevel())
