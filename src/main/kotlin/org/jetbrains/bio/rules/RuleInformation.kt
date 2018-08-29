@@ -48,7 +48,8 @@ fun <T> KL(p: Distribution<T>, q: Distribution<T>): Double {
         }
         v++
     }
-    return kl
+    // Fix potential floating point errors
+    return Math.max(0.0, kl)
 }
 
 class EmpiricalDistribution<T>(database: List<T>, atomics: List<Predicate<T>>) : Distribution<T>(database, atomics) {

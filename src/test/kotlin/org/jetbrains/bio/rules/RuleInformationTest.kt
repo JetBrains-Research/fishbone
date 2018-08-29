@@ -4,6 +4,7 @@ import org.jetbrains.bio.predicates.Predicate
 import org.junit.Assert
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class RuleInformationTest {
 
@@ -145,6 +146,32 @@ class RuleInformationTest {
         Assert.assertEquals(0.06, marginalP(independent, mapOf(1 to true, 3 to true)), 1e-10)
         Assert.assertEquals(0.02, marginalP(independent, mapOf(0 to true, 2 to false)), 1e-10)
 
+    }
+
+    @Test
+    fun testKLNonNegative() {
+        val predicates = listOf(
+                RangePredicate(10, 20),
+                RangePredicate(10, 40),
+                RangePredicate(10, 100),
+                RangePredicate(20, 40),
+                RangePredicate(30, 60),
+                RangePredicate(40, 80))
+        for (condition in predicates) {
+            for (target in predicates.filter { it != condition }) {
+                val ps = listOf(condition, target)
+                listOf(100, 1000, 100000).forEach { size ->
+                    println("Database: $size condition: ${condition.name()} target: ${target.name()}")
+                    val database = (0.until(size)).toList()
+                    val rule = Rule(condition, target, database)
+                    val empirical = EmpiricalDistribution(database, ps)
+                    val independent = Distribution(database, ps)
+                    val learn = independent.learn(rule)
+                    val kl = KL(empirical, learn)
+                    assertTrue(kl >= 0)
+                }
+            }
+        }
     }
 
     private fun mark(vararg indices: Int): Long {
