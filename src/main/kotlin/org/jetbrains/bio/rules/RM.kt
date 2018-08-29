@@ -20,8 +20,8 @@ import java.util.concurrent.Executors
 object RM {
 
     const val TOP_PER_COMPLEXITY = 100
-    const val CONVICTION_DELTA = 0.1
-    const val KL_DELTA = 0.01
+    const val CONVICTION_DELTA = 1E-3
+    const val KL_DELTA = 1E-3
 
     /**
      * Bounded Priority Queue.

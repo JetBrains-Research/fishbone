@@ -50,7 +50,7 @@ class RMTest : TestCase() {
         }
     }
 
-    private fun <T> RM.Node<T>.structure(database: List<T>): String {
+    private fun <T> RM.Node<T>.structure(database: List<T>, logConviction: Boolean = true, logKL: Boolean = true): String {
         val result = arrayListOf<String>()
         var node: RM.Node<T>? = this
         val atomics = (rule.conditionPredicate.collectAtomics() + rule.targetPredicate.collectAtomics()).toList()
@@ -58,12 +58,14 @@ class RMTest : TestCase() {
         val independent = Distribution(database, atomics)
         val kl = KL(empirical, independent)
         while (node != null) {
-            result.add("<${node.element.name()}+c${String.format("%.2f", if (node.parent != null)
-                node.rule.conviction - node.parent!!.rule.conviction
-            else
-                node.rule.conviction)}kl${
-            String.format("%.2f", KL(empirical, independent.learn(node.rule)) / kl)
-            }>")
+            result.add("<${node.element.name()}" +
+                    (if (logConviction) "+c${String.format("%.2f", if (node.parent != null)
+                        node.rule.conviction - node.parent!!.rule.conviction
+                    else
+                        node.rule.conviction)}" else "") +
+                    (if (logKL) "kl${
+                    String.format("%.2f", KL(empirical, independent.learn(node.rule)) / kl)
+                    }" else "") + ">")
             node = node.parent
         }
         return result.reversed().joinToString(",")
@@ -87,7 +89,7 @@ class RMTest : TestCase() {
 
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
-        val database = (0..100).toList()
+        var database = (0..100).toList()
         val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = RM.CONVICTION_DELTA, klDelta = -1.0)
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
@@ -108,7 +110,7 @@ class RMTest : TestCase() {
 
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
-        val database = (0..100).toList()
+        var database = (0..100).toList()
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA).structure(database))
         // NOTE that [4;8) is placed before [16;32), this is result of high KL delta
@@ -116,12 +118,26 @@ class RMTest : TestCase() {
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).structure(database))
         assertEquals("<[32;64)+c6.65kl0.00>",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5).structure(database))
+        // Check that exact values can be slightly different overall optimization results persist
+        listOf(500, 1000, 100000).forEach { size ->
+            database = (0..size).toList()
+            assertEquals("<[32;64)>,<[16;32)>,<[8;16)>,<[4;8)>,<[2;4)>,<[1;2)>",
+                    optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA)
+                            .structure(database, logConviction = false, logKL = false))
+            // NOTE that [4;8) is placed before [16;32), this is result of high KL delta
+            assertEquals("<[32;64)>,<[4;8)>,<[16;32)>,<[8;16)>",
+                    optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1)
+                            .structure(database, logConviction = false, logKL = false))
+            assertEquals("<[32;64)>",
+                    optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.5)
+                            .structure(database, logConviction = false, logKL = false))
+        }
     }
 
     fun testOptimize() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
-            val database = 0.until(size).toList()
+            val database = (0..size).toList()
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50)",
                     optimizeWithProbes(RangePredicate(20, 50), database, predicates).rule.conditionPredicate.name())
             assertEquals(size.toString(), "[20;30) OR [30;40) OR [40;50) OR [50;60)",
