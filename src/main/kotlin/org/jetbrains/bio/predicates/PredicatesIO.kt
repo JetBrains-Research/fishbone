@@ -144,9 +144,13 @@ object PredicatesIO {
 
         @Synchronized
         override fun test(items: List<T>): BitSet {
-            if (items == database) {
+            // IMPORTANT: we use reference equality instead of Lists equality,
+            // because check of database on each test can be slow for large databases,
+            // and result will be cached in super method call.
+            if (items === database) {
                 return positives
             }
+            LOG.warn("Loaded predicate should be checked against loaded database for performance reasons")
             return super.test(items)
         }
 

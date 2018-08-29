@@ -49,16 +49,16 @@ abstract class Predicate<T> {
     private var cache = WeakReference<BitSet>(null)
 
     /**
-     * Please use [.testUncached] to implement custom behavior.
+     * Please use [testUncached] to implement custom behavior.
      * NOTE: we don't use Cache here, because items is the same object, so that cache miss should be quite rare.
      */
     @Synchronized
     open fun test(items: List<T>): BitSet {
-        var result: BitSet?
-        if (cachedDataBase !== items) {
-            result = null
+        // NOTE: We use reference equality check instead of Lists equality because it can be slow on large databases.
+        var result = if (cachedDataBase !== items) {
+            null
         } else {
-            result = cache.get()
+            cache.get()
         }
         if (result == null) {
             cachedDataBase = items
