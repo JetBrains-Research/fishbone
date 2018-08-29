@@ -118,7 +118,7 @@ function load(content) {
     $('#conviction-filter').removeAttr('disabled');
     $('#complexity-filter').removeAttr('disabled');
     $('#show-top-filter').removeAttr('disabled');
-    ({records: records, palette: palette} = JSON.parse(content));
+    ({records: records, palette: palette} = JSON.parse(content.replace("NaN", "0")));
     $.notify("Loaded " + records.length + " records", {className: "success", position: 'bottom right'});
     groupRecordsByConditionTarget();
     filterAndRender();
@@ -143,6 +143,8 @@ function filterAndRender() {
     const target = $('#target-filter').val().trim();
     if (target.length > 0) {
         targetPattern = new RegExp(target);
+    } else {
+        targetPattern = new RegExp('.*');
     }
 
     let correlationFieldMin = $('#correlation-filter-min').val().trim();
