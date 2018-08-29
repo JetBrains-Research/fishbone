@@ -333,7 +333,12 @@ function showInfo(edge) {
     const dialog = $('#dialog');
     let html = "";
     if (dialog.dialog('isOpen') === true) {
-        html = dialog.html() + "<br/>";
+        html = dialog.html().replace(`</tbody></table>`, '');
+    } else {
+        html = `<table class="table table-striped table-condensed table-responsive table-sm">
+                <thead class="thead-default">` +
+            "<tr><th>condition</th><th>target</th><th>#d</th><th>#c</th><th>#t</th><th>#\u2229</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th></tr>" +
+            `</thead><tbody>`
     }
     const processed = new Set();
     for (let r of edge.records) {
@@ -346,23 +351,23 @@ function showInfo(edge) {
         console.info("Rule: " + r.condition + "=>" + r.target);
         if (id in groupedRecordsMap) {
             // Build html table
-            const table = `<table class="table table-striped">
-                <thead class="thead-default">` +
-                "<tr><th>db</th><th>support</th><th>confidence</th><th>correlation</th><th>conviction</th></tr>" +
-                `</thead><tbody>` +
-                groupedRecordsMap[id].map(r =>
-                    `<tr>
-<td>${r.id} (${r.database_count})</td>
+            html += groupedRecordsMap[id].map(r =>
+                `<tr>
+<td>${r.condition}</td>
+<td>${r.target}</td>
+<td>${r.database_count}</td>
+<td>${r.condition_count}</td>
+<td>${r.target_count}</td>
+<td>${r.intersection_count}</td>
+<td>${r.correlation.toFixed(2)}</td>
 <td>${r.support.toFixed(2)}</td>
 <td>${r.confidence.toFixed(2)}</td>
-<td>${r.correlation.toFixed(2)} (${r.condition_count}, ${r.target_count}, ${r.intersection_count})</td>
 <td>${r.conviction.toFixed(2)}</td>
-</tr>`).join("") +
-                `</tbody></table>`;
-            html += `<div>${r.condition} => ${r.target}${table}</div>`;
+</tr>`).join("");
         }
     }
 
+    html += `</tbody></table>`;
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
