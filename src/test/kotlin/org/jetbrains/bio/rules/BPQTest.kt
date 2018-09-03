@@ -16,12 +16,12 @@ class BPQTest : TestCase() {
         val queue = RM.BPQ(100, data, 0.0, 0.0)
         queue.add(RM.Node(Rule(p1.or(p2).or(p3), t, data), p2,
                 RM.Node(Rule(p1.or(p3), t, data), p1, null)))
-        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=2, parent=Node(rule=1 OR 3 => t, element=1, parent=null))]",
+        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=2, parent=Node(rule=1 OR 3 => t, element=1, parent=null, aux=null), aux=null)]",
                 queue.toList().toString())
         // Add same condition with greater parent, check replace
         queue.add(RM.Node(Rule(p1.or(p2).or(p3), t, data), p1,
                 RM.Node(Rule(p2.or(p3), t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=1, parent=Node(rule=2 OR 3 => t, element=2, parent=null))]",
+        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=1, parent=Node(rule=2 OR 3 => t, element=2, parent=null, aux=null), aux=null)]",
                 queue.toList().toString())
     }
 
@@ -41,7 +41,7 @@ class BPQTest : TestCase() {
 
         queue.add(RM.Node(Rule(p1.or(p2), t, data), p1,
                 RM.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null))]", queue.toList().toString())
+        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, aux=null), aux=null)]", queue.toList().toString())
     }
 
 
@@ -54,11 +54,11 @@ class BPQTest : TestCase() {
 
         val queue = RM.BPQ(10, data, 0.0, 0.0)
         queue.add(RM.Node(Rule(p1.or(p2), t, data), p1, RM.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null))]",
+        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, aux=null), aux=null)]",
                 queue.toList().toString())
         // Adding the same rules doesn't change the queue
         queue.add(RM.Node(Rule(p1.or(p2), t, data), p1, RM.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null))]",
+        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, aux=null), aux=null)]",
                 queue.toList().toString())
     }
 

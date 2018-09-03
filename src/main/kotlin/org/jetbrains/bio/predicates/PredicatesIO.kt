@@ -13,14 +13,13 @@ import org.jetbrains.bio.util.bufferedWriter
 import java.nio.file.Path
 import java.util.*
 
+
 object PredicatesIO {
     private val LOG = Logger.getLogger(PredicatesIO::class.java)
 
     private const val INDEX_KEY = "index"
     private const val NOT = "NOT: "
     private const val COMMENT = '#'
-
-    fun Boolean.mark() = if (this) '1' else '0'
 
 
     fun <T> predicatesToDataFrame(dataBase: List<T>, predicates: List<Predicate<T>>): DataFrame {
@@ -158,3 +157,5 @@ object PredicatesIO {
         override fun toString() = "Loaded[${name()}]"
     }
 }
+
+fun Boolean.mark() = if (this) '1' else '0'

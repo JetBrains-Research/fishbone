@@ -50,7 +50,8 @@ class RMLogger(val path: Path?, vararg params: String) {
                 graphRecords.add(r.toMap() + mapOf(
                         "node" to node.element.name(),
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
-                        "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null))
+                        "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
+                        "aux" to node.aux))
                 node = node.parent
             }
         }

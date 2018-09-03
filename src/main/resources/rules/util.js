@@ -321,6 +321,39 @@ function textColor(background) {
     return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 186) ? "black" : "white";
 }
 
+function createAuxInfo(aux, target) {
+    if ("marginals" in aux) {
+        let ms = aux.marginals;
+        let ps = aux.probabilities;
+        return `
+<table class="table table-condensed table-tiny table-bordered">
+    <thead class="thead-default">
+        <tr>` + Object.entries(ms).map(m => `<td>${m[0]}</td>`).join("") + `<td>p</td></tr>
+    </thead>
+    <tbody>
+        <tr>` + Object.entries(ms).map(m => `<td>${m[1]}</td>`).join("") + `<td>1.0</td>
+        </tr>` +
+            Object.entries(ps).map(p => `
+        <tr>${p[0].replace(new RegExp('1', 'g'), '<td>T</td>').replace(new RegExp('0', 'g'), '<td>F</td>')}
+            <td style="background-color: rgba(0,0,255, ${p[1]}">${p[1]}</td>
+        </tr>`).join("") +
+    `</tbody>
+</table>`;
+    }
+    return Object.entries(aux)
+        .filter(e => Object.keys(edges).filter(el => el.includes(edgeId(e[0], target))).length > 0)
+        .map(e => createAuxInfo(e[1], target)).join("");
+
+}
+
+function toggleCollapseButton(e) {
+    if (e.value === '+') {
+        e.value = '-'
+    } else {
+        e.value = '+'
+    }
+}
+
 /**
  * Generate rules statistics information and display it as modal dialog
  */
@@ -331,15 +364,22 @@ function showInfo(edge) {
     }
     highlightEdge(edge);
     const dialog = $('#dialog');
+    const panel = $('#dialog-pane');
     let html = "";
     if (dialog.dialog('isOpen') === true) {
-        html = dialog.html().replace(`</tbody></table>`, '');
+        html = panel.html().replace(new RegExp('</tbody></table>$', 'g'), '');
     } else {
-        html = `<table class="table table-striped table-condensed table-responsive table-sm">
-                <thead class="thead-default">` +
-            "<tr><th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th></tr>" +
-            `</thead><tbody>`
+        html = `
+<table class="table table-condensed">
+    <thead class="thead-default">
+        <tr>
+            <th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+`
     }
+
     const processed = new Set();
     for (let r of edge.records) {
         const id = edgeId(r.condition, r.target);
@@ -350,30 +390,41 @@ function showInfo(edge) {
         }
         console.info("Rule: " + r.condition + "=>" + r.target);
         if (id in groupedRecordsMap) {
+            let infoId = `aux_${r.id}_${id}`.replace(new RegExp('[\\.:;\\(\\)\\[\\] ]', 'g'), "_");
             // Build html table
-            html += groupedRecordsMap[id].map(r =>
-                `<tr>
-<td>${r.id}</td>
-<td>${r.condition}</td>
-<td>${r.target}</td>
-<td>${r.condition_count}</td>
-<td>${r.target_count}</td>
-<td>${r.intersection_count}</td>
-<td>${r.database_count}</td>
-<td>${r.correlation.toFixed(2)}</td>
-<td>${r.support.toFixed(2)}</td>
-<td>${r.confidence.toFixed(2)}</td>
-<td>${r.conviction.toFixed(2)}</td>
-</tr>`).join("");
+            html += groupedRecordsMap[id].map(r => `
+<tr>
+    <td>${r.id}</td>
+    <td>${r.condition}</td>
+    <td>${r.target}</td>
+    <td>${r.condition_count}</td>
+    <td>${r.target_count}</td>
+    <td>${r.intersection_count}</td>
+    <td>${r.database_count}</td>
+    <td>${r.correlation.toFixed(2)}</td>
+    <td>${r.support.toFixed(2)}</td>
+    <td>${r.confidence.toFixed(2)}</td>
+    <td>${r.conviction.toFixed(2)}</td>
+    <td>
+        <input type="button" data-toggle="collapse" data-target=#${infoId} onclick="toggleCollapseButton(this);" value="+"/>
+    </td>
+</tr>
+<tr>
+    <td colspan="12">
+        <div id=${infoId} class="collapse" >
+    ${createAuxInfo(r.aux, r.target)} 
+        </div>
+    </td>
+</tr>
+`).join("");
         }
     }
 
     html += `</tbody></table>`;
-    const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
     if (dialog.dialog('isOpen') !== true) {
-        dialog.dialog("option", "width", 750);
+        dialog.dialog("option", "width", 1000);
     }
     dialog.dialog('open');
 }

@@ -20,6 +20,7 @@ import java.util.concurrent.Executors
 object RM {
 
     const val TOP_PER_COMPLEXITY = 100
+    const val TOP_LEVEL_PREDICATES_INFO = 10
     const val CONVICTION_DELTA = 1E-3
     const val KL_DELTA = 1E-3
 
@@ -58,7 +59,7 @@ object RM {
                         }
                     } else {
                         LOG.debug("FAILED parent check for same condition ${oldNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
-                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                         return false
                     }
                 }
@@ -112,8 +113,8 @@ object RM {
                 }
                 // If klDelta <= 0 ignore information check
                 if (klDelta > 0) {
-                    val startAtomics = parent.rule.conditionPredicate.collectAtomics() + node.rule.targetPredicate
-                    val atomics = (startAtomics + node.element.collectAtomics()).distinct()
+                    val atomics = (parent.rule.conditionPredicate.collectAtomics() +
+                            node.element.collectAtomics() + listOf(node.rule.targetPredicate)).distinct()
                     val empirical = EmpiricalDistribution(database, atomics)
                     val independent = Distribution(database, atomics)
                     val klParent = KL(empirical, independent.learn(parent.rule))
@@ -129,6 +130,7 @@ object RM {
                                 "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                         return false
                     }
+                    node.aux = empirical.toJson()
                 }
                 LOG.debug("PASS rule\n" +
                         "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
@@ -152,7 +154,7 @@ object RM {
     /**
      * Result of [optimize] procedure.
      */
-    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?)
+    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var aux: Any? = null)
 
 
     /**
@@ -178,9 +180,11 @@ object RM {
                               database: List<T>,
                               maxComplexity: Int,
                               topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                              topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                               convictionDelta: Double = CONVICTION_DELTA,
                               klDelta: Double = KL_DELTA): List<Node<T>> {
-        val best = optimizeByComplexity(predicates, target, database, maxComplexity, topPerComplexity, convictionDelta, klDelta)
+        val best = optimizeByComplexity(predicates, target, database,
+                maxComplexity, topPerComplexity, topLevelToPredicatesInfo, convictionDelta, klDelta)
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
         val result = best.flatMap { it }.sortedWith(BPQ.comparator())
@@ -193,6 +197,7 @@ object RM {
                                           database: List<T>,
                                           maxComplexity: Int,
                                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                                          topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                                           convictionDelta: Double = CONVICTION_DELTA,
                                           klDelta: Double = KL_DELTA): Array<BPQ<T>> {
         if (klDelta <= 0) {
@@ -209,8 +214,21 @@ object RM {
                 predicates.forEach { p ->
                     MultitaskProgress.reportTask(target.name())
                     (if (p.canNegate()) listOf(p, p.not()) else listOf(p))
-                            .filter { it.complexity() == k }
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
+                }
+                // Collect all the top level mutual aux information
+                val topLevelPredicates = queue.sortedWith(BPQ.comparator()).take(topLevelToPredicatesInfo)
+
+                for (i in 0 until topLevelPredicates.size) {
+                    val n1 = topLevelPredicates[i]
+                    val aux = (i + 1 until topLevelPredicates.size).associate { j ->
+                        val n2 = topLevelPredicates[j]
+                        n2.rule.conditionPredicate.name() to EmpiricalDistribution(database, listOf(
+                                n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)).toJson()
+                    }
+                    // Update aux
+                    n1.aux = aux
+
                 }
             } else {
                 best[k - 1].flatMap { parent ->
@@ -234,6 +252,7 @@ object RM {
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                 topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  convictionDelta: Double = CONVICTION_DELTA,
                  klDelta: Double = KL_DELTA) {
         LOG.info("RM processing: $title")
@@ -244,7 +263,8 @@ object RM {
                     MultitaskProgress.addTask(target.name(),
                             conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
                     Callable {
-                        logFunction(optimize(conditions, target, database, maxComplexity, topPerComplexity, convictionDelta, klDelta))
+                        logFunction(optimize(conditions, target, database,
+                                maxComplexity, topPerComplexity, topLevelToPredicatesInfo, convictionDelta, klDelta))
                     }
                 })
         check(executor.shutdownNow().isEmpty())

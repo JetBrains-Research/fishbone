@@ -34,8 +34,7 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
             this(conditionPredicate, targetPredicate, data.size,
                     conditionPredicate.test(data).cardinality(),
                     targetPredicate.test(data).cardinality(),
-                    conditionPredicate.and(targetPredicate).test(data).cardinality()) {
-    }
+                    conditionPredicate.and(targetPredicate).test(data).cardinality())
 
     /**
      * Lift measures how many times more often X and Y occur together than expected if they were statistically independent.

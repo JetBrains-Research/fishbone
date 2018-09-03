@@ -158,7 +158,7 @@ function buildFishbone() {
 
 
 
-    function renderFish(fish, boneLength, headId, xHead, yHead, boneAngle) {
+    function renderFish(target, fish, boneLength, headId, xHead, yHead, boneAngle) {
         let bones = Object.values(fish.bones);
         bones.sort(function (a, b) {
             return b.conviction - a.conviction;
@@ -172,7 +172,7 @@ function buildFishbone() {
         for (let bone of bones) {
             x = x + Math.cos(boneAngle) * delta;
             y = y + Math.sin(boneAngle) * delta;
-            const boneStartNode = addNode(fish, "", x, y);
+            const boneStartNode = addNode(target, "", x, y);
             const boneId = addBone(boneStartNode, lastBoneStartNode, null);
             edges[boneId]['data']['width'] = getWidth(bone.conviction);
             lastBoneStartNode = boneStartNode;
@@ -184,11 +184,11 @@ function buildFishbone() {
             }
             let childBoneLength = Math.max(80, 9 * boneLength / 20);
             // Don't mix nodes
-            const boneEndNode = addNode(fish, bone.node,
+            const boneEndNode = addNode(target, bone.node,
                 x + Math.cos(boneEndAngle) * childBoneLength,
                 y + Math.sin(boneEndAngle) * childBoneLength);
 
-            let lastBoneStartNodeRec = renderFish(bone, childBoneLength, boneStartNode, x, y, boneEndAngle);
+            let lastBoneStartNodeRec = renderFish(target, bone, childBoneLength, boneStartNode, x, y, boneEndAngle);
 
             addBone(boneEndNode, lastBoneStartNodeRec, bone.records[0]);
             direction = -direction;
@@ -254,7 +254,7 @@ function buildFishbone() {
             'shape-polygon-points': [-1, 0.5, -0.8, 0.8, 0.4, 0.8, 1, 0.2, 1, -0.2, 0.4, -0.8, -0.8, -0.8, -1, -0.5],
         };
         let boneLength = xHead - xTail;
-        const lastBoneStartNode = renderFish(fish, boneLength, headId, xHead, fishY, Math.PI);
+        const lastBoneStartNode = renderFish(target, fish, boneLength, headId, xHead, fishY, Math.PI);
         const tailId = addNode(target, "tail",
             xHead + Math.cos(Math.PI) * boneLength,
             fishY + Math.sin(Math.PI) * boneLength);

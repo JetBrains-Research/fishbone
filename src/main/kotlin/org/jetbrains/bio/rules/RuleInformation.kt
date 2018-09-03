@@ -1,5 +1,6 @@
 package org.jetbrains.bio.rules
 
+import com.google.gson.GsonBuilder
 import gnu.trove.map.TLongDoubleMap
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TLongDoubleHashMap
@@ -192,16 +193,17 @@ open class Distribution<T>(val database: List<T>,
     private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * Math.log(x)
 
     override fun toString(): String {
-        var result = "Marginals:\n" +
-                "${atomics.indices.joinToString("\n") { "${atomics[it].name()}\t${marginals()[it]}" }}\n" +
-                "Probabilities:\n"
-        var v = 0L
-        while (v < 1L shl atomics.size) {
-            result += "{${atomics.indices.filter { v and (1L shl it) != 0L }
-                    .joinToString(", ") { atomics[it].name() }}}\t${probability(v)}\n"
-            v++
-        }
-        return result + "H = ${H()}"
+        return GsonBuilder().setPrettyPrinting().create().toJson(toJson())
+    }
+
+    fun toJson(): Map<String, Any> {
+        return mapOf(
+                // Preserve order here
+                "marginals" to linkedMapOf(*atomics.map { it to marginals()[atomics.indexOf(it)] }.toTypedArray()),
+                "probabilities" to (0.until(1L shl atomics.size)).associate { v ->
+                    "${atomics.indices.joinToString("") { (v and (1L shl it) != 0L).mark().toString() }}" to
+                            probability(v)
+                })
     }
 
     companion object {
