@@ -332,14 +332,12 @@ function showInfo(edge) {
     highlightEdge(edge);
     const dialog = $('#dialog');
     let html = "";
-    let db = "";
-    let db_count = 0;
     if (dialog.dialog('isOpen') === true) {
         html = dialog.html().replace(`</tbody></table>`, '');
     } else {
         html = `<table class="table table-striped table-condensed table-responsive table-sm">
                 <thead class="thead-default">` +
-            "<tr><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th></tr>" +
+            "<tr><th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th></tr>" +
             `</thead><tbody>`
     }
     const processed = new Set();
@@ -353,15 +351,15 @@ function showInfo(edge) {
         console.info("Rule: " + r.condition + "=>" + r.target);
         if (id in groupedRecordsMap) {
             // Build html table
-            db = groupedRecordsMap[id][0].id;
-            db_count = groupedRecordsMap[id][0].database_count;
             html += groupedRecordsMap[id].map(r =>
                 `<tr>
+<td>${r.id}</td>
 <td>${r.condition}</td>
 <td>${r.target}</td>
 <td>${r.condition_count}</td>
 <td>${r.target_count}</td>
 <td>${r.intersection_count}</td>
+<td>${r.database_count}</td>
 <td>${r.correlation.toFixed(2)}</td>
 <td>${r.support.toFixed(2)}</td>
 <td>${r.confidence.toFixed(2)}</td>
@@ -374,8 +372,9 @@ function showInfo(edge) {
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
-    dialog.dialog("option", "width", 750);
-    dialog.dialog("option", "title", `${db}, size: ${db_count} regions`);
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", 750);
+    }
     dialog.dialog('open');
 }
 
