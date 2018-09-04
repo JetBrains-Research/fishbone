@@ -119,4 +119,11 @@ class RuleTest : TestCase() {
         val rule21 = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 20, 15, 10, 10)
         assertEquals(rule12.correlation, rule21.correlation, 1e-2)
     }
+
+    fun testNaN() {
+        val rule = Rule(UndefinedPredicate<Any>(), UndefinedPredicate(), 10, 10, 0, 0)
+        assertTrue(rule.correlation.isNaN())
+        assertEquals(listOf("foo", "undefined", "undefined", 10, 10, 0, 0, 1.0, 0.0, 0.0, 0.0, 0.9090909090909091, 1),
+                rule.toRecord("foo").toCSV())
+    }
 }

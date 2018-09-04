@@ -93,7 +93,7 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
      */
     fun toRecord(id: String = ""): RuleRecord<T> =
             RuleRecord(id, conditionPredicate, targetPredicate,
-                    database, condition, target, intersection, errorType1, errorType2,
+                    database, condition, target, intersection,
                     condition.toDouble() / database, intersection.toDouble() / condition,
                     correlation, lift, conviction,
                     conditionPredicate.complexity())
@@ -119,7 +119,6 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
 
 class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val targetPredicate: Predicate<T>,
                     val database: Int, val condition: Int, val target: Int, val intersection: Int,
-                    val errorType1: Int, val errorType2: Int,
                     val support: Double, val confidence: Double,
                     val correlation: Double,
                     val lift: Double,
@@ -134,13 +133,11 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
             condition,
             target,
             intersection,
-            errorType1,
-            errorType2,
             support,
             confidence,
-            correlation,
-            lift,
-            conviction,
+            if (!correlation.isNaN()) correlation else 0.0,
+            if (!lift.isNaN()) lift else 0.0,
+            if (!conviction.isNaN()) conviction else 0.0,
             complexity)
 
 
@@ -154,8 +151,6 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
         private const val KEY_CONDITION_COUNT = "condition_count"
         private const val KEY_TARGET_COUNT = "target_count"
         private const val KEY_INTERSECTION_COUNT = "intersection_count"
-        private const val KEY_ERROR_TYPE1_COUNT = "error_type_1_count"
-        private const val KEY_ERROR_TYPE2_COUNT = "error_type_2_count"
         private const val KEY_SUPPORT = "support"
         private const val KEY_CONFIDENCE = "confidence"
         private const val KEY_CORRELATION = "correlation"
@@ -171,8 +166,6 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
                 KEY_CONDITION_COUNT,
                 KEY_TARGET_COUNT,
                 KEY_INTERSECTION_COUNT,
-                KEY_ERROR_TYPE1_COUNT,
-                KEY_ERROR_TYPE2_COUNT,
                 KEY_SUPPORT,
                 KEY_CONFIDENCE,
                 KEY_CORRELATION,
@@ -188,7 +181,6 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
                     database = i(it, KEY_DATABASE_COUNT),
                     condition = i(it, KEY_CONDITION_COUNT), target = i(it, KEY_TARGET_COUNT),
                     intersection = i(it, KEY_INTERSECTION_COUNT),
-                    errorType1 = i(it, KEY_ERROR_TYPE1_COUNT), errorType2 = i(it, KEY_ERROR_TYPE2_COUNT),
                     support = d(it, KEY_SUPPORT), confidence = d(it, KEY_CONFIDENCE),
                     correlation = d(it, KEY_CORRELATION),
                     lift = d(it, KEY_LIFT),
