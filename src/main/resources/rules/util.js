@@ -323,17 +323,17 @@ function textColor(background) {
 
 function createAuxInfo(aux, target) {
     if ("marginals" in aux) {
-        let ms = aux.marginals;
-        let ps = aux.probabilities;
+        let ms = Object.entries(aux.marginals);
+        let ps = Object.entries(aux.probabilities);
         return `
 <table class="table table-condensed table-tiny table-bordered">
     <thead class="thead-default">
-        <tr>` + Object.entries(ms).map(m => `<td>${m[0]}</td>`).join("") + `<td>p</td></tr>
+        <tr>` + ms.map(m => `<td>${m[0]}</td>`).join("") + `<td>p</td></tr>
     </thead>
     <tbody>
-        <tr>` + Object.entries(ms).map(m => `<td>${m[1]}</td>`).join("") + `<td>1.0</td>
+        <tr>` + ms.map(m => `<td>${m[1]}</td>`).join("") + `<td>1.0</td>
         </tr>` +
-            Object.entries(ps).map(p => `
+            ps.map(p => `
         <tr>${p[0].replace(new RegExp('1', 'g'), '<td>T</td>').replace(new RegExp('0', 'g'), '<td>F</td>')}
             <td style="background-color: rgba(0,0,255, ${p[1]}">${p[1]}</td>
         </tr>`).join("") +
