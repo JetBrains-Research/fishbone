@@ -15,7 +15,10 @@ function renderGraph() {
         style: RULE_GRAPH_STYLE("unbundled-bezier").slice()
     });
     cy.on('tap', 'edge', function (evt) {
-        showInfo(evt.cyTarget.data());
+        showInfoEdge(evt.cyTarget.data());
+    });
+    cy.on('tap', 'node', function (evt) {
+        showInfoNode(evt.cyTarget.data());
     });
     cy.startBatch();
     cy.layout({

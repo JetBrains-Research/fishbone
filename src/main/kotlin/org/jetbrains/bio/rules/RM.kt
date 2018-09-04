@@ -130,7 +130,9 @@ object RM {
                                 "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                         return false
                     }
-                    node.aux = empirical.toJson()
+                    node.aux = Aux(rule = EmpiricalDistribution(database,
+                            listOf(node.element, node.parent!!.rule.conditionPredicate, node.rule.targetPredicate))
+                            .probabilities())
                 }
                 LOG.debug("PASS rule\n" +
                         "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
@@ -152,9 +154,14 @@ object RM {
     private val LOG = Logger.getLogger(RM::class.java)
 
     /**
+     * [target] looks like a hack! this information should be result of
+     */
+    data class Aux(val rule: Probabilities, val target: List<Probabilities>? = null)
+
+    /**
      * Result of [optimize] procedure.
      */
-    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var aux: Any? = null)
+    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var aux: Aux? = null)
 
 
     /**
@@ -216,19 +223,23 @@ object RM {
                     (if (p.canNegate()) listOf(p, p.not()) else listOf(p))
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
-                // Collect all the top level mutual aux information
-                val topLevelPredicates = queue.sortedWith(BPQ.comparator()).take(topLevelToPredicatesInfo)
-
-                for (i in 0 until topLevelPredicates.size) {
-                    val n1 = topLevelPredicates[i]
-                    val aux = (i + 1 until topLevelPredicates.size).associate { j ->
-                        val n2 = topLevelPredicates[j]
-                        n2.rule.conditionPredicate.name() to EmpiricalDistribution(database, listOf(
-                                n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)).toJson()
+                // Collect all the top level predicates mutual distributions
+                val topLevelNodes = queue.sortedWith(BPQ.comparator()).take(topLevelToPredicatesInfo)
+                val targetPairwiseProbabilities = arrayListOf<Probabilities>()
+                for (i in 0 until topLevelNodes.size) {
+                    val n1 = topLevelNodes[i]
+                    (i + 1 until topLevelNodes.size).forEach { j ->
+                        val n2 = topLevelNodes[j]
+                        targetPairwiseProbabilities.add(EmpiricalDistribution(database, listOf(
+                                n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)).probabilities())
                     }
-                    // Update aux
-                    n1.aux = aux
-
+                }
+                // shpynov hacks adding target information to all the nodes
+                for (i in 0 until topLevelNodes.size) {
+                    val n1 = topLevelNodes[i]
+                    n1.aux = Aux(
+                            rule = EmpiricalDistribution(database, listOf(n1.rule.conditionPredicate, target)).probabilities(),
+                            target = targetPairwiseProbabilities)
                 }
             } else {
                 best[k - 1].flatMap { parent ->

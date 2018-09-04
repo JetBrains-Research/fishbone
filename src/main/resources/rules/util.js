@@ -6,6 +6,7 @@ const CLASS_MISSING_RULE = "missing-rule";
 const CLASS_NOT_EDGE = "not";
 const CLASS_GROUP = "group";
 const CLASS_HIGHLIGHTED = "highlighted";
+const DIALOG_WIDTH = 1200;
 
 let records, filteredRecords = [];
 
@@ -321,43 +322,159 @@ function textColor(background) {
     return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 186) ? "black" : "white";
 }
 
-function createAuxInfo(aux, target) {
-    if ("marginals" in aux) {
-        let ms = Object.entries(aux.marginals);
-        let ps = Object.entries(aux.probabilities);
-        return `
-<table class="table table-condensed table-tiny table-bordered">
-    <thead class="thead-default">
-        <tr>` + ms.map(m => `<td>${m[0]}</td>`).join("") + `<td>p</td></tr>
-    </thead>
-    <tbody>
-        <tr>` + ms.map(m => `<td>${m[1]}</td>`).join("") + `<td>1.0</td>
-        </tr>` +
-            ps.map(p => `
-        <tr>${p[0].replace(new RegExp('1', 'g'), '<td>T</td>').replace(new RegExp('0', 'g'), '<td>F</td>')}
-            <td style="background-color: rgba(0,0,255, ${p[1]}">${p[1]}</td>
-        </tr>`).join("") +
-    `</tbody>
-</table>`;
+/**
+ * Generate target information.
+ * This is a fast hack to investigate before the paper is out, must be refactored.
+ */
+function showInfoNode(node) {
+    console.info("Information node: " + node.id);
+    // Hack check for fish head
+    if (nodes[node.id].style.shape !== "polygon") {
+        return
     }
-    return Object.entries(aux)
-        .filter(e => Object.keys(edges).filter(el => el.includes(edgeId(e[0], target))).length > 0)
-        .map(e => createAuxInfo(e[1], target)).join("");
 
+    const target = node.label;
+    let infoId = `aux_${node.id}`.replace(new RegExp('[@<>!\\.:;\\(\\)\\[\\] ]', 'g'), "_");
+    let html = `<div id="${infoId}"></div>`;
+    const panel = $('#dialog-pane');
+    panel.empty();
+    panel.append($(html));
+    // Hack: this should saved separately per each target
+    let targetAux = records.filter(el => el.target === target && el.aux && "target" in el.aux);
+    if (targetAux.length === 0) {
+        return
+    }
+    let somethingAdded = false;
+    for (let e of targetAux[0].aux.target) {
+        let allNamesShown =  e.names.filter(
+            n => filteredRecords.filter(el => el.target === target && el.condition === n).length > 0
+        ).length === e.names.filter(n => n !== target).length;
+        if (allNamesShown) {
+            somethingAdded = true;
+            showRepresentationInfo(e, infoId);
+        }
+    }
+    if (!somethingAdded) {
+        return
+    }
+    let dialog = $('#dialog');
+    dialog.dialog('option', 'title', `Pairwise combinations => ${target}`);
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+    dialog.dialog('open');
 }
 
-function toggleCollapseButton(e) {
+
+let vennIndex = 0;
+
+function showRepresentationInfo(representation, infoId) {
+    let names = Object.entries(representation.names);
+    let infoIdDiv = $(`#${infoId}`);
+    infoIdDiv.append($(`<br>`));
+    let probabilities = Object.entries(representation.probabilities);
+    let tableHtml = `
+<table class="table table-condensed table-tiny table-bordered">
+    <thead class="thead-default">
+        <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>p</td></tr>
+    </thead>
+    <tbody>
+        </tr>`;
+    for (let v = 0; v < probabilities.length; v++) {
+        tableHtml += `<tr>`;
+        for (let i = 0; i < names.length; i++) {
+            tableHtml += `<td>`;
+            if ((v & (1 << i)) !== 0) {
+                tableHtml += 'T'
+            } else {
+                tableHtml += 'F';
+            }
+            tableHtml += `</td>`;
+        }
+        tableHtml += `<td style="background-color: rgba(0,0,255, ${probabilities[v][1]}">${probabilities[v][1]}</td>`;
+        tableHtml += `</tr>`;
+    }
+    tableHtml += `
+    </tbody>
+</table>`;
+    if (names.length <= 5) {
+        let vennData = [];
+        // Compute Venn numbers out of probabilities
+        for (let v = 1; v < (1 << names.length); v++) {
+            let sets = [];
+            let size = 0;
+            for (let i = 0; i < names.length; i++) {
+                if ((v & (1 << i)) !== 0) {
+                    sets.push(names[i][1]);
+                }
+            }
+            for (let x = 0; x < probabilities.length; x++) {
+                if ((v & x) === v) {
+                    size += probabilities[x][1];
+                }
+            }
+            if (size > 0) {
+                vennData.push({'sets': sets, 'size': size});
+            }
+        }
+        vennIndex += 1;
+        infoIdDiv.append($(`<ul><li>${tableHtml}</li><li><div id="venn${vennIndex}" class="venn"></div></li></ul>`));
+        let div = d3.select(`#venn${vennIndex}`);
+        div.datum(vennData).call(venn.VennDiagram());
+
+        // add a tooltip
+        let tooltip = $(`<div></div>`);
+        infoIdDiv.append(tooltip);
+
+        // add listeners to all the groups to display tooltip on mouseover
+        div.selectAll("g")
+            .on("mouseover", function (d, i) {
+                // sort all the areas relative to the current item
+                venn.sortAreas(div, d);
+
+                // Display a tooltip
+                tooltip.text(d.sets + " : " + d.size);
+
+                // highlight the current path
+                var selection = d3.select(this);
+                selection.select("path")
+                    .style("stroke-width", 3)
+                    .style("fill-opacity", d.sets.length == 1 ? .4 : .1)
+                    .style("stroke-opacity", 1);
+            })
+            .on("mouseout", function (d, i) {
+                // Display a tooltip with the current size
+                tooltip.text("");
+                var selection = d3.select(this);
+                selection.select("path")
+                    .style("stroke-width", 0)
+                    .style("fill-opacity", d.sets.length == 1 ? .25 : .0)
+                    .style("stroke-opacity", 0);
+            });
+    }
+
+    else {
+        infoIdDiv.append($(tableHtml));
+    }
+}
+
+function toggleAuxInfo(e, infoId) {
     if (e.value === '+') {
+        let r = recordsAuxMap[infoId];
+        showRepresentationInfo(r.aux.rule, infoId);
         e.value = '-'
     } else {
+        $(`#${infoId}`).empty();
         e.value = '+'
     }
 }
 
+const recordsAuxMap = {};
+
 /**
  * Generate rules statistics information and display it as modal dialog
  */
-function showInfo(edge) {
+function showInfoEdge(edge) {
     console.info("Information edge: " + edge.id);
     if (!edge.records) {
         return
@@ -390,7 +507,8 @@ function showInfo(edge) {
         }
         console.info("Rule: " + r.condition + "=>" + r.target);
         if (id in groupedRecordsMap) {
-            let infoId = `aux_${r.id}_${id}`.replace(new RegExp('[\\.:;\\(\\)\\[\\] ]', 'g'), "_");
+            let infoId = `aux_${r.id}_${id}`.replace(new RegExp('[@<>!\\.:;\\(\\)\\[\\] ]', 'g'), "_");
+            recordsAuxMap[infoId] = r;
             // Build html table
             html += groupedRecordsMap[id].map(r => `
 <tr>
@@ -406,14 +524,12 @@ function showInfo(edge) {
     <td>${r.confidence.toFixed(2)}</td>
     <td>${r.conviction.toFixed(2)}</td>
     <td>
-        <input type="button" data-toggle="collapse" data-target=#${infoId} onclick="toggleCollapseButton(this);" value="+"/>
+        <input type="button" onclick="toggleAuxInfo(this, '${infoId}');" value="+"/>
     </td>
 </tr>
 <tr>
     <td colspan="12">
-        <div id=${infoId} class="collapse" >
-    ${createAuxInfo(r.aux, r.target)} 
-        </div>
+        <div id="${infoId}"></div>
     </td>
 </tr>
 `).join("");
@@ -424,7 +540,7 @@ function showInfo(edge) {
     panel.empty();
     panel.append($(html));
     if (dialog.dialog('isOpen') !== true) {
-        dialog.dialog("option", "width", 1000);
+        dialog.dialog("option", "width", DIALOG_WIDTH);
     }
     dialog.dialog('open');
 }

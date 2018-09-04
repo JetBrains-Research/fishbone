@@ -26,6 +26,7 @@ Libraries
 * [Notify.js jQuery plugin](https://notifyjs.jpillora.com)
 * [Bootstrap](https://getbootstrap.com)
 * [Cytoscape JS](http://js.cytoscape.org)
+* [Venn.js](https://github.com/benfred/venn.js/)
 * [ASCII art](http://ascii.co.uk/art/fish)
 
 Authors

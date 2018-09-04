@@ -21,6 +21,7 @@
 #support-filter, #confidence-filter, #correlation-filter-min, #correlation-filter-max, #conviction-filter, #complexity-filter {
     width: 60px;
 }
+
 #show-top-filter {
     width: 70px;
 }
@@ -41,4 +42,13 @@
 #about {
     width: 900px;
     margin: 20px auto;
+}
+
+ul {
+    display: flex;
+    list-style: none;
+}
+
+#dialog {
+    max-height: 1000px;
 }

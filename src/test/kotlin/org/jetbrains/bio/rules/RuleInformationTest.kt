@@ -3,7 +3,6 @@ package org.jetbrains.bio.rules
 import org.jetbrains.bio.predicates.Predicate
 import org.junit.Assert
 import org.junit.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class RuleInformationTest {
@@ -129,7 +128,6 @@ class RuleInformationTest {
                 RangePredicate(4, 8))
         val database = 0.until(10).toList()
         val empirical = EmpiricalDistribution(database, ps)
-        assertEquals("0.2, 0.3, 0.9, 0.2, 0.3, 0.4", empirical.marginals().joinToString(", ") { "%.1f".format(it) })
         Assert.assertEquals(0.0, empirical.probability(mark(0, 1)), 1e-10)
         Assert.assertEquals(0.1, empirical.probability(mark(0, 1, 2)), 1e-10)
         Assert.assertEquals(0.0, empirical.probability(mark(0, 1, 2, 3)), 1e-10)
@@ -139,7 +137,6 @@ class RuleInformationTest {
         Assert.assertEquals(0.1, marginalP(empirical, mapOf(0 to true, 2 to false)), 1e-10)
 
         val independent = Distribution(database, ps)
-        assertEquals("0.2, 0.3, 0.9, 0.2, 0.3, 0.4", independent.marginals().joinToString(", ") { "%.1f".format(it) })
         Assert.assertEquals(0.002, independent.probability(mark(0, 1)), 1e-3)
         Assert.assertEquals(0.2, marginalP(independent, mapOf(0 to true)), 1e-10)
         Assert.assertEquals(0.3, marginalP(independent, mapOf(1 to true)), 1e-10)
@@ -181,7 +178,7 @@ class RuleInformationTest {
     private fun <T> marginalP(distribution: Distribution<T>, indices: Map<Int, Boolean>): Double {
         var v = 0L
         var p = 0.0
-        while (v < 1 shl distribution.atomics.size) {
+        while (v < 1 shl distribution.predicates.size) {
             var res = true
             indices.forEach { i, r ->
                 res = res && (r xor (v and (1L shl i) == 0L))

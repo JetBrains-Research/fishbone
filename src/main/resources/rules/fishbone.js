@@ -16,7 +16,10 @@ function renderFishBone() {
         layout: {name: 'preset'}
     });
     cy.on('tap', 'edge', function (evt) {
-        showInfo(evt.cyTarget.data());
+        showInfoEdge(evt.cyTarget.data());
+    });
+    cy.on('tap', 'node', function (evt) {
+        showInfoNode(evt.cyTarget.data());
     });
     cy.fit();
     spinner.stop();
@@ -110,9 +113,9 @@ function buildFishbone() {
         }
     }
 
-    function addNode(fish, n, x, y) {
-        console.info("NODE: " + fish + "-" + n);
-        const id = fish + "_" + nodeId + "_" + n;
+    function addNode(target, n, x, y) {
+        console.info("NODE: " + target + "-" + n);
+        const id = target + "_" + nodeId + "_" + n;
         nodeId += 1;
         let not_n = n.replace("NOT ", "");
         if (!(id in nodes)) {
