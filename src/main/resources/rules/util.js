@@ -332,6 +332,11 @@ function showInfoNode(node) {
     if (nodes[node.id].style.shape !== "polygon") {
         return
     }
+    if (complexity !== 1) {
+       $.notify('Primary effectors information is available for max complexity = 1',
+           {className: "error", position: 'bottom right'});
+        return
+    }
 
     const target = node.label;
     let infoId = `aux_${node.id}`.replace(new RegExp('[@<>!\\.:;\\(\\)\\[\\] ]', 'g'), "_");
@@ -358,7 +363,7 @@ function showInfoNode(node) {
         return
     }
     let dialog = $('#dialog');
-    dialog.dialog('option', 'title', `Pairwise combinations => ${target}`);
+    dialog.dialog('option', 'title', `Primary effectors combinations => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
         dialog.dialog("option", "width", DIALOG_WIDTH);
     }
