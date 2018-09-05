@@ -542,6 +542,7 @@ function showInfoEdge(edge) {
     if (dialog.dialog('isOpen') !== true) {
         dialog.dialog("option", "width", DIALOG_WIDTH);
     }
+    dialog.dialog("option", "width", "Rules information");
     dialog.dialog('open');
 }
 
