@@ -18,9 +18,8 @@ class RMLoggerTest {
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
         val database = 0.until(100).toList()
         val logger = RMLogger(null)
-        RM.mine("foo", database, listOf(predicates to RangePredicate(20, 50),
-                predicates to RangePredicate(30, 80)),
-                { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 5)
+        RM.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
+                { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2)
         assertEquals("""{
   "records": [
     {
