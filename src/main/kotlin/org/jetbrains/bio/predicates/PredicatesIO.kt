@@ -3,10 +3,10 @@ package org.jetbrains.bio.predicates
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.log4j.Logger
-import org.jetbrains.bio.statistics.data.BitterSet
-import org.jetbrains.bio.statistics.data.DataFrame
-import org.jetbrains.bio.statistics.data.DataFrameMapper
-import org.jetbrains.bio.statistics.data.DataFrameSpec
+import org.jetbrains.bio.dataframe.BitterSet
+import org.jetbrains.bio.dataframe.DataFrame
+import org.jetbrains.bio.dataframe.DataFrameMapper
+import org.jetbrains.bio.dataframe.DataFrameSpec
 import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter
