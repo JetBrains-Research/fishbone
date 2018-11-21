@@ -4,10 +4,15 @@ import junit.framework.TestCase
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.util.Retry
+import org.jetbrains.bio.util.RetryRule
 import org.jetbrains.bio.util.time
+import org.junit.Test
 import java.util.*
 
 class RMTest : TestCase() {
+    @get:org.junit.Rule
+    var rule = RetryRule(3)
 
     private fun <T> optimizeWithProbes(target: Predicate<T>,
                                        database: List<T>,
@@ -29,6 +34,8 @@ class RMTest : TestCase() {
         return 0.until(number).map { RangePredicate(it * dataSize / number, (it + 1) * dataSize / number) }
     }
 
+    @Retry
+    @Test
     fun testKL() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
@@ -87,9 +94,11 @@ class RMTest : TestCase() {
                 o[6].single().structure(database))
     }
 
+    @Retry
+    @Test
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
-        var database = (0..100).toList()
+        val database = (0..100).toList()
         val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = RM.CONVICTION_DELTA, klDelta = -1.0)
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
@@ -108,6 +117,8 @@ class RMTest : TestCase() {
         assertEquals("<[32;64)+c6.65kl0.00>", r10.structure(database))
     }
 
+    @Retry
+    @Test
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         var database = (0..100).toList()
@@ -134,6 +145,8 @@ class RMTest : TestCase() {
         }
     }
 
+    @Retry
+    @Test
     fun testOptimize() {
         val predicates = predicates(10, 100)
         listOf(100, 1000, 5000).forEach { size ->
