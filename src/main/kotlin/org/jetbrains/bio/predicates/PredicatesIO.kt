@@ -1,9 +1,13 @@
 package org.jetbrains.bio.predicates
 
+import com.google.common.annotations.VisibleForTesting
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.log4j.Logger
-import org.jetbrains.bio.dataframe.*
+import org.jetbrains.bio.dataframe.BitterSet
+import org.jetbrains.bio.dataframe.DataFrame
+import org.jetbrains.bio.dataframe.DataFrameMappers
+import org.jetbrains.bio.dataframe.DataFrameSpec
 import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter
@@ -12,7 +16,8 @@ import java.util.*
 
 
 object PredicatesIO {
-    private val LOG = Logger.getLogger(PredicatesIO::class.java)
+    @VisibleForTesting
+    internal val LOG = Logger.getLogger(PredicatesIO::class.java)
 
     private const val INDEX_KEY = "index"
     private const val NOT = "NOT: "

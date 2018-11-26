@@ -1,12 +1,11 @@
 package org.jetbrains.bio.predicates
 
-import org.apache.log4j.Level
-import org.jetbrains.bio.Logs
+import org.apache.log4j.SimpleLayout
+import org.apache.log4j.WriterAppender
 import org.jetbrains.bio.util.withTempFile
 import org.junit.After
 import org.junit.Test
 import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -55,27 +54,30 @@ class PredicatesIOTest {
 
     @Test
     fun testLoadedPredicatesDatabaseCheck() {
-        val stream = ByteArrayOutputStream()
-        System.setOut(PrintStream(stream))
-        // Update logging
-        Logs.addConsoleAppender(Level.INFO)
-        val predicates = listOf<Predicate<Int>>(object : Predicate<Int>() {
-            override fun test(item: Int): Boolean = true
-            override fun name(): String = "True"
-        })
-        val database = listOf(1, 2, 3, 4, 5)
-        withTempFile("predicates", ".tsv") {
-            PredicatesIO.savePredicates(it, database, predicates, Int::toString)
-            val (loadedDb, loaded) = PredicatesIO.loadPredicates(it, String::toInt)
-            assertEquals(5, loaded.first().test(database).cardinality())
-            assertTrue("Loaded predicate should be checked against loaded database for performance reasons" in String(stream.toByteArray()))
-
-            val stream = ByteArrayOutputStream()
-            System.setOut(PrintStream(stream))
-            // Update logging
-            Logs.addConsoleAppender(Level.INFO)
-            assertEquals(5, loaded.first().test(loadedDb).cardinality())
-            assertFalse("Loaded predicate should be checked against loaded database for performance reasons" in String(stream.toByteArray()))
+        val logContent1 = ByteArrayOutputStream()
+        val logContent2 = ByteArrayOutputStream()
+        val appender1 = WriterAppender(SimpleLayout(), logContent1).apply { name = "test appender1" }
+        val appender2 = WriterAppender(SimpleLayout(), logContent2).apply { name = "test appender2" }
+        try {
+            val predicates = listOf<Predicate<Int>>(object : Predicate<Int>() {
+                override fun test(item: Int): Boolean = true
+                override fun name(): String = "True"
+            })
+            val database = listOf(1, 2, 3, 4, 5)
+            withTempFile("predicates", ".tsv") {
+                PredicatesIO.LOG.addAppender(appender1)
+                PredicatesIO.savePredicates(it, database, predicates, Int::toString)
+                val (loadedDb, loaded) = PredicatesIO.loadPredicates(it, String::toInt)
+                assertEquals(5, loaded.first().test(database).cardinality())
+                assertTrue("Loaded predicate should be checked against loaded database for performance reasons" in logContent1.toString())
+                PredicatesIO.LOG.removeAppender(appender1)
+                PredicatesIO.LOG.addAppender(appender2)
+                assertEquals(5, loaded.first().test(loadedDb).cardinality())
+                assertFalse("Loaded predicate should be checked against loaded database for performance reasons" in logContent2.toString())
+            }
+        } finally {
+            PredicatesIO.LOG.removeAppender(appender1)
+            PredicatesIO.LOG.removeAppender(appender2)
         }
     }
 
