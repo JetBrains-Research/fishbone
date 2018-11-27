@@ -151,7 +151,7 @@ object PredicatesIO {
             if (items === database) {
                 return positives
             }
-            LOG.warn("Loaded predicate should be checked against loaded database for performance reasons")
+            LOG.debug("Loaded predicate should be checked against loaded database for performance reasons")
             return super.test(items)
         }
 
