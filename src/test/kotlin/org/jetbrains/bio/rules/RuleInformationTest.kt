@@ -1,5 +1,6 @@
 package org.jetbrains.bio.rules
 
+import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.junit.Assert
 import org.junit.Test
@@ -27,7 +28,7 @@ class RuleInformationTest {
             for (target in predicates.filter { it != condition }) {
                 val ps = listOf(condition, target)
                 listOf(100, 1000, 100000).forEach { size ->
-                    println("Database: $size condition: ${condition.name()} target: ${target.name()}")
+                    LOG.debug("Database: $size condition: ${condition.name()} target: ${target.name()}")
                     val database = (0.until(size)).toList()
                     val rule = Rule(condition, target, database)
                     val empirical = EmpiricalDistribution(database, ps)
@@ -37,7 +38,7 @@ class RuleInformationTest {
                     val klI = KL(empirical, independent)
                     val klL = KL(empirical, learn)
                     val dKL = klL - klI
-                    println("H(Empirical): ${empirical.H()}\tH(Independent): ${independent.H()}\tKL: $klI\tH(rule): ${learn.H()}\tKL(rule): $klL\tdH: $dH\tdKL: $dKL")
+                    LOG.debug("H(Empirical): ${empirical.H()}\tH(Independent): ${independent.H()}\tKL: $klI\tH(rule): ${learn.H()}\tKL(rule): $klL\tdH: $dH\tdKL: $dKL")
                     Assert.assertEquals("dHdKL", dH, dKL, 1e-10)
 
                     // Probe predicate
@@ -49,7 +50,7 @@ class RuleInformationTest {
                     val klL2 = KL(empirical2, learn2)
                     val klI2 = KL(empirical2, independent2)
                     val dKL2 = klL2 - klI2
-                    println("H(Empirical(+probe)): ${empirical2.H()}\tH(Independent): ${independent2.H()}\tKL: $klI2\tH(rule): ${learn2.H()}\tKL(rule): $klL2\tdH: $dH2\tdKL: $dKL2")
+                    LOG.debug("H(Empirical(+probe)): ${empirical2.H()}\tH(Independent): ${independent2.H()}\tKL: $klI2\tH(rule): ${learn2.H()}\tKL(rule): $klL2\tdH: $dH2\tdKL: $dKL2")
                     Assert.assertEquals("dH2", dH, dH2, 1e-10)
                     Assert.assertEquals("dKL2", dKL, dKL2, 1e-10)
 
@@ -65,7 +66,7 @@ class RuleInformationTest {
                     val klL3 = KL(empirical3, learn3)
                     val klI3 = KL(empirical3, independent3)
                     val dKL3 = klL3 - klI3
-                    println("H(Empirical(+div3)): ${empirical3.H()}\tH(Independent): ${independent3.H()}\tKL: $klI3\tH(rule): ${learn3.H()}\tKL(rule): $klL3\tdH: $dH3\tdKL: $dKL3")
+                    LOG.debug("H(Empirical(+div3)): ${empirical3.H()}\tH(Independent): ${independent3.H()}\tKL: $klI3\tH(rule): ${learn3.H()}\tKL(rule): $klL3\tdH: $dH3\tdKL: $dKL3")
                     Assert.assertEquals("dH3", dH, dH3, 1e-10)
                     Assert.assertEquals("dKL3", dKL, dKL3, 1e-10)
 
@@ -81,7 +82,7 @@ class RuleInformationTest {
                     val klL4 = KL(empirical4, learn4)
                     val klI4 = KL(empirical4, independent4)
                     val dKL4 = klL4 - klI4
-                    println("H(Empirical(x2+probe+div3)): ${empirical4.H()}\tH(Independent): ${independent4.H()}\tKL: $klI4\tH(rule): ${learn4.H()}\tKL(rule): $klL4\tdH: $dH4\tdKL: $dKL4")
+                    LOG.debug("H(Empirical(x2+probe+div3)): ${empirical4.H()}\tH(Independent): ${independent4.H()}\tKL: $klI4\tH(rule): ${learn4.H()}\tKL(rule): $klL4\tdH: $dH4\tdKL: $dKL4")
                     Assert.assertEquals("dH4", dH, dH4, 1e-10)
                     Assert.assertEquals("dKL4", dKL, dKL4, 1e-10)
                 }
@@ -101,7 +102,7 @@ class RuleInformationTest {
         for (condition in ps) {
             for (target in ps) {
                 listOf(1000, 10000, 50000).forEach { size ->
-                    println("Database: $size condition: ${condition.name()} target: ${target.name()}")
+                    LOG.debug("Database: $size condition: ${condition.name()} target: ${target.name()}")
                     val database = 0.until(size).toList()
                     val rule = Rule(condition, target, database)
                     val model = Distribution(database, ps)
@@ -158,7 +159,7 @@ class RuleInformationTest {
             for (target in predicates.filter { it != condition }) {
                 val ps = listOf(condition, target)
                 listOf(100, 1000, 100000).forEach { size ->
-                    println("Database: $size condition: ${condition.name()} target: ${target.name()}")
+                    LOG.debug("Database: $size condition: ${condition.name()} target: ${target.name()}")
                     val database = (0.until(size)).toList()
                     val rule = Rule(condition, target, database)
                     val empirical = EmpiricalDistribution(database, ps)
@@ -189,5 +190,8 @@ class RuleInformationTest {
             v++
         }
         return p
+    }
+    companion object {
+        private val LOG = Logger.getLogger(RuleInformationTest::class.java)
     }
 }

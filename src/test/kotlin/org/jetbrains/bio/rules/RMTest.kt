@@ -49,7 +49,7 @@ class RMTest : TestCase() {
                 val condition = optimizeWithProbes(target, database, predicates, maxComplexity = c).element
                 val rule = Rule(condition, target, database)
                 val newKL = KL(empiricalDistribution, independent.learn(rule))
-                LOG.info("Complexity: $c\tRule: ${rule.name}\tKL: $newKL\tDelta KL: ${newKL - kl}")
+                LOG.debug("Complexity: $c\tRule: ${rule.name}\tKL: $newKL\tDelta KL: ${newKL - kl}")
                 // Fix floating point errors
                 assert(newKL <= kl + 1e-10)
                 kl = newKL
