@@ -30,7 +30,6 @@ class BPQTest : TestCase() {
         val data = 0.until(100).toList()
         val p1 = RangePredicate(0, 9).named("1")
         val p2 = RangePredicate(9, 20).named("2")
-        val p3 = RangePredicate(20, 40).named("3")
         val t = RangePredicate(0, 40).named("t")
 
         val queue = RM.BPQ(100, data, 0.0, 0.0)
