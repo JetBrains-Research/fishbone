@@ -2,18 +2,20 @@ package org.jetbrains.bio.rules
 
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.predicates.ProbePredicate
+import org.jetbrains.bio.rules.Distribution.Companion.kullbackLeibler
 import org.junit.Assert
 import org.junit.Test
 import kotlin.test.assertTrue
 
-class RuleInformationTest {
+class DistributionsTest {
 
     /**
      * Test that checks that even though independent predicate change distribution information,
      * delta in information obtained by learning new rule is the same.
-     * The same is true for delta in KL.
+     * The same is true for delta in kullbackLeibler.
      * This is the main idea of information based rule mining.
-     * See [RMTest.testKL] for check that predicates reduce KL divergence.
+     * See [RulesMinerTest.testKL] for check that predicates reduce kullbackLeibler divergence.
      */
     @Test
     fun testIndependenceRuleLearning() {
@@ -35,10 +37,11 @@ class RuleInformationTest {
                     val independent = Distribution(database, ps)
                     val learn = independent.learn(rule)
                     val dH = learn.H() - independent.H()
-                    val klI = KL(empirical, independent)
-                    val klL = KL(empirical, learn)
+                    val klI = kullbackLeibler(empirical, independent)
+                    val klL = kullbackLeibler(empirical, learn)
                     val dKL = klL - klI
-                    LOG.debug("H(Empirical): ${empirical.H()}\tH(Independent): ${independent.H()}\tKL: $klI\tH(rule): ${learn.H()}\tKL(rule): $klL\tdH: $dH\tdKL: $dKL")
+                    LOG.debug("H(Empirical): ${empirical.H()}\tH(Independent): ${independent.H()}\t" +
+                            "KL: $klI\tH(rule): ${learn.H()}\tKL(rule): $klL\tdH: $dH\tdKL: $dKL")
                     Assert.assertEquals("dHdKL", dH, dKL, 1e-10)
 
                     // Probe predicate
@@ -47,10 +50,11 @@ class RuleInformationTest {
                     val independent2 = Distribution(database, ps + probe)
                     val learn2 = independent2.learn(rule)
                     val dH2 = learn2.H() - independent2.H()
-                    val klL2 = KL(empirical2, learn2)
-                    val klI2 = KL(empirical2, independent2)
+                    val klL2 = kullbackLeibler(empirical2, learn2)
+                    val klI2 = kullbackLeibler(empirical2, independent2)
                     val dKL2 = klL2 - klI2
-                    LOG.debug("H(Empirical(+probe)): ${empirical2.H()}\tH(Independent): ${independent2.H()}\tKL: $klI2\tH(rule): ${learn2.H()}\tKL(rule): $klL2\tdH: $dH2\tdKL: $dKL2")
+                    LOG.debug("H(Empirical(+probe)): ${empirical2.H()}\tH(Independent): ${independent2.H()}\t" +
+                            "KL: $klI2\tH(rule): ${learn2.H()}\tKL(rule): $klL2\tdH: $dH2\tdKL: $dKL2")
                     Assert.assertEquals("dH2", dH, dH2, 1e-10)
                     Assert.assertEquals("dKL2", dKL, dKL2, 1e-10)
 
@@ -63,26 +67,28 @@ class RuleInformationTest {
                     val independent3 = Distribution(database, ps + div3)
                     val learn3 = independent3.learn(rule)
                     val dH3 = learn3.H() - independent3.H()
-                    val klL3 = KL(empirical3, learn3)
-                    val klI3 = KL(empirical3, independent3)
+                    val klL3 = kullbackLeibler(empirical3, learn3)
+                    val klI3 = kullbackLeibler(empirical3, independent3)
                     val dKL3 = klL3 - klI3
-                    LOG.debug("H(Empirical(+div3)): ${empirical3.H()}\tH(Independent): ${independent3.H()}\tKL: $klI3\tH(rule): ${learn3.H()}\tKL(rule): $klL3\tdH: $dH3\tdKL: $dKL3")
+                    LOG.debug("H(Empirical(+div3)): ${empirical3.H()}\tH(Independent): ${independent3.H()}\t" +
+                            "KL: $klI3\tH(rule): ${learn3.H()}\tKL(rule): $klL3\tdH: $dH3\tdKL: $dKL3")
                     Assert.assertEquals("dH3", dH, dH3, 1e-10)
                     Assert.assertEquals("dKL3", dKL, dKL3, 1e-10)
 
                     // Check that we observe the same dKL for dependent predicates
                     // IMPORTANT: Jensen-Shannon distance doesn't work here, otherwise we'll use JSD.
-                    // Jensen-Shannon distance is based on the KL divergence, with some notable (and useful) differences,
+                    // Jensen-Shannon distance is based on the kullbackLeibler divergence, with some notable (and useful) differences,
                     // including that it is symmetric and it is always a finite value.
                     // https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
                     val empirical4 = EmpiricalDistribution(database, ps + ps + probe + div3)
                     val independent4 = Distribution(database, ps + ps + probe + div3)
                     val learn4 = independent4.learn(rule)
                     val dH4 = learn4.H() - independent4.H()
-                    val klL4 = KL(empirical4, learn4)
-                    val klI4 = KL(empirical4, independent4)
+                    val klL4 = kullbackLeibler(empirical4, learn4)
+                    val klI4 = kullbackLeibler(empirical4, independent4)
                     val dKL4 = klL4 - klI4
-                    LOG.debug("H(Empirical(x2+probe+div3)): ${empirical4.H()}\tH(Independent): ${independent4.H()}\tKL: $klI4\tH(rule): ${learn4.H()}\tKL(rule): $klL4\tdH: $dH4\tdKL: $dKL4")
+                    LOG.debug("H(Empirical(x2+probe+div3)): ${empirical4.H()}\tH(Independent): ${independent4.H()}\t" +
+                            "KL: $klI4\tH(rule): ${learn4.H()}\tKL(rule): $klL4\tdH: $dH4\tdKL: $dKL4")
                     Assert.assertEquals("dH4", dH, dH4, 1e-10)
                     Assert.assertEquals("dKL4", dKL, dKL4, 1e-10)
                 }
@@ -109,9 +115,9 @@ class RuleInformationTest {
                     val learn = model.learn(rule)
                     val relearn = learn.learn(rule)
                     Assert.assertEquals(learn.H(), relearn.H(), 1e-10)
-                    Assert.assertEquals(0.0, KL(relearn, learn), 1e-10)
-                    val klLearn = KL(learn, model)
-                    val klRelearn = KL(relearn, model)
+                    Assert.assertEquals(0.0, kullbackLeibler(relearn, learn), 1e-10)
+                    val klLearn = kullbackLeibler(learn, model)
+                    val klRelearn = kullbackLeibler(relearn, model)
                     Assert.assertEquals(klLearn, klRelearn, 1e-10)
                 }
             }
@@ -129,16 +135,16 @@ class RuleInformationTest {
                 RangePredicate(4, 8))
         val database = 0.until(10).toList()
         val empirical = EmpiricalDistribution(database, ps)
-        Assert.assertEquals(0.0, empirical.probability(mark(0, 1)), 1e-10)
-        Assert.assertEquals(0.1, empirical.probability(mark(0, 1, 2)), 1e-10)
-        Assert.assertEquals(0.0, empirical.probability(mark(0, 1, 2, 3)), 1e-10)
+        Assert.assertEquals(0.0, empirical.probability(encode(0, 1)), 1e-10)
+        Assert.assertEquals(0.1, empirical.probability(encode(0, 1, 2)), 1e-10)
+        Assert.assertEquals(0.0, empirical.probability(encode(0, 1, 2, 3)), 1e-10)
         Assert.assertEquals(0.2, marginalP(empirical, mapOf(0 to true)), 1e-10)
         Assert.assertEquals(0.3, marginalP(empirical, mapOf(1 to true)), 1e-10)
         Assert.assertEquals(0.2, marginalP(empirical, mapOf(1 to true, 3 to true)), 1e-10)
         Assert.assertEquals(0.1, marginalP(empirical, mapOf(0 to true, 2 to false)), 1e-10)
 
         val independent = Distribution(database, ps)
-        Assert.assertEquals(0.002, independent.probability(mark(0, 1)), 1e-3)
+        Assert.assertEquals(0.002, independent.probability(encode(0, 1)), 1e-3)
         Assert.assertEquals(0.2, marginalP(independent, mapOf(0 to true)), 1e-10)
         Assert.assertEquals(0.3, marginalP(independent, mapOf(1 to true)), 1e-10)
         Assert.assertEquals(0.06, marginalP(independent, mapOf(1 to true, 3 to true)), 1e-10)
@@ -165,33 +171,34 @@ class RuleInformationTest {
                     val empirical = EmpiricalDistribution(database, ps)
                     val independent = Distribution(database, ps)
                     val learn = independent.learn(rule)
-                    val kl = KL(empirical, learn)
+                    val kl = kullbackLeibler(empirical, learn)
                     assertTrue(kl >= 0)
                 }
             }
         }
     }
 
-    private fun mark(vararg indices: Int): Long {
-        return indices.fold(0L) { a, b -> a or (1L shl b) }
+    private fun encode(vararg indices: Int): Int {
+        return indices.fold(0) { a, b -> a or (1 shl b) }
     }
 
     private fun <T> marginalP(distribution: Distribution<T>, indices: Map<Int, Boolean>): Double {
-        var v = 0L
+        var encoding = 0
         var p = 0.0
-        while (v < 1 shl distribution.predicates.size) {
+        while (encoding < 1 shl distribution.predicates.size) {
             var res = true
             indices.forEach { i, r ->
-                res = res && (r xor (v and (1L shl i) == 0L))
+                res = res && (r xor (encoding and (1 shl i) == 0))
             }
             if (res) {
-                p += distribution.probability(v)
+                p += distribution.probability(encoding)
             }
-            v++
+            encoding++
         }
         return p
     }
+
     companion object {
-        private val LOG = Logger.getLogger(RuleInformationTest::class.java)
+        private val LOG = Logger.getLogger(DistributionsTest::class.java)
     }
 }

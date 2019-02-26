@@ -61,8 +61,7 @@ class RuleTest : TestCase() {
             val score = rule(dataSize, c, t, s).conviction
             val delta = score - prevScore
             assert(delta > 0) {
-                listOf(dataSize, c, t, s)
-                        .map(Int::toString).joinToString(", ")
+                listOf(dataSize, c, t, s).joinToString(", ", transform = Int::toString)
             }
             prevScore = score
             c += deltaCondition

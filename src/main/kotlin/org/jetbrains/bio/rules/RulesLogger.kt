@@ -14,11 +14,11 @@ import java.nio.file.Path
 /**
  * Class to log predicates or trees to csv and json suitable for rules_browser rendering
  */
-class RMLogger(val path: Path?, vararg params: String) {
+class RulesLogger(val path: Path?, vararg params: String) {
     private val extraParams: Array<out String> = params
 
     companion object {
-        private val LOG = Logger.getLogger(RMLogger::class.java)
+        private val LOG = Logger.getLogger(RulesLogger::class.java)
     }
 
     private val graphRecords = LinkedHashSet<Map<String, Any?>>()
@@ -31,10 +31,10 @@ class RMLogger(val path: Path?, vararg params: String) {
     }
 
     @Synchronized
-    fun log(id: String, tree: List<RM.Node<*>>) {
+    fun log(id: String, tree: List<RulesMiner.Node<*>>) {
         val visited = hashSetOf<String>()
         tree.forEach { n ->
-            var node: RM.Node<*>? = n
+            var node: RulesMiner.Node<*>? = n
             while (node != null) {
                 val rule = node.rule
                 val r = rule.toRecord(id = id)

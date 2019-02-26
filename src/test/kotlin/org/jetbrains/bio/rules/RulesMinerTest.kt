@@ -4,13 +4,15 @@ import junit.framework.TestCase
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.predicates.ProbePredicate
+import org.jetbrains.bio.rules.Distribution.Companion.kullbackLeibler
 import org.jetbrains.bio.util.Retry
 import org.jetbrains.bio.util.RetryRule
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import java.util.*
 
-class RMTest : TestCase() {
+class RulesMinerTest : TestCase() {
     @get:org.junit.Rule
     var rule = RetryRule(3)
 
@@ -18,14 +20,16 @@ class RMTest : TestCase() {
                                        database: List<T>,
                                        conditions: List<Predicate<T>>,
                                        maxComplexity: Int = 10,
-                                       topResults: Int = RM.TOP_PER_COMPLEXITY,
-                                       convictionDelta: Double = RM.CONVICTION_DELTA,
-                                       klDelta: Double = RM.KL_DELTA): RM.Node<T> {
+                                       topPerComplexity: Int = RulesMiner.TOP_PER_COMPLEXITY,
+                                       topLevelToPredicatesInfo: Int = RulesMiner.TOP_LEVEL_PREDICATES_INFO,
+                                       convictionDelta: Double = RulesMiner.CONVICTION_DELTA,
+                                       klDelta: Double = RulesMiner.KL_DELTA): RulesMiner.Node<T> {
         // 10% of predicates are probes
         val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
-        return RM.optimize(conditions + probes, target, database,
+        return RulesMiner.mine(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
-                topPerComplexity = topResults,
+                topPerComplexity = topPerComplexity,
+                topLevelToPredicatesInfo = topLevelToPredicatesInfo,
                 convictionDelta = convictionDelta,
                 klDelta = klDelta).first()
     }
@@ -48,7 +52,7 @@ class RMTest : TestCase() {
             for (c in 1..5) {
                 val condition = optimizeWithProbes(target, database, predicates, maxComplexity = c).element
                 val rule = Rule(condition, target, database)
-                val newKL = KL(empiricalDistribution, independent.learn(rule))
+                val newKL = kullbackLeibler(empiricalDistribution, independent.learn(rule))
                 LOG.debug("Complexity: $c\tRule: ${rule.name}\tKL: $newKL\tDelta KL: ${newKL - kl}")
                 // Fix floating point errors
                 assert(newKL <= kl + 1e-10)
@@ -57,13 +61,15 @@ class RMTest : TestCase() {
         }
     }
 
-    private fun <T> RM.Node<T>.structure(database: List<T>, logConviction: Boolean = true, logKL: Boolean = true): String {
+    private fun <T> RulesMiner.Node<T>.structure(database: List<T>,
+                                                 logConviction: Boolean = true,
+                                                 logKL: Boolean = true): String {
         val result = arrayListOf<String>()
-        var node: RM.Node<T>? = this
+        var node: RulesMiner.Node<T>? = this
         val atomics = (rule.conditionPredicate.collectAtomics() + rule.targetPredicate.collectAtomics()).toList()
         val empirical = EmpiricalDistribution(database, atomics)
         val independent = Distribution(database, atomics)
-        val kl = KL(empirical, independent)
+        val kl = kullbackLeibler(empirical, independent)
         while (node != null) {
             result.add("<${node.element.name()}" +
                     (if (logConviction) "+c${String.format("%.2f", if (node.parent != null)
@@ -71,7 +77,7 @@ class RMTest : TestCase() {
                     else
                         node.rule.conviction)}" else "") +
                     (if (logKL) "kl${
-                    String.format("%.2f", KL(empirical, independent.learn(node.rule)) / kl)
+                    String.format("%.2f", kullbackLeibler(empirical, independent.learn(node.rule)) / kl)
                     }" else "") + ">")
             node = node.parent
         }
@@ -79,9 +85,12 @@ class RMTest : TestCase() {
     }
 
     fun testOptimizationStructureDefaultParams() {
-        val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
+        val predicates = (0..5).map {
+            RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt())
+        }
         val database = (0..100).toList()
-        val o = RM.optimizeByComplexity(predicates, RangePredicate(0, 80), database, maxComplexity = 6, topPerComplexity = 3)
+        val o = RulesMiner.mineByComplexity(predicates, RangePredicate(0, 80),
+                database, maxComplexity = 6, topPerComplexity = 3)
         assertEquals("[32;64), [16;32), [8;16)",
                 o[1].reversed().joinToString(", ") { it.rule.conditionPredicate.name() })
         assertEquals("[16;32) OR [32;64), [32;64) OR [8;16), [32;64) OR [4;8)",
@@ -99,7 +108,8 @@ class RMTest : TestCase() {
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         val database = (0..100).toList()
-        val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = RM.CONVICTION_DELTA, klDelta = -1.0)
+        val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates,
+                convictionDelta = RulesMiner.CONVICTION_DELTA, klDelta = -1.0)
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
                 r0.structure(database))
@@ -123,8 +133,8 @@ class RMTest : TestCase() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
         var database = (0..100).toList()
         assertEquals("<[32;64)+c6.65kl0.79>,<[16;32)+c3.33kl0.62>,<[8;16)+c1.66kl0.50>,<[4;8)+c0.83kl0.42>,<[2;4)+c0.42kl0.38>,<[1;2)+c0.21kl0.35>",
-                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA).structure(database))
-        // NOTE that [4;8) is placed before [16;32), this is result of high KL delta
+                optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RulesMiner.KL_DELTA).structure(database))
+        // NOTE that [4;8) is placed before [16;32), this is result of high kullbackLeibler delta
         assertEquals("<[32;64)+c6.65kl0.76>,<[4;8)+c0.83kl0.72>,<[16;32)+c3.33kl0.51>,<[8;16)+c1.66kl0.35>",
                 optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1).structure(database))
         assertEquals("<[32;64)+c6.65kl0.00>",
@@ -133,9 +143,9 @@ class RMTest : TestCase() {
         listOf(500, 1000, 100000).forEach { size ->
             database = (0..size).toList()
             assertEquals("<[32;64)>,<[16;32)>,<[8;16)>,<[4;8)>,<[2;4)>,<[1;2)>",
-                    optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RM.KL_DELTA)
+                    optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = RulesMiner.KL_DELTA)
                             .structure(database, logConviction = false, logKL = false))
-            // NOTE that [4;8) is placed before [16;32), this is result of high KL delta
+            // NOTE that [4;8) is placed before [16;32), this is result of high kullbackLeibler delta
             assertEquals("<[32;64)>,<[4;8)>,<[16;32)>,<[8;16)>",
                     optimizeWithProbes(RangePredicate(0, 80), database, predicates, convictionDelta = 0.0, klDelta = 0.1)
                             .structure(database, logConviction = false, logKL = false))
@@ -179,7 +189,7 @@ class RMTest : TestCase() {
             val solutionX = Predicate.and(order.subList(0, order.size - 1))
             val bestRule = Rule(solutionX, target, database)
             LOG.info("Best rule ${bestRule.name}")
-            val correctOrderRule = RM.optimize(order, target, database, maxComplexity = 20).first().rule
+            val correctOrderRule = RulesMiner.mine(order, target, database, maxComplexity = 20).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (correctOrderRule.conviction > bestRule.conviction) {
                 fail("Best rule is not optimal.")
@@ -187,7 +197,7 @@ class RMTest : TestCase() {
 
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
-                    val rule = RM.optimize(order, target, database, maxComplexity = 20,
+                    val rule = RulesMiner.mine(order, target, database, maxComplexity = 20,
                             topPerComplexity = maxTop).first().rule
                     LOG.debug("RuleNode (top=$top): ${rule.name}")
                     assertTrue(rule.conviction >= bestRule.conviction)
@@ -201,7 +211,7 @@ class RMTest : TestCase() {
         val predicates = listOf(RangePredicate(20, 35), RangePredicate(35, 48)) +
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
         val database = 0.until(100).toList()
-        val optimize = RM.optimize(predicates, RangePredicate(20, 50), database, maxComplexity = 3, topPerComplexity = 3)
+        val optimize = RulesMiner.mine(predicates, RangePredicate(20, 50), database, maxComplexity = 3, topPerComplexity = 3)
         assertEquals(listOf("[20;35) OR [35;48) OR [40;50)", "[20;35) OR [30;40) OR [40;50)", "[20;35) OR [35;48)"),
                 optimize.take(3).map { it.rule.conditionPredicate.name() })
         assertEquals(3 * 3, optimize.size)
@@ -209,7 +219,7 @@ class RMTest : TestCase() {
 
 
     companion object {
-        internal val LOG = Logger.getLogger(RMTest::class.java)
+        internal val LOG = Logger.getLogger(RulesMinerTest::class.java)
     }
 }
 
@@ -230,7 +240,7 @@ class RangePredicate(private val start: Int, private val end: Int) : Predicate<I
 }
 
 fun <T> Predicate<T>.named(name: String): Predicate<T> {
-    RMTest.LOG.info("$name = ${this.name()}")
+    RulesMinerTest.LOG.info("$name = ${this.name()}")
     return object : Predicate<T>() {
         override fun test(item: T) = this@named.test(item)
         override fun name() = name
