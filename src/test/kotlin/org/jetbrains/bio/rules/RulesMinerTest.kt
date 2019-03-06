@@ -6,15 +6,11 @@ import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.predicates.ProbePredicate
 import org.jetbrains.bio.rules.Distribution.Companion.kullbackLeibler
-import org.jetbrains.bio.util.Retry
-import org.jetbrains.bio.util.RetryRule
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import java.util.*
 
 class RulesMinerTest : TestCase() {
-    @get:org.junit.Rule
-    var rule = RetryRule(3)
 
     private fun <T> optimizeWithProbes(target: Predicate<T>,
                                        database: List<T>,
@@ -38,7 +34,6 @@ class RulesMinerTest : TestCase() {
         return 0.until(number).map { RangePredicate(it * dataSize / number, (it + 1) * dataSize / number) }
     }
 
-    @Retry
     @Test
     fun testKL() {
         val predicates = predicates(10, 100)
@@ -103,7 +98,6 @@ class RulesMinerTest : TestCase() {
                 o[6].single().structure(database))
     }
 
-    @Retry
     @Test
     fun testOptimizeConvictionDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
@@ -127,7 +121,6 @@ class RulesMinerTest : TestCase() {
         assertEquals("<[32;64)+c6.65kl0.00>", r10.structure(database))
     }
 
-    @Retry
     @Test
     fun testOptimizeKLDelta() {
         val predicates = (0..5).map { RangePredicate(Math.pow(2.0, it.toDouble()).toInt(), Math.pow(2.0, it.toDouble() + 1).toInt()) }
@@ -155,7 +148,6 @@ class RulesMinerTest : TestCase() {
         }
     }
 
-    @Retry
     @Test
     fun testOptimize() {
         val predicates = predicates(10, 100)
