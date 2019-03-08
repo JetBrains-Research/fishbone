@@ -1,0 +1,78 @@
+buildscript {
+    ext.kotlin_version = '1.3.21'
+
+    repositories {
+        maven { url "https://cache-redirector.jetbrains.com/repo1.maven.org/maven2" }
+        maven { url "https://cache-redirector.jetbrains.com/jcenter.bintray.com" }
+
+        // In case of issues with cache redirector:
+        // jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id 'com.jfrog.bintray' version '1.6'
+}
+
+repositories {
+    jcenter()
+}
+
+apply plugin: 'kotlin'
+
+sourceCompatibility = 1.8
+targetCompatibility = sourceCompatibility
+compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
+compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
+
+dependencies {
+    compile 'com.google.guava:guava:23.6.1-jre'
+    compile 'net.sf.trove4j:trove4j:3.0.3'
+    compile 'org.apache.commons:commons-csv:1.4'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'log4j:log4j:1.2.17'
+
+    compile 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    compile 'org.apache.commons:commons-math3:3.6.1'
+    compile 'commons-net:commons-net:3.5'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.11'
+
+    compile files("$rootDir/lib/bioinf-commons-0.0.1.jar")
+
+    compile 'org.jetbrains.bio:npy:0.3.3'
+
+    testCompile 'org.jetbrains.bio:npy:0.3.3'
+
+    testCompile 'junit:junit:4.12'
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+}
+
+
+tasks.withType(Test) {
+    // Continue execution even if tests for some of the
+    // sub-projects failed.
+    ignoreFailures = true
+    maxParallelForks = Runtime.runtime.availableProcessors()
+    maxHeapSize = "1024m"
+
+    testLogging.showStandardStreams = true
+
+    systemProperty "teamcity.build.checkoutDir", System.getProperty("teamcity.build.checkoutDir")
+}
+
+test {
+    include '**/*Test.class'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.10'
+}
