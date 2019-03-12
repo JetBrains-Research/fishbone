@@ -16,6 +16,7 @@ buildscript {
 }
 
 repositories {
+    maven { url "https://dl.bintray.com/jetbrains-research/maven" }
     jcenter()
 }
 
@@ -43,9 +44,8 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.11'
 
-    compile files("$rootDir/lib/bioinf-commons-0.0.1.jar")
-
     compile 'org.jetbrains.bio:npy:0.3.3'
+    compile 'org.jetbrains.bio:bioinf-commons:0.0.1'
 
     testCompile 'org.jetbrains.bio:npy:0.3.3'
 
@@ -98,6 +98,6 @@ jar {
     }
 }
 
-task wrapper(type: Wrapper, overwrite: true) {
+task wrapper(type: Wrapper) {
     gradleVersion = '4.10'
 }
