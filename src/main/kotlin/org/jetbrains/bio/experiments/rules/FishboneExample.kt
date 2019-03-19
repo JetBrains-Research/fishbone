@@ -4,15 +4,18 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.Logger
-import org.jetbrains.bio.dataset.*
+import org.jetbrains.bio.dataset.CellId
+import org.jetbrains.bio.dataset.DataConfig
+import org.jetbrains.bio.dataset.DataType
+import org.jetbrains.bio.genome.Genome
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
 import org.jetbrains.bio.genome.downloadTo
+import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
-import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.util.*
 import java.awt.Color
 import java.time.LocalDateTime
@@ -77,7 +80,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
     companion object {
         private val LOG = Logger.getLogger(FishboneExample::class.java)
 
-        val genomeQuery = GenomeQuery("hg19")
+        val genomeQuery = GenomeQuery(Genome["hg19"])
 
         @Throws(Exception::class)
         @JvmStatic
