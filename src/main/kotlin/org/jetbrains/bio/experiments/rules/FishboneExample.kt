@@ -1,6 +1,5 @@
 package org.jetbrains.bio.experiments.rules
 
-import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.Logger
@@ -90,8 +89,6 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                 accepts("sourceFilesUrls", "Source files urls").withRequiredArg()
                 accepts("targetFilesUrls", "Target files urls").withRequiredArg()
                 accepts("outputFolder", "Output folder").withRequiredArg()
-
-                formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
                 FishboneExample(options.valueOf("databaseUrl").toString(),
                                 options.valueOf("sourceFilesUrls").toString().split(" "),
