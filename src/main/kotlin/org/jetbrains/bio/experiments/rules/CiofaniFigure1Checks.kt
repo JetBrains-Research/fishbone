@@ -14,9 +14,11 @@ import org.jetbrains.bio.rules.RulesMiner
 import org.jetbrains.bio.util.ciofani.CiofaniCheckQuery
 import org.jetbrains.bio.util.ciofani.CiofaniTFsFileColumn
 import org.jetbrains.bio.util.ciofani.CiofaniTFsOutputFileParser
+import org.jetbrains.bio.util.ciofani.StatManager
 import org.jetbrains.bio.util.div
 import org.jetbrains.bio.util.toPath
 import java.awt.Color
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
@@ -64,18 +66,38 @@ class CiofaniFigure1Checks(private val databasePath: Path, private val sourceFil
         val genomeQuery = GenomeQuery("mm10")
         private val allTfsToRorcQuery = CiofaniCheckQuery(
                 mapOf(
-                        CiofaniTFsFileColumn.TFS to fun(tf: String): Boolean { return tf in listOf("Batf", "IRF4", "Maf", "Stat3") }
+                        CiofaniTFsFileColumn.TFS to fun(params): Boolean { return params[0] in listOf("Batf", "IRF4", "Maf", "Stat3") }
                 ),
                 Pair(
-                        CiofaniTFsFileColumn.TFS, fun(tf: String): Boolean { return tf == "RORC" }
+                        CiofaniTFsFileColumn.TFS, fun(params): Boolean { return params[0] == "RORC" }
                 )
         )
         private val allTfsToIrf4Query = CiofaniCheckQuery(
                 mapOf(
-                        CiofaniTFsFileColumn.TFS to fun(tf: String): Boolean { return tf in listOf("Batf", "Maf", "Stat3", "RORC") }
+                        CiofaniTFsFileColumn.TFS to
+                                fun(params): Boolean {
+                                    return params[0] in listOf("Stat3", "Maf", "RORC", "Batf") && params[1].toDouble() >= params[2].toDouble()
+                                }
                 ),
                 Pair(
-                        CiofaniTFsFileColumn.TFS, fun(tf: String): Boolean { return tf == "IRF4" }
+                        CiofaniTFsFileColumn.TFS,
+                        fun(params): Boolean {
+                            return params[0] == "IRF4" && params[1].toDouble() >= params[2].toDouble()
+                        }
+                )
+        )
+        private val allTfsToIrf4QueryWithTr = CiofaniCheckQuery(
+                mapOf(
+                        CiofaniTFsFileColumn.TFS to
+                                fun(params): Boolean {
+                                    return params[0] in listOf("Stat3", "Maf", "RORC", "Batf") && params[1].toDouble() >= 2000
+                                }
+                ),
+                Pair(
+                        CiofaniTFsFileColumn.TFS,
+                        fun(params): Boolean {
+                            return params[0] == "IRF4" && params[1].toDouble() >= 2000
+                        }
                 )
         )
 
@@ -83,16 +105,26 @@ class CiofaniFigure1Checks(private val databasePath: Path, private val sourceFil
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-            val query = allTfsToIrf4Query
+            val query = allTfsToIrf4QueryWithTr
 
-            val outputFilePath = "/home/nlukashina/education/bioinf/spring/fishbone_materials/GSE40918_pCRMs_5TFs_th17.csv"
+            val filePath = "/home/nlukashina/education/bioinf/spring/fishbone_materials/GSE40918_pCRMs_5TFs_th17.csv"
             val databaseFilename = "database.bed"
             val outputFolder = "ciofani_output"
 
-            val sources = CiofaniTFsOutputFileParser.parseSources(outputFilePath, query)
-            val targets = CiofaniTFsOutputFileParser.parseTarget(outputFilePath, query)
-            val database = CiofaniTFsOutputFileParser.parseDatabase(outputFilePath, databaseFilename)
+            val pvalueStatistics = StatManager(filePath).getPvalueStatistics()
+            print(pvalueStatistics)
+
+            val sources = CiofaniTFsOutputFileParser.parseSources(filePath, query)
+            val targets = CiofaniTFsOutputFileParser.parseTarget(filePath, query)
+            val database = CiofaniTFsOutputFileParser.parseDatabase(filePath, databaseFilename)
             CiofaniFigure1Checks(database, sources, targets, outputFolder).doCalculations()
+            cleanup(sources, targets, database)
+        }
+
+        private fun cleanup(sources: List<String>, targets: List<String>, database: Path) {
+            sources.forEach { Files.delete(Paths.get(it)) }
+            targets.forEach { Files.delete(Paths.get(it)) }
+            Files.delete(database)
         }
 
         fun generatePalette(): (String) -> Color = { name ->
