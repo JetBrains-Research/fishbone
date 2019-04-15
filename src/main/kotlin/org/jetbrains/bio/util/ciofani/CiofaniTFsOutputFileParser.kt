@@ -35,16 +35,17 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
         return Paths.get(databaseFilename)
     }
 
-    private fun parse(predicates: Map<CiofaniTFsFileColumn, (String) -> Boolean>, outputFilesPrefix: String = ""):
+    private fun parse(predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>):
             List<String> {
+        val nonExistentPredicates = predicates.filter { p -> !Files.exists(Paths.get("$p.bed")) }
         Files.newBufferedReader(Paths.get(filePath)).use { reader ->
-            val bedEntries = createPredicateBedEntries(reader, predicates)
-            return writePredicatesToFiles(bedEntries, outputFilesPrefix)
+            val bedEntries = createPredicateBedEntries(reader, nonExistentPredicates)
+            return writePredicatesToFiles(bedEntries)
         }
     }
 
     private fun createPredicateBedEntries(
-            inputFileReader: BufferedReader?, predicates: Map<CiofaniTFsFileColumn, (String) -> Boolean>
+            inputFileReader: BufferedReader?, predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>
     ): Map<String, List<BedEntry>> {
         return CSVParser(inputFileReader, CSVFormat.DEFAULT.withHeader()).map { csvRecord ->
             getBedEntriesForRecord(csvRecord, predicates)
@@ -55,13 +56,22 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
                 }
     }
 
-    private fun getBedEntriesForRecord(csvRecord: CSVRecord, predicates: Map<CiofaniTFsFileColumn, (String) -> Boolean>):
+    private fun getBedEntriesForRecord(csvRecord: CSVRecord, predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>):
             List<Pair<String, BedEntry>> {
         return predicates.map { (column, checkFunction) ->
             val predicateValues = csvRecord.get(column.columnName).split("_")
-            predicateValues
-                    .filter { value -> checkFunction(value) }
-                    .map { value ->
+            predicateValues.withIndex()
+                    .filter { (idx, value) ->
+                        val params = if (column == CiofaniTFsFileColumn.TFS) {
+                            val pval = csvRecord.get(CiofaniTFsFileColumn.PVAL.columnName).split("_")[idx]
+                            val pvalMean = csvRecord.get(CiofaniTFsFileColumn.PVAL_MEAN.columnName)
+                            listOf(value, pval, pvalMean)
+                        } else {
+                            listOf(value)
+                        }
+                        checkFunction(params)
+                    }
+                    .map { (_, value) ->
                         Pair(
                                 if (column.isValuePredicate) value else column.columnName,
                                 BedEntry(
@@ -74,9 +84,9 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
         }.flatten()
     }
 
-    private fun writePredicatesToFiles(bedEntries: Map<String, List<BedEntry>>, outputFilesPrefix: String): List<String> {
+    private fun writePredicatesToFiles(bedEntries: Map<String, List<BedEntry>>): List<String> {
         return bedEntries.map { (predicate, entries) ->
-            val predicateFilename = outputFilesPrefix + "_" + "$predicate.bed"
+            val predicateFilename = "$predicate.bed"
             File(predicateFilename).printWriter().use { out ->
                 entries.forEach { out.println(bedEntryToString(it)) }
             }
@@ -94,11 +104,11 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
         }
 
         fun parseSources(filePath: String, query: CiofaniCheckQuery): List<String> {
-            return CiofaniTFsOutputFileParser(filePath).parse(query.sourcePredicates, "source")
+            return CiofaniTFsOutputFileParser(filePath).parse(query.sourcePredicates)
         }
 
         fun parseTarget(filePath: String, query: CiofaniCheckQuery): List<String> {
-            return CiofaniTFsOutputFileParser(filePath).parse(mapOf(query.targetPredicate), "target")
+            return CiofaniTFsOutputFileParser(filePath).parse(mapOf(query.targetPredicate))
         }
     }
 }

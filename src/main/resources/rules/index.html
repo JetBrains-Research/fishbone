@@ -52,11 +52,71 @@
 <div id="dialog" title="Information">
     <div id="dialog-pane"></div>
 </div>
+<nav id="navbar-top" class="navbar navbar-default">
+    <div class="container-fluid">
+        <form class="navbar-form navbar-left">
+            <label>
+                <input type="radio" name="action-type" onchange="runAnalysis(this)" checked="checked">
+                Run analysis on *.bed files
+            </label>
+            <label></label>
+            <label></label>
+            <label>
+                <input type="radio" name="action-type" onchange="loadResultFile(this)">
+                Load result json file
+            </label>
+
+            <br>
+            <label id="bed-source-file-label" for="bed-source-file-button">Source</label>
+            <input id="bed-source-file" type="file" style="display: none"/>
+            <input id="bed-source-file-button" type="button" class="btn btn-primary" value="Load *.bed"
+                   onclick="$('#bed-source-file').click();"/>
+            <label id="bed-target-file-label" for="bed-target-file-button">Target</label>
+            <input id="bed-target-file" type="file" style="display: none"/>
+            <input id="bed-target-file-button" type="button" class="btn btn-primary" value="Load *.bed"
+                   onclick="$('#bed-source-file').click();"/>
+
+            <label id="filename" style="display: none">File</label>
+            <input id="file" type="file" accept=".json" style="display: none"/>
+            <input id="file-button" type="button" class="btn btn-primary" value="Load *.json" style="display: none"
+                   onclick="$('#file').click();"/>
+
+            <script>
+                function runAnalysis(x) {
+                    if (x.checked) {
+                        document.getElementById("bed-source-file-button").style.display = "inline";
+                        document.getElementById("bed-source-file-label").style.display = "inline";
+                        document.getElementById("bed-target-file-button").style.display = "inline";
+                        document.getElementById("bed-target-file-label").style.display = "inline";
+
+                        document.getElementById("filename").style.display = "none";
+                        document.getElementById("file-button").style.display = "none";
+                    }
+                }
+
+                function loadResultFile(x) {
+                    if (x.checked) {
+                        document.getElementById("bed-target-file-button").style.display = "none";
+                        document.getElementById("bed-target-file-label").style.display = "none";
+                        document.getElementById("bed-source-file-button").style.display = "none";
+                        document.getElementById("bed-source-file-label").style.display = "none";
+
+                        document.getElementById("filename").style.display = "inline";
+                        document.getElementById("file-button").style.display = "inline";
+                    }
+                }
+            </script>
+        </form>
+    </div>
+</nav>
 <nav id="navbar" class="navbar navbar-default">
     <form class="navbar-form navbar-left">
-        <label id="filename">File: ?</label>
-    </form>
-    <form class="navbar-form navbar-right">
+        <label id="display-title">Display settings:</label>
+
+        <!-- Gap -->
+        <label></label>
+        <label></label>
+
         <label for="visualize-method">Type</label>
         <select disabled id="visualize-method">
             <option value="Fishbone">Fishbone</option>
@@ -86,10 +146,6 @@
 
         <label for="show-top-filter">Show</label>
         <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="5"/>&nbsp;
-
-        <input id="file" type="file" accept=".json"/>
-        <input id="file-button" type="button" class="btn btn-primary" value="Load *.json"
-               onclick="$('#file').click();"/>
     </form>
 </nav>
 <div id="main-panel">
