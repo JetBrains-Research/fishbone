@@ -29,7 +29,6 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="lib/venn.min.js"></script>
 
-
     <!--Spinner-->
     <script src="lib/spin.js"></script>
     <!-- NotifyJS-->
@@ -68,13 +67,22 @@
 
             <br>
             <label id="bed-source-file-label" for="bed-source-file-button">Source</label>
-            <input id="bed-source-file" type="file" style="display: none"/>
+            <input id="bed-source-file" type="file" style="display: none" multiple="multiple"/>
             <input id="bed-source-file-button" type="button" class="btn btn-primary" value="Load *.bed"
                    onclick="$('#bed-source-file').click();"/>
             <label id="bed-target-file-label" for="bed-target-file-button">Target</label>
-            <input id="bed-target-file" type="file" style="display: none"/>
+            <input id="bed-target-file" type="file" style="display: none" multiple="multiple"/>
             <input id="bed-target-file-button" type="button" class="btn btn-primary" value="Load *.bed"
-                   onclick="$('#bed-source-file').click();"/>
+                   onclick="$('#bed-target-file').click();"/>
+            <label id="bed-database-file-label" for="bed-database-file-button">Database</label>
+            <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
+            <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load *.bed"
+                   onclick="$('#bed-database-file').click();"/>
+            <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
+                   onclick="veryImportantButton()"/>
+
+            <!-- <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
+                   onclick="$('#run-analysis-button').click();"/>  -->
 
             <label id="filename" style="display: none">File</label>
             <input id="file" type="file" accept=".json" style="display: none"/>
@@ -88,6 +96,8 @@
                         document.getElementById("bed-source-file-label").style.display = "inline";
                         document.getElementById("bed-target-file-button").style.display = "inline";
                         document.getElementById("bed-target-file-label").style.display = "inline";
+                        document.getElementById("bed-database-file-button").style.display = "inline";
+                        document.getElementById("run-analysis-button").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
                         document.getElementById("file-button").style.display = "none";
@@ -100,6 +110,8 @@
                         document.getElementById("bed-target-file-label").style.display = "none";
                         document.getElementById("bed-source-file-button").style.display = "none";
                         document.getElementById("bed-source-file-label").style.display = "none";
+                        document.getElementById("bed-database-file-button").style.display = "none";
+                        document.getElementById("run-analysis-button").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
                         document.getElementById("file-button").style.display = "inline";
