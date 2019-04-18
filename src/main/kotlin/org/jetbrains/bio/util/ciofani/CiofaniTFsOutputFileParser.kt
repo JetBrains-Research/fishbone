@@ -17,16 +17,16 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
     private val startColumn = CiofaniTFsFileColumn.START.columnName
     private val endColumn = CiofaniTFsFileColumn.END.columnName
 
-    fun parseDatabase(databaseFilename: String): Path {
-        File(databaseFilename).printWriter().use { out ->
+    fun parseDatabase(databaseFilename: String, outputFolder: String): Path {
+        File("$outputFolder/$databaseFilename").printWriter().use { out ->
             Files.newBufferedReader(Paths.get(filePath)).use { reader ->
                 CSVParser(reader, CSVFormat.DEFAULT.withHeader()).forEach { csvRecord ->
                     val bedEntryLine = bedEntryToString(
-                            BedEntry(
-                                    csvRecord.get(chrColumn),
-                                    Integer.parseInt(csvRecord.get(startColumn)),
-                                    Integer.parseInt(csvRecord.get(endColumn))
-                            )
+                        BedEntry(
+                            csvRecord.get(chrColumn),
+                            Integer.parseInt(csvRecord.get(startColumn)),
+                            Integer.parseInt(csvRecord.get(endColumn))
+                        )
                     )
                     out.println(bedEntryLine)
                 }
@@ -35,58 +35,61 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
         return Paths.get(databaseFilename)
     }
 
-    private fun parse(predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>):
+    private fun parse(predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>, outputFolder: String):
             List<String> {
         val nonExistentPredicates = predicates.filter { p -> !Files.exists(Paths.get("$p.bed")) }
         Files.newBufferedReader(Paths.get(filePath)).use { reader ->
             val bedEntries = createPredicateBedEntries(reader, nonExistentPredicates)
-            return writePredicatesToFiles(bedEntries)
+            return writePredicatesToFiles(bedEntries, outputFolder)
         }
     }
 
     private fun createPredicateBedEntries(
-            inputFileReader: BufferedReader?, predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>
+        inputFileReader: BufferedReader?, predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>
     ): Map<String, List<BedEntry>> {
         return CSVParser(inputFileReader, CSVFormat.DEFAULT.withHeader()).map { csvRecord ->
             getBedEntriesForRecord(csvRecord, predicates)
         }
-                .flatten()
-                .fold(mapOf()) { bedEntries, (predicate, bedEntry) ->
-                    bedEntries.plus(Pair(predicate, bedEntries.getOrDefault(predicate, listOf()) + bedEntry))
-                }
+            .flatten()
+            .fold(mapOf()) { bedEntries, (predicate, bedEntry) ->
+                bedEntries.plus(Pair(predicate, bedEntries.getOrDefault(predicate, listOf()) + bedEntry))
+            }
     }
 
-    private fun getBedEntriesForRecord(csvRecord: CSVRecord, predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>):
+    private fun getBedEntriesForRecord(
+        csvRecord: CSVRecord,
+        predicates: Map<CiofaniTFsFileColumn, (List<String>) -> Boolean>
+    ):
             List<Pair<String, BedEntry>> {
         return predicates.map { (column, checkFunction) ->
             val predicateValues = csvRecord.get(column.columnName).split("_")
             predicateValues.withIndex()
-                    .filter { (idx, value) ->
-                        val params = if (column == CiofaniTFsFileColumn.TFS) {
-                            val pval = csvRecord.get(CiofaniTFsFileColumn.PVAL.columnName).split("_")[idx]
-                            val pvalMean = csvRecord.get(CiofaniTFsFileColumn.PVAL_MEAN.columnName)
-                            listOf(value, pval, pvalMean)
-                        } else {
-                            listOf(value)
-                        }
-                        checkFunction(params)
+                .filter { (idx, value) ->
+                    val params = if (column == CiofaniTFsFileColumn.TFS) {
+                        val pval = csvRecord.get(CiofaniTFsFileColumn.PVAL.columnName).split("_")[idx]
+                        val pvalMean = csvRecord.get(CiofaniTFsFileColumn.PVAL_MEAN.columnName)
+                        listOf(value, pval, pvalMean)
+                    } else {
+                        listOf(value)
                     }
-                    .map { (_, value) ->
-                        Pair(
-                                if (column.isValuePredicate) value else column.columnName,
-                                BedEntry(
-                                        csvRecord.get(chrColumn),
-                                        Integer.parseInt(csvRecord.get(startColumn)),
-                                        Integer.parseInt(csvRecord.get(endColumn))
-                                )
+                    checkFunction(params)
+                }
+                .map { (_, value) ->
+                    Pair(
+                        if (column.isValuePredicate) value else column.columnName,
+                        BedEntry(
+                            csvRecord.get(chrColumn),
+                            Integer.parseInt(csvRecord.get(startColumn)),
+                            Integer.parseInt(csvRecord.get(endColumn))
                         )
-                    }
+                    )
+                }
         }.flatten()
     }
 
-    private fun writePredicatesToFiles(bedEntries: Map<String, List<BedEntry>>): List<String> {
+    private fun writePredicatesToFiles(bedEntries: Map<String, List<BedEntry>>, outputFolder: String): List<String> {
         return bedEntries.map { (predicate, entries) ->
-            val predicateFilename = "$predicate.bed"
+            val predicateFilename = "$outputFolder/$predicate.bed"
             File(predicateFilename).printWriter().use { out ->
                 entries.forEach { out.println(bedEntryToString(it)) }
             }
@@ -99,16 +102,16 @@ class CiofaniTFsOutputFileParser(private val filePath: String) {
     }
 
     companion object {
-        fun parseDatabase(filePath: String, databaseFilename: String): Path {
-            return CiofaniTFsOutputFileParser(filePath).parseDatabase(databaseFilename)
+        fun parseDatabase(filePath: String, databaseFilename: String, outputFolder: String): Path {
+            return CiofaniTFsOutputFileParser(filePath).parseDatabase(databaseFilename, outputFolder)
         }
 
-        fun parseSources(filePath: String, query: CiofaniCheckQuery): List<String> {
-            return CiofaniTFsOutputFileParser(filePath).parse(query.sourcePredicates)
+        fun parseSources(filePath: String, query: CiofaniCheckQuery, outputFolder: String): List<String> {
+            return CiofaniTFsOutputFileParser(filePath).parse(query.sourcePredicates, outputFolder)
         }
 
-        fun parseTarget(filePath: String, query: CiofaniCheckQuery): List<String> {
-            return CiofaniTFsOutputFileParser(filePath).parse(mapOf(query.targetPredicate))
+        fun parseTarget(filePath: String, query: CiofaniCheckQuery, outputFolder: String): List<String> {
+            return CiofaniTFsOutputFileParser(filePath).parse(mapOf(query.targetPredicate), outputFolder)
         }
     }
 }

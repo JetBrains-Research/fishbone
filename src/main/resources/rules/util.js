@@ -72,6 +72,26 @@ function initialize() {
         };
         reader.readAsText(file);
     });
+    window.myForm = new FormData();
+    $('#bed-source-file').change(function () {
+        window.myForm.delete('sources');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('sources', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " sources", {className: "success", position: 'bottom right'});
+    });
+    $('#bed-target-file').change(function () {
+        window.myForm.delete('targets');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('targets', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " targets", {className: "success", position: 'bottom right'});
+    });
+    $('#bed-database-file').change(function () {
+        window.myForm.delete('database');
+        window.myForm.append('database', this.files[0]);
+        $.notify("Uploaded database", {className: "success", position: 'bottom right'});
+    });
 
     // Load by hash if possible, this is useful for pipeline
     const {hash} = window.location;
@@ -86,6 +106,34 @@ function initialize() {
             }
         }, "text");
     }
+}
+
+function veryImportantButton() {
+    console.log("Sending request");
+    window.myForm.append("experiment", "ciofani");
+    $.ajax({
+        url: 'http://localhost:8080/rules/mine',
+        type: "POST",
+        data: window.myForm,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            $.ajax({
+                url: 'http://localhost:8080/fishbone',
+                type: "GET",
+                data: {filename: response.fishbone_filename},
+                success: function (res) {
+                    load(JSON.stringify(res));
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            })
+        },
+        error: function (errResponse) {
+            console.log(errResponse);
+        }
+    })
 }
 
 function showProgress() {
