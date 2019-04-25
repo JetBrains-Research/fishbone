@@ -25,6 +25,7 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.experiments.rules.CiofaniExperiment
+import org.jetbrains.bio.experiments.rules.fpgrows.FPGrowsExperiment
 import org.jetbrains.bio.util.parse
 import org.slf4j.event.Level
 import java.io.File
@@ -34,6 +35,7 @@ class FishboneApp {
     private val defaultServerPort = 8080
 
     private val ciofaniExperiment = CiofaniExperiment()
+    private val fpGrowthExperiment = FPGrowsExperiment()
     private val jacksonObjectMapper = jacksonObjectMapper()
 
     fun run(port: Int = defaultServerPort) {
@@ -59,6 +61,7 @@ class FishboneApp {
             }
             routing {
                 route("/rules") {
+                    // TODO: the name of the algorithm!
                     post("/mine") {
                         call.respond(mapOf("fishbone_filename" to processMineRuleRequest(call.receiveMultipart())))
                     }
@@ -82,10 +85,12 @@ class FishboneApp {
     private suspend fun processMineRuleRequest(multipart: MultiPartData): String {
         val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
         val request = combineMineRulesRequest(multipart, tempDir)
-        val result = when (request.experiment) {
-            "ciofani" -> ciofaniExperiment.run(request)
+        val experiment = when (request.experiment) {
+            "ciofani" -> ciofaniExperiment
+            "fpgrowth" -> fpGrowthExperiment
             else -> throw IllegalArgumentException("Unexpected expirement name")
         }
+        val result = experiment.run(request)
         tempDir.deleteRecursively()
         return result
     }

@@ -42,6 +42,9 @@
         $(function () {
             $("#dialog").dialog({autoOpen: false});
         });
+        $(function () {
+            $("#another-alg-dialog").dialog({autoOpen: false});
+        });
     </script>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
@@ -50,6 +53,9 @@
 
 <div id="dialog" title="Information">
     <div id="dialog-pane"></div>
+</div>
+<div id="another-alg-dialog" title="Fp-growth algorithm results">
+    <div id="another-alg-dialog-pane"></div>
 </div>
 <nav id="navbar-top" class="navbar navbar-default">
     <div class="container-fluid">
@@ -81,8 +87,6 @@
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="veryImportantButton()"/>
 
-            <!-- <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
-                   onclick="$('#run-analysis-button').click();"/>  -->
 
             <label id="filename" style="display: none">File</label>
             <input id="file" type="file" accept=".json" style="display: none"/>
