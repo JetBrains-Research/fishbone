@@ -111,6 +111,8 @@ function initialize() {
 function veryImportantButton() {
     console.log("Sending request");
     window.myForm.append("experiment", "ciofani");
+    const panel = $('#another-alg-dialog-pane');
+    panel.empty();
     $.ajax({
         url: 'http://localhost:8080/rules/mine',
         type: "POST",
@@ -118,6 +120,60 @@ function veryImportantButton() {
         processData: false,
         contentType: false,
         success: function (response) {
+            window.myForm.delete('experiment');
+            window.myForm.append("experiment", "fpgrowth");
+            $.ajax({
+                url: 'http://localhost:8080/rules/mine',
+                type: "POST",
+                data: window.myForm,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    $.ajax({
+                        url: 'http://localhost:8080/fishbone',
+                        type: "GET",
+                        data: {filename: res.fishbone_filename},
+                        success: function (res2) {
+                            let tableHtml = `
+                            <table class="table table-condensed table-tiny table-bordered" id="fp-growth-table">
+                                <thead class="thead-default"></thead>
+                                <tbody>
+                                     <tr>
+                                        <th>Rule</th>
+                                        <th>Support</th>
+                                        <th>Confidence</th>
+                                     </tr>
+                                    </tr>`;
+                                                        for (let v = 0; v < res2.split("\n").length - 1; v++) {
+                                                            let line = res2.split("\n")[v];
+                                                            let rule = line.match(/\[.*?\] ==> \[.*?\]/g)[0];
+                                                            let support = line.match(/support = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+                                                            let confidence = line.match(/confidence = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+                                                            tableHtml += `<tr>`;
+                                                            tableHtml += (`<td>` + rule + `</td>`);
+                                                            tableHtml += (`<td>` + support + `</td>`);
+                                                            tableHtml += (`<td>` + confidence + `</td>`);
+                                                            tableHtml += `</tr>`;
+                                                        }
+                                                        tableHtml += `
+                                </tbody>
+                            </table>`;
+                            let dialog = $('#another-alg-dialog');
+                            if (dialog.dialog('isOpen') !== true) {
+                                dialog.dialog("option", "width", DIALOG_WIDTH);
+                            }
+                            panel.append($(tableHtml));
+                            dialog.dialog('open');
+                        },
+                        error: function (error) {
+                            console.log(error);
+                        }
+                    })
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
             $.ajax({
                 url: 'http://localhost:8080/fishbone',
                 type: "GET",
