@@ -43,10 +43,16 @@
             $("#dialog").dialog({autoOpen: false});
         });
         $(function () {
-            $("#another-alg-dialog").dialog({autoOpen: false});
+            $("#fpgrowth-alg-dialog").dialog({autoOpen: false});
+        });
+        $(function () {
+            $("#decisiontree-alg-dialog").dialog({autoOpen: false});
         });
     </script>
     <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="lib/viz.js"></script>
+    <script src="lib/full.render.js"></script>
 </head>
 
 <body onload="initialize()">
@@ -54,8 +60,11 @@
 <div id="dialog" title="Information">
     <div id="dialog-pane"></div>
 </div>
-<div id="another-alg-dialog" title="Fp-growth algorithm results">
-    <div id="another-alg-dialog-pane"></div>
+<div id="fpgrowth-alg-dialog" title="Fp-growth algorithm results">
+    <div id="fpgrowth-alg-dialog-pane"></div>
+</div>
+<div id="decisiontree-alg-dialog" title="Decision tree algorithm results">
+    <div id="decisiontree-alg-dialog-pane"></div>
 </div>
 <nav id="navbar-top" class="navbar navbar-default">
     <div class="container-fluid">
@@ -85,7 +94,7 @@
             <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load *.bed"
                    onclick="$('#bed-database-file').click();"/>
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
-                   onclick="veryImportantButton()"/>
+                   onclick="runAnalysisOnLoadedData()"/>
 
 
             <label id="filename" style="display: none">File</label>
@@ -101,6 +110,8 @@
                         document.getElementById("bed-target-file-button").style.display = "inline";
                         document.getElementById("bed-target-file-label").style.display = "inline";
                         document.getElementById("bed-database-file-button").style.display = "inline";
+                        document.getElementById("bed-database-file-label").style.display = "inline";
+                        document.getElementById("show-alternative-results-button").style.display = "inline";
                         document.getElementById("run-analysis-button").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
@@ -115,6 +126,8 @@
                         document.getElementById("bed-source-file-button").style.display = "none";
                         document.getElementById("bed-source-file-label").style.display = "none";
                         document.getElementById("bed-database-file-button").style.display = "none";
+                        document.getElementById("bed-database-file-label").style.display = "none";
+                        document.getElementById("show-alternative-results-button").style.display = "none";
                         document.getElementById("run-analysis-button").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
@@ -162,6 +175,15 @@
 
         <label for="show-top-filter">Show</label>
         <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="5"/>&nbsp;
+
+        <label for="alternative-results">Alternative results</label>
+        <div id="alternative-results" class="checkbox navbar-btn">
+            <input type="checkbox" id="fpGrowthCheckbox" onclick="showFPGrowthResults()">
+            <label for="fpGrowthCheckbox">FPGrowth</label>
+
+            <input type="checkbox" id="decisionTreeCheckbox" onclick="showDecisionTreeResults()">
+            <label for="decisionTreeCheckbox">Decision tree</label>
+        </div>
     </form>
 </nav>
 <div id="main-panel">

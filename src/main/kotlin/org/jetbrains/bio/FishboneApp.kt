@@ -1,12 +1,14 @@
 package org.jetbrains.bio
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.gson.Gson
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
-import io.ktor.http.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.content.MultiPartData
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -23,26 +25,27 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
+import org.jetbrains.bio.api.ExperimentType
 import org.jetbrains.bio.api.MineRulesRequest
-import org.jetbrains.bio.experiments.rules.CiofaniExperiment
-import org.jetbrains.bio.experiments.rules.fpgrows.FPGrowsExperiment
+import org.jetbrains.bio.api.Miner
+import org.jetbrains.bio.experiments.rules.ChiantiDataExperiment
+import org.jetbrains.bio.experiments.rules.CiofaniDataExperiment
 import org.jetbrains.bio.util.parse
-import org.slf4j.event.Level
 import java.io.File
 
 
 class FishboneApp {
     private val defaultServerPort = 8080
 
-    private val ciofaniExperiment = CiofaniExperiment()
-    private val fpGrowthExperiment = FPGrowsExperiment()
+    private val experiments = mapOf(
+        ExperimentType.CIOFANI to CiofaniDataExperiment(),
+        ExperimentType.CHIANTI to ChiantiDataExperiment()
+    )
     private val jacksonObjectMapper = jacksonObjectMapper()
 
     fun run(port: Int = defaultServerPort) {
         val server = embeddedServer(Netty, port) {
-            install(CallLogging) {
-                level = Level.INFO
-            }
+            install(CallLogging)
             install(ContentNegotiation) {
                 jackson {}
             }
@@ -50,9 +53,6 @@ class FishboneApp {
                 method(HttpMethod.Options)
                 method(HttpMethod.Get)
                 method(HttpMethod.Post)
-                method(HttpMethod.Put)
-                method(HttpMethod.Delete)
-                method(HttpMethod.Patch)
                 header(HttpHeaders.AccessControlAllowHeaders)
                 header(HttpHeaders.ContentType)
                 header(HttpHeaders.AccessControlAllowOrigin)
@@ -61,20 +61,12 @@ class FishboneApp {
             }
             routing {
                 route("/rules") {
-                    // TODO: the name of the algorithm!
-                    post("/mine") {
-                        call.respond(mapOf("fishbone_filename" to processMineRuleRequest(call.receiveMultipart())))
-                    }
-                }
-                route("/fishbone") {
                     get {
-                        val filename: String = call.request.queryParameters["filename"]!!
-                        val file = File("$filename")
-                        if (file.exists()) {
-                            call.respondFile(file)
-                        } else {
-                            call.respond(HttpStatusCode.NotFound)
-                        }
+                        val filename = call.request.queryParameters["filename"]!!
+                        call.respondFile(File(filename))
+                    }
+                    post {
+                        call.respond(mineRules(call.receiveMultipart()))
                     }
                 }
             }
@@ -82,32 +74,31 @@ class FishboneApp {
         server.start(wait = true)
     }
 
-    private suspend fun processMineRuleRequest(multipart: MultiPartData): String {
+    // TODO: run miners async
+    private suspend fun mineRules(multipart: MultiPartData): Map<Miner, String> {
         val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
-        val request = combineMineRulesRequest(multipart, tempDir)
-        val experiment = when (request.experiment) {
-            "ciofani" -> ciofaniExperiment
-            "fpgrowth" -> fpGrowthExperiment
-            else -> throw IllegalArgumentException("Unexpected expirement name")
-        }
+        val request = multipartToMineRulesRequest(multipart, tempDir)
+        val experiment = experiments[request.experiment] ?: throw IllegalArgumentException("Unexpected experiment name")
         val result = experiment.run(request)
         tempDir.deleteRecursively()
         return result
     }
 
-    private suspend fun combineMineRulesRequest(multipart: MultiPartData, tempDir: File): MineRulesRequest {
+    private suspend fun multipartToMineRulesRequest(multipart: MultiPartData, tempDir: File): MineRulesRequest {
         val requestMap = mutableMapOf<String, Any>()
         multipart.forEachPart { part ->
             val name = part.name!!
             when (part) {
                 is PartData.FormItem -> {
-                    requestMap[name] = part.value
+                    if (part.name == "miners") {
+                        requestMap[name] = part.value.split(", ").map { Miner.byLable(it) }.toSet() //TODO: process array correctly
+                    } else {
+                        requestMap[name] = part.value
+                    }
                 }
                 is PartData.FileItem -> {
                     val file = File(tempDir, part.originalFileName)
-                    part.streamProvider().use { its ->
-                        file.outputStream().buffered().use { its.copyTo(it) }
-                    }
+                    part.streamProvider().use { its -> file.outputStream().buffered().use { its.copyTo(it) } }
                     requestMap[name] = if (name == "database") {
                         file.absolutePath
                     } else {
@@ -123,6 +114,7 @@ class FishboneApp {
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
+
             OptionParser().apply {
                 accepts("port", "Server port (default 8080)").withOptionalArg()
                 formatHelpWith(BuiltinHelpFormatter(200, 2))

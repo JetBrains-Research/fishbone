@@ -1,4 +1,4 @@
-package org.jetbrains.bio.experiments.rules
+package org.jetbrains.bio.util
 
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
@@ -13,7 +13,6 @@ import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
 import org.jetbrains.bio.predicates.OverlapPredicate
-import org.jetbrains.bio.util.*
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -70,7 +69,8 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                         { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
         rulesLogger.done(rulesLogger.path.toString().replace(".csv", ".json").toPath(),
-                         generatePalette())
+            generatePalette()
+        )
         LOG.info("Rules saved to $rulesResults")
     }
 
@@ -90,10 +90,12 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
 
                 formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
-                FishboneExample(options.valueOf("databaseUrl").toString(),
-                                options.valueOf("sourceFilesUrls").toString().split(" "),
-                                options.valueOf("targetFilesUrls").toString().split(" "),
-                                options.valueOf("outputFolder").toString()).doCalculations()
+                FishboneExample(
+                    options.valueOf("databaseUrl").toString(),
+                    options.valueOf("sourceFilesUrls").toString().split(" "),
+                    options.valueOf("targetFilesUrls").toString().split(" "),
+                    options.valueOf("outputFolder").toString()
+                ).doCalculations()
             }
         }
 
