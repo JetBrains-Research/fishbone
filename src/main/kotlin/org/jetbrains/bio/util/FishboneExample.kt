@@ -1,4 +1,4 @@
-package org.jetbrains.bio.experiments.rules
+package org.jetbrains.bio.util
 
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
@@ -11,11 +11,10 @@ import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
 import org.jetbrains.bio.genome.downloadTo
-import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
-import org.jetbrains.bio.util.*
+import org.jetbrains.bio.predicates.OverlapPredicate
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -72,7 +71,8 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                         { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
         rulesLogger.done(rulesLogger.path.toString().replace(".csv", ".json").toPath(),
-                         generatePalette())
+            generatePalette()
+        )
         LOG.info("Rules saved to $rulesResults")
     }
 
@@ -90,10 +90,12 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                 accepts("targetFilesUrls", "Target files urls").withRequiredArg()
                 accepts("outputFolder", "Output folder").withRequiredArg()
             }.parse(args) { options ->
-                FishboneExample(options.valueOf("databaseUrl").toString(),
-                                options.valueOf("sourceFilesUrls").toString().split(" "),
-                                options.valueOf("targetFilesUrls").toString().split(" "),
-                                options.valueOf("outputFolder").toString()).doCalculations()
+                FishboneExample(
+                    options.valueOf("databaseUrl").toString(),
+                    options.valueOf("sourceFilesUrls").toString().split(" "),
+                    options.valueOf("targetFilesUrls").toString().split(" "),
+                    options.valueOf("outputFolder").toString()
+                ).doCalculations()
             }
         }
 

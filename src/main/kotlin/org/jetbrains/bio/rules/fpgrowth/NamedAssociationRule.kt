@@ -1,4 +1,4 @@
-package org.jetbrains.bio.experiments.rules.fpgrows
+package org.jetbrains.bio.rules.fpgrowth
 
 import smile.association.AssociationRule
 

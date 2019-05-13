@@ -108,33 +108,38 @@ function initialize() {
     }
 }
 
-function veryImportantButton() {
-    console.log("Sending request");
-    window.myForm.append("experiment", "ciofani");
-    const panel = $('#another-alg-dialog-pane');
-    panel.empty();
+function showTree() {
+    var viz = new Viz();
+    let dialog = $('#dialog');
+    const panel = $('#dialog-pane');
+    dialog.dialog('option', 'title', `Primary effectors combinations => `);
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    viz.renderSVGElement('digraph { a -> b }')
+        .then(function (element) {
+            panel.append($(element));
+            //document.body.appendChild(element);
+        })
+        .catch(error => {
+            // Create a new Viz instance (@see Caveats page for more info)
+            viz = new Viz();
+
+            // Possibly display the error
+            console.error(error);
+        });
+    dialog.dialog('open');
+    return panel;
+}
+
+function renderFpGrowthAlgorithmResults(res) {
     $.ajax({
-        url: 'http://localhost:8080/rules/mine',
-        type: "POST",
-        data: window.myForm,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            window.myForm.delete('experiment');
-            window.myForm.append("experiment", "fpgrowth");
-            $.ajax({
-                url: 'http://localhost:8080/rules/mine',
-                type: "POST",
-                data: window.myForm,
-                processData: false,
-                contentType: false,
-                success: function (res) {
-                    $.ajax({
-                        url: 'http://localhost:8080/fishbone',
-                        type: "GET",
-                        data: {filename: res.fishbone_filename},
-                        success: function (res2) {
-                            let tableHtml = `
+        url: 'http://localhost:8080/rules',
+        type: "GET",
+        data: {filename: res["FP_GROWTH"]},
+        success: function (res2) {
+            let tableHtml = `
                             <table class="table table-condensed table-tiny table-bordered" id="fp-growth-table">
                                 <thead class="thead-default"></thead>
                                 <tbody>
@@ -144,52 +149,155 @@ function veryImportantButton() {
                                         <th>Confidence</th>
                                      </tr>
                                     </tr>`;
-                                                        for (let v = 0; v < res2.split("\n").length - 1; v++) {
-                                                            let line = res2.split("\n")[v];
-                                                            let rule = line.match(/\[.*?\] ==> \[.*?\]/g)[0];
-                                                            let support = line.match(/support = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
-                                                            let confidence = line.match(/confidence = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
-                                                            tableHtml += `<tr>`;
-                                                            tableHtml += (`<td>` + rule + `</td>`);
-                                                            tableHtml += (`<td>` + support + `</td>`);
-                                                            tableHtml += (`<td>` + confidence + `</td>`);
-                                                            tableHtml += `</tr>`;
-                                                        }
-                                                        tableHtml += `
+            for (let v = 0; v < res2.split("\n").length - 1; v++) {
+                let line = res2.split("\n")[v];
+                let rule = line.match(/\[.*?\] ==> \[.*?\]/g)[0];
+                let support = line.match(/support = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+                let confidence = line.match(/confidence = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+                tableHtml += `<tr>`;
+                tableHtml += (`<td>` + rule + `</td>`);
+                tableHtml += (`<td>` + support + `</td>`);
+                tableHtml += (`<td>` + confidence + `</td>`);
+                tableHtml += `</tr>`;
+            }
+            tableHtml += `
                                 </tbody>
                             </table>`;
-                            let dialog = $('#another-alg-dialog');
-                            if (dialog.dialog('isOpen') !== true) {
-                                dialog.dialog("option", "width", DIALOG_WIDTH);
-                            }
-                            panel.append($(tableHtml));
-                            dialog.dialog('open');
-                        },
-                        error: function (error) {
-                            console.log(error);
-                        }
-                    })
+
+            const panel = $('#fpgrowth-alg-dialog-pane');
+            panel.empty();
+            let dialog = $('#fpgrowth-alg-dialog');
+            if (dialog.dialog('isOpen') !== true) {
+                dialog.dialog("option", "width", DIALOG_WIDTH);
+            }
+            panel.append($(tableHtml));
+            dialog.dialog('open');
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+function renderDecisionTreeAlgorithmsResults(res) {
+    $.ajax({
+        url: 'http://localhost:8080/rules',
+        type: "GET",
+        data: {filename: res["DECISION_TREE"]},
+        success: function (res3) {
+            const panel = $('#decisiontree-alg-dialog-pane');
+            panel.empty();
+            let dialog = $('#decisiontree-alg-dialog');
+            if (dialog.dialog('isOpen') !== true) {
+                dialog.dialog("option", "width", DIALOG_WIDTH);
+            }
+
+            var viz = new Viz();
+
+            viz.renderSVGElement(res3)
+                .then(function (element) {
+                    panel.append($(element));
+                })
+                .catch(error => {
+                    viz = new Viz();
+                    console.error(error);
+                });
+            dialog.dialog('open');
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+function renderFishboneResults(response) {
+    $.ajax({
+        url: 'http://localhost:8080/rules',
+        type: "GET",
+        data: {filename: response["FISHBONE"]},
+        success: function (res) {
+            load(JSON.stringify(res));
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+function runAnalysisOnLoadedData() {
+    console.log("Sending request");
+
+    window.myForm.append("experiment", "CIOFANI");
+    window.myForm.append("miners", "tree, fishbone, fp-growth");
+
+    $.ajax({
+        url: 'http://localhost:8080/rules',
+        type: "POST",
+        data: window.myForm,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+
+            window.myForm.delete('experiment');
+            window.myForm.append("experiment", "CIOFANI");
+            window.myForm.append("miners", "tree, fishbone, fp-growth");
+
+            $.ajax({
+                url: 'http://localhost:8080/rules',
+                type: "POST",
+                data: window.myForm,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    renderFishboneResults(res);
+                    renderFpGrowthAlgorithmResults(res);
+                    renderDecisionTreeAlgorithmsResults(res);
                 },
                 error: function (error) {
                     console.log(error);
                 }
             });
-            $.ajax({
-                url: 'http://localhost:8080/fishbone',
-                type: "GET",
-                data: {filename: response.fishbone_filename},
-                success: function (res) {
-                    load(JSON.stringify(res));
-                },
-                error: function (error) {
-                    console.log(error);
-                }
-            })
         },
         error: function (errResponse) {
             console.log(errResponse);
         }
     })
+}
+
+function showAlternativeAlgorithmResults() {
+    let dialog = $('#fpgrowth-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+    dialog.dialog('open');
+}
+
+function showFPGrowthResults() {
+    let dialog = $('#fpgrowth-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    var checkBox = document.getElementById("fpGrowthCheckbox");
+    if (checkBox.checked == true){
+        dialog.dialog('open');
+    } else {
+        dialog.dialog('close');
+    }
+}
+
+function showDecisionTreeResults() {
+    let dialog = $('#decisiontree-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    var checkBox = document.getElementById("decisionTreeCheckbox");
+    if (checkBox.checked == true){
+        dialog.dialog('open');
+    } else {
+        dialog.dialog('close');
+    }
 }
 
 function showProgress() {
