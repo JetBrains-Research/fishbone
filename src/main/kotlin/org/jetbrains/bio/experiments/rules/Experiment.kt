@@ -15,6 +15,7 @@ import org.jetbrains.bio.util.div
 import org.jetbrains.bio.util.toPath
 import smile.data.NumericAttribute
 import java.awt.Color
+import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -24,105 +25,58 @@ abstract class Experiment(private val outputFolder: String) {
 
     class PredicateInfo(val id: Int, val name: String, val satisfactionOnIds: BitSet)
 
+    private val fpGrowthRuleRegex = """\[.*?\] ==> \[.*?\]""".toRegex()
+
     abstract fun run(mineRulesRequest: MineRulesRequest): Map<Miner, String>
     abstract fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean
 
     private val logger = Logger.getLogger(Experiment::class.java)
 
-    fun <V> mineByDecisionTree(
+    fun <V> mine(
+        mineRulesRequest: MineRulesRequest,
         database: List<V>,
-        sourcePredicates: List<Predicate<V>>,
-        targetPredicates: List<Predicate<V>>
-    ): String {
-        try {
-            logger.info("Processing decision tree")
-            val rulesResults = getOutpuFilePath(Miner.DECISION_TREE)
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>? = null
+    ): MutableMap<Miner, String> {
+        val isTargetPresented = target != null
+        val results = mineRulesRequest.miners.map { miner ->
+            miner to when (miner) {
+                Miner.FISHBONE -> mineByFishbone(database, predicates, target)
+                Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, target)
+                Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(database, predicates, target!!) else ""
+            }
+        }.toMap().toMutableMap()
 
-            val attributes = sourcePredicates.map { NumericAttribute(it.name()) }.toTypedArray()
-            val x = (0 until database.size).map { i ->
-                sourcePredicates.map { predicate ->
-                    if (predicateCheck(predicate, i, database)) 1.0 else 0.0
-                }.toDoubleArray()
-            }.toTypedArray()
-            // TODO: use all targets
-            val y = (0 until database.size).map { i ->
-                if (predicateCheck(targetPredicates[0], i, database)) 1 else 0
-            }.toIntArray()
-
-            val rulesPath = DecionTreeMiner.mine(attributes, x, y, rulesResults)
-            logger.info("Decision tree rules saved to $rulesPath")
-
-            return rulesPath
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            logger.error(t.message)
-            return ""
-        }
+        // Decision tree is the only algorithm, which needs target explicitly
+        return if (isTargetPresented) results else addDecisionTreeResults(
+            mineRulesRequest,
+            database,
+            predicates,
+            results
+        )
     }
 
-    fun <V> mineByFPGrowth(
+    private fun <V> mineByFishbone(
         database: List<V>,
-        sourcePredicates: List<Predicate<V>>,
-        targetPredicates: List<Predicate<V>>
-    ): String {
-        try {
-            logger.info("Processing fp-growth")
-            val rulesResults = getOutpuFilePath(Miner.FP_GROWTH)
-
-            val sourcePredicatesInfo = getPredicatesInfoOverDatabase(sourcePredicates, database, "1")
-            val sourceIdsToNames = sourcePredicatesInfo.map { it.id to it.name }.toMap()
-            val targetPredicatesInfo = getPredicatesInfoOverDatabase(targetPredicates, database, "2")
-            val targetIdsToNames = targetPredicatesInfo.map { it.id to it.name }.toMap()
-
-            val items = database.withIndex().map { (idx, _) ->
-                val satisfiedSources = getSatisfiedPredicateIds(sourcePredicatesInfo, idx)
-                val satisfiedTargets = getSatisfiedPredicateIds(targetPredicatesInfo, idx)
-                (satisfiedSources + satisfiedTargets).toIntArray()
-            }.toTypedArray()
-
-            val rulesPath = FPGrowthMiner.mine(
-                items,
-                sourcePredicatesInfo,
-                sourceIdsToNames,
-                targetPredicatesInfo,
-                targetIdsToNames,
-                rulesResults
-            )
-            logger.info("FPGrowth rules saved to $rulesPath")
-
-            return rulesPath
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            logger.error(t.message)
-            return ""
-        }
-    }
-
-    private fun <V> getPredicatesInfoOverDatabase(predicates: List<Predicate<V>>, database: List<V>, suffix: String)
-            : List<PredicateInfo> {
-        return predicates.withIndex().map { (idx, predicate) ->
-            val id = (idx.toString() + suffix).toInt()
-            PredicateInfo(id, predicate.name(), predicate.test(database))
-        }
-    }
-
-    private fun getSatisfiedPredicateIds(predicates: List<PredicateInfo>, itemIdx: Int) =
-        predicates.filter { it.satisfactionOnIds[itemIdx] }.map { it.id }
-
-    fun <V> mineByFishbone(
-        database: List<V>,
-        sourcePredicates: List<Predicate<V>>,
-        targetPredicates: List<Predicate<V>>
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>? = null
     ): String {
         try {
             logger.info("Processing fishbone")
             val rulesResults = getOutpuFilePath(Miner.FISHBONE)
             val rulesLogger = RulesLogger(rulesResults)
 
+            val indexedPredicates = predicates.withIndex()
+            val sourcesToTargets = if (target != null) {
+                listOf(predicates to target)
+            } else {
+                mapAllPredicatesToAll(predicates, indexedPredicates)
+            }
+
             RulesMiner.mine(
                 "All => All",
                 database,
-                targetPredicates.map { sourcePredicates to it },
+                sourcesToTargets,
                 { rulesLogger.log("test", it) },
                 3
             )
@@ -137,6 +91,17 @@ abstract class Experiment(private val outputFolder: String) {
             logger.error(t.message)
             return ""
         }
+    }
+
+    private fun <V> mapAllPredicatesToAll(
+        predicates: List<Predicate<V>>,
+        indexedPredicates: Iterable<IndexedValue<Predicate<V>>>
+    ): List<Pair<List<Predicate<V>>, Predicate<V>>> {
+        return (0 until predicates.size).map { i ->
+            val target = predicates[i]
+            val sources = indexedPredicates.filter { (j, _) -> j != i }.map { (_, value) -> value }
+            sources to target
+        }.toList()
     }
 
     private fun generatePalette(): (String) -> Color = { name ->
@@ -174,7 +139,114 @@ abstract class Experiment(private val outputFolder: String) {
         return if (cell?.name == "OD") color.darker() else color
     }
 
-    fun getOutpuFilePath(miner: Miner): Path {
+    private fun <V> mineByFPGrowth(
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>? = null
+    ): String {
+        try {
+            logger.info("Processing fp-growth")
+            val rulesResults = getOutpuFilePath(Miner.FP_GROWTH)
+
+            val allPredicates = if (target != null) predicates + target else predicates
+            val predicatesInfo = getPredicatesInfoOverDatabase(allPredicates, database)
+            val idsToNames = predicatesInfo.map { it.id to it.name }.toMap()
+            val targetId = predicatesInfo.find { it.name == target?.name() }?.id
+
+            val items = database.withIndex().map { (idx, _) ->
+                getSatisfiedPredicateIds(predicatesInfo, idx).toIntArray()
+            }.toTypedArray()
+
+            val rulesPath = FPGrowthMiner.mine(items, idsToNames, rulesResults, target = targetId)
+            logger.info("FPGrowth rules saved to $rulesPath")
+
+            return rulesPath
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            logger.error(t.message)
+            return ""
+        }
+    }
+
+    private fun <V> getPredicatesInfoOverDatabase(predicates: List<Predicate<V>>, database: List<V>)
+            : List<PredicateInfo> {
+        return predicates.withIndex().map { (idx, predicate) ->
+            // println("$idx out of ${predicates.size}")
+            PredicateInfo(idx, predicate.name(), predicate.test(database))
+        }
+    }
+
+    private fun getSatisfiedPredicateIds(predicates: List<PredicateInfo>, itemIdx: Int) =
+        predicates.filter { it.satisfactionOnIds[itemIdx] }.map { it.id }
+
+    private fun <V> addDecisionTreeResults(
+        mineRulesRequest: MineRulesRequest,
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        results: MutableMap<Miner, String>
+    ): MutableMap<Miner, String> {
+        if (mineRulesRequest.miners.contains(Miner.DECISION_TREE) /*&& results.containsKey(Miner.FP_GROWTH)*/) {
+            results[Miner.DECISION_TREE] = runDecisionTreeAlg(
+                database, predicates, results.getValue(Miner.FP_GROWTH)
+            )
+        }
+        return results
+    }
+
+    // TODO: use all targets
+    private fun <V> runDecisionTreeAlg(
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        fpGrowthResultsFilename: String
+    ): String {
+        val fpGrowthResultsFile = File(fpGrowthResultsFilename)
+        return if (fpGrowthResultsFile.canRead()) {
+            val target = getBestTargetFromFpGrowthResults(fpGrowthResultsFile)
+            val targetName = target.substring(1, target.length - 1)
+            val targetPredicate = predicates.find { it.name() == targetName }
+            val sourcePredicates = predicates.filter { it.name() != targetName }
+            targetPredicate?.let { mineByDecisionTree(database, sourcePredicates, it) }.orEmpty()
+        } else {
+            ""
+        }
+    }
+
+    private fun getBestTargetFromFpGrowthResults(rulesFile: File): String {
+        val rule = rulesFile.useLines { it.firstOrNull() }
+        return fpGrowthRuleRegex.find(rule as CharSequence)!!.value.split(" ==> ")[1]
+    }
+
+    private fun <V> mineByDecisionTree(
+        database: List<V>,
+        sourcePredicates: List<Predicate<V>>,
+        targetPredicate: Predicate<V>
+    ): String {
+        try {
+            logger.info("Processing decision tree")
+            val rulesResults = getOutpuFilePath(Miner.DECISION_TREE)
+
+            val attributes = sourcePredicates.map { NumericAttribute(it.name()) }.toTypedArray()
+            val x = (0 until database.size).map { i ->
+                sourcePredicates.map { predicate ->
+                    if (predicateCheck(predicate, i, database)) 1.0 else 0.0
+                }.toDoubleArray()
+            }.toTypedArray()
+            val y = (0 until database.size).map { i ->
+                if (predicateCheck(targetPredicate, i, database)) 1 else 0
+            }.toIntArray()
+
+            val rulesPath = DecionTreeMiner.mine(attributes, x, y, rulesResults)
+            logger.info("Decision tree rules saved to $rulesPath")
+
+            return rulesPath
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            logger.error(t.message)
+            return ""
+        }
+    }
+
+    private fun getOutpuFilePath(miner: Miner): Path {
         val timestamp = timestamp()
         val prefix = when (miner) {
             Miner.DECISION_TREE -> "tree"

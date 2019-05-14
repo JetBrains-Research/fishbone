@@ -73,19 +73,12 @@ function initialize() {
         reader.readAsText(file);
     });
     window.myForm = new FormData();
-    $('#bed-source-file').change(function () {
-        window.myForm.delete('sources');
+    $('#predicates-file').change(function () {
+        window.myForm.delete('predicates');
         for (var i = 0; i < this.files.length; ++i) {
-            window.myForm.append('sources', this.files[i]);
+            window.myForm.append('predicates', this.files[i]);
         }
-        $.notify("Uploaded " + this.files.length + " sources", {className: "success", position: 'bottom right'});
-    });
-    $('#bed-target-file').change(function () {
-        window.myForm.delete('targets');
-        for (var i = 0; i < this.files.length; ++i) {
-            window.myForm.append('targets', this.files[i]);
-        }
-        $.notify("Uploaded " + this.files.length + " targets", {className: "success", position: 'bottom right'});
+        $.notify("Uploaded " + this.files.length + " predicates", {className: "success", position: 'bottom right'});
     });
     $('#bed-database-file').change(function () {
         window.myForm.delete('database');

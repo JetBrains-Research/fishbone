@@ -1,7 +1,6 @@
 package org.jetbrains.bio
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.google.gson.Gson
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
@@ -30,17 +29,12 @@ import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.Miner
 import org.jetbrains.bio.experiments.rules.ChiantiDataExperiment
 import org.jetbrains.bio.experiments.rules.CiofaniDataExperiment
+import org.jetbrains.bio.experiments.rules.Experiment
 import org.jetbrains.bio.util.parse
 import java.io.File
 
 
-class FishboneApp {
-    private val defaultServerPort = 8080
-
-    private val experiments = mapOf(
-        ExperimentType.CIOFANI to CiofaniDataExperiment(),
-        ExperimentType.CHIANTI to ChiantiDataExperiment()
-    )
+class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
     private val jacksonObjectMapper = jacksonObjectMapper()
 
     fun run(port: Int = defaultServerPort) {
@@ -91,7 +85,8 @@ class FishboneApp {
             when (part) {
                 is PartData.FormItem -> {
                     if (part.name == "miners") {
-                        requestMap[name] = part.value.split(", ").map { Miner.byLable(it) }.toSet() //TODO: process array correctly
+                        requestMap[name] =
+                            part.value.split(", ").map { Miner.byLable(it) }.toSet() //TODO: process array correctly
                     } else {
                         requestMap[name] = part.value
                     }
@@ -99,7 +94,7 @@ class FishboneApp {
                 is PartData.FileItem -> {
                     val file = File(tempDir, part.originalFileName)
                     part.streamProvider().use { its -> file.outputStream().buffered().use { its.copyTo(it) } }
-                    requestMap[name] = if (name == "database") {
+                    requestMap[name] = if (name == "database" || name == "target") {
                         file.absolutePath
                     } else {
                         (requestMap.getOrDefault(name, listOf<String>()) as List<String>) + file.absolutePath
@@ -111,15 +106,30 @@ class FishboneApp {
     }
 
     companion object {
+        private const val defaultServerPort = 8080
+        private const val defaultOutputFolder = "."
+
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
 
             OptionParser().apply {
-                accepts("port", "Server port (default 8080)").withOptionalArg()
+                accepts("port", "Server port (default 8080)").withOptionalArg().ofType(Int::class.java)
+                    .defaultsTo(defaultServerPort)
+                accepts(
+                    "output",
+                    "Output folder to store experiment's results (default - current directory)"
+                ).withOptionalArg().ofType(String::class.java)
+                    .defaultsTo(defaultOutputFolder)
                 formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
-                FishboneApp().run(options.valueOf("port").toString().toInt())
+                val outputFolder = options.valueOf("output").toString()
+                val experiments = mapOf(
+                    ExperimentType.CIOFANI to CiofaniDataExperiment(outputFolder),
+                    ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
+                )
+                val port = options.valueOf("port").toString().toInt()
+                FishboneApp(experiments).run(port)
             }
         }
     }

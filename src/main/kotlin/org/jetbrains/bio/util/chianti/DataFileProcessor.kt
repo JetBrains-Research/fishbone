@@ -111,7 +111,7 @@ class DataFileProcessor {
     }
 
     companion object {
-        private val defaultDataoutputFolder = "/home/nlukashina/education/bioinf/spring/fishbone_materials/italiantest"
+        private val defaultDataoutputFolder = "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments"
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -121,6 +121,7 @@ class DataFileProcessor {
             val transformer = CodebookToPredicatesTransformer(codebook)
             val (database, predicates) = processor.createPredicatesFromData(transformer.predicates)
             val databaseOutput = File("$defaultDataoutputFolder/database.txt")
+            databaseOutput.createNewFile()
             databaseOutput.printWriter().use { out ->
                 database.forEach { out.println(it) }
             }
@@ -133,15 +134,6 @@ class DataFileProcessor {
             }
 
             predicateFilenames.forEach { println(it) }
-
-            /*ChiantiDataExperiment().run(
-                MineRulesRequest(
-                    "itailan",
-                    predicateFilenames.subList(1, predicateFilenames.size),
-                    listOf(predicateFilenames[0]),
-                    databaseOutput.absolutePath
-                )
-            )*/
         }
     }
 }
