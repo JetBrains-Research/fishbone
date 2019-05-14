@@ -6,29 +6,21 @@ import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.util.PredicatesHelper
 import java.nio.file.Paths
 
-class ChiantiDataExperiment(
-    outputFolder: String = "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_output"
-) : Experiment(outputFolder) {
+class ChiantiDataExperiment(outputFolder: String) : Experiment("$outputFolder/cianti_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(i as V)
 
     override fun run(mineRulesRequest: MineRulesRequest): Map<Miner, String> {
 
         val databasePath = Paths.get(mineRulesRequest.database)
-        val database = databasePath.toFile().useLines { it.map { it.toInt() }.toList() }
-        val sourcePredicates = PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.sources)
-        val targetPredicates = PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.targets)
+        val database = databasePath.toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
+        val predicates = PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.predicates)
+        val target = if (mineRulesRequest.target != null) {
+            PredicatesHelper.createOverlapSamplePredicates(listOf(mineRulesRequest.target))[0]
+        } else {
+            null
+        }
 
-        return mineRulesRequest.miners.map { miner ->
-            miner to when (miner) {
-                Miner.DECISION_TREE -> mineByDecisionTree(
-                    database,
-                    sourcePredicates,
-                    targetPredicates
-                )
-                Miner.FISHBONE -> mineByFishbone(database, sourcePredicates, targetPredicates)
-                Miner.FP_GROWTH -> mineByFPGrowth(database, sourcePredicates, targetPredicates)
-            }
-        }.toMap()
+        return mine(mineRulesRequest, database, predicates, target)
     }
 
 }

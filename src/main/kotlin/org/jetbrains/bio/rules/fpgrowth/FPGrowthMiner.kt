@@ -1,6 +1,5 @@
 package org.jetbrains.bio.rules.fpgrowth
 
-import org.jetbrains.bio.experiments.rules.Experiment
 import smile.association.ARM
 import smile.association.AssociationRule
 import java.nio.file.Path
@@ -9,11 +8,6 @@ import java.util.*
 class FPGrowthMiner {
 
     companion object {
-        val directionFilter =
-            { rule: AssociationRule, sources: List<Experiment.PredicateInfo>, targets: List<Experiment.PredicateInfo> ->
-                rule.antecedent.all { ant -> sources.map { it.id }.contains(ant) } &&
-                        rule.consequent.all { ant -> targets.map { it.id }.contains(ant) }
-            }
 
         private val associationRuleComparator = Comparator
             .comparingDouble(AssociationRule::support)
@@ -21,22 +15,23 @@ class FPGrowthMiner {
 
         fun mine(
             items: Array<IntArray>,
-            sources: List<Experiment.PredicateInfo>,
-            sourceIdsToNames: Map<Int, String>,
-            targets: List<Experiment.PredicateInfo>,
-            targetIdsToNames: Map<Int, String>,
+            predicateIdsToNames: Map<Int, String>,
             outputFilePath: Path,
             minSupport: Int = 1,
             minConfidence: Double = 0.1,
-            top: Int = 10
+            top: Int = 10,
+            target: Int? = null
         ): String {
             val arm = ARM(items, minSupport)
             val rules = arm.learn(minConfidence)
             val result = rules
+                .asSequence()
                 .sortedWith(compareByDescending(associationRuleComparator) { v -> v })
-                .filter { rule -> directionFilter(rule, sources, targets) }
+                .filter { rule -> rule.consequent.size == 1 }
+                .filter { rule -> if (target != null) rule.consequent[0] == target else true }
                 .take(top)
-                .map { NamedAssociationRule(it, sourceIdsToNames, targetIdsToNames) }
+                .map { NamedAssociationRule(it, predicateIdsToNames) }
+                .toList()
 
             val outputFile = outputFilePath.toFile()
             outputFile.createNewFile()
