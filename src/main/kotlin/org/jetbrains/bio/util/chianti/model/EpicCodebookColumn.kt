@@ -1,6 +1,6 @@
 package org.jetbrains.bio.util.chianti.model
 
-enum class CodebookColumn(val index: Int) {
+enum class EpicCodebookColumn(val index: Int) {
     NumberOfValiarble(0),
     Variable(1),
     Meaning(2),

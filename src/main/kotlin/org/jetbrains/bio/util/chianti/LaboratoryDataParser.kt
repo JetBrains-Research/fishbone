@@ -12,14 +12,28 @@ import java.time.ZoneId
 import java.util.*
 
 /**
- * Test class to try to parse chianti data
+ * this class is used to parse labo_raw data from chianti dataset
  */
-class DataFileProcessor {
-
+class LaboratoryDataParser {
     val dataFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Nutrients_Intake/epic_raw.sas7bdat"
-    val codebookFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/epic_raw.xlsx"
+        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw.sas7bdat"
+    private val codebookFilename =
+        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/labo_raw_fixed.xlsx"
+    private val ignoredVariables = setOf(
+        "CODE98", // will be used only as sample id
+        "SITE",
+        "DATA_NAS",
+        "X_DATEL",
+        "X_VUOTO",
+        "X_PIENO",
+        "X_BUSTE",
+        "X_INIZIO",
+        "X_FINE",
+        "X_PPAIR",
+        "X_CASCTL",
+        "X_U_SEDI",
+        "X_USEDIA"
+    )
 
     fun readCodebook(): Codebook {
         val workbook = WorkbookFactory.create(File(codebookFilename))
@@ -28,14 +42,18 @@ class DataFileProcessor {
         rowIterator.next()
 
         val sheetData = getSheetData(rowIterator, emptyList())
-        val variables = sheetData.map { data ->
-            when {
-                data.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(data)
-                data.getValue(EpicCodebookColumn.Meaning.index)[0].toLowerCase().contains("date") ->
-                    DateVariable.fromDataMap(data)
-                else -> NumericVariable.fromDataMap(data)
-            }
-        }.toList()
+        val variables = sheetData
+            // filter ignoring variables
+            .filter { data -> !ignoredVariables.contains(data.getValue(EpicCodebookColumn.Variable.index)[0]) }
+            .map { data ->
+                println(data.getValue(EpicCodebookColumn.Variable.index)[0])
+                when {
+                    data.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(data)
+                    data.getValue(EpicCodebookColumn.Meaning.index)[0].toLowerCase().contains("date") ->
+                        DateVariable.fromDataMap(data)
+                    else -> NumericVariable.fromDataMap(data)
+                }
+            }.toList()
         return Codebook(variables.map { it.name to it }.toMap())
     }
 
@@ -47,19 +65,19 @@ class DataFileProcessor {
             return data
         }
         val rowData = getRowData(rowIterator.next().cellIterator(), emptyMap())
-        if (!rowData.containsKey(0)) {
+        if (!rowData.containsKey(0) || rowData.getValue(0)[0] == "") {
             val updatedLastRow = addVariablesToLastRow(data, rowData)
             return getSheetData(rowIterator, data.subList(0, data.size - 1) + updatedLastRow)
         }
         return getSheetData(rowIterator, data + rowData)
     }
 
+    // TODO: rewrite with streams
     private fun addVariablesToLastRow(
         data: List<Map<Int, List<String>>>,
         rowData: Map<Int, List<String>>
     ): MutableMap<Int, List<String>> {
         val lastRow = data.last()
-        // TODO: rewrite with streams
         val updatedLastRow = mutableMapOf<Int, List<String>>()
         updatedLastRow.putAll(lastRow)
         for (item in rowData) {
@@ -88,16 +106,23 @@ class DataFileProcessor {
         val database = data.withIndex().map { (sampleIndex, sample) ->
             println(sampleIndex)
             for ((columnIndex, column) in columnsByIndex) {
-                var cell = sample[columnIndex]
-                if (cell is Date) {
-                    cell = cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                }
-                val satisfiedPredicates =
-                    predicateCodebooks
-                        .filter { (name, predicate) -> name.contains(column) && predicate(cell) }
-                        .keys
-                for (name in satisfiedPredicates) {
-                    dataPredicates[name] = (dataPredicates.getOrDefault(name, emptyList()) + sampleIndex)
+                println(column)
+                /*if (column == "X_UTPEGE") {
+                    println("f")
+                }*/
+                val cell = sample[columnIndex]
+                if (cell != null) { // could be missed data
+                    val satisfiedPredicates =
+                        predicateCodebooks
+                            .filter { (name, predicate) ->
+                                name.contains(column) && predicate(
+                                    if (cell is Date) cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() else cell.toString()
+                                )
+                            }
+                            .keys
+                    for (name in satisfiedPredicates) {
+                        dataPredicates[name] = (dataPredicates.getOrDefault(name, emptyList()) + sampleIndex)
+                    }
                 }
             }
             sampleIndex
@@ -112,12 +137,12 @@ class DataFileProcessor {
 
     companion object {
         private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_medical_to_age"
 
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val processor = DataFileProcessor()
+            val processor = LaboratoryDataParser()
             val codebook = processor.readCodebook()
             val (database, predicates) = processor.createPredicatesFromData(
                 CodebookToPredicatesTransformer(codebook).predicates

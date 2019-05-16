@@ -12,22 +12,31 @@ class NumericVariable(
 ) :
     Variable(name, meaning) {
 
+    fun getPredicates(): Map<String, (String) -> Boolean> {
+        return mapOf(
+            "low_$name" to isLowValue(),
+            "normal_$name" to isNormalValue(),
+            "high_$name" to isHighValue()
+        )
+    }
+
+    private fun isLowValue() = { it: String -> it.toDouble() < q1 }
+    private fun isHighValue() = { it: String -> it.toDouble() > q3 }
+    private fun isNormalValue() = { it: String -> it.toDouble() in q1..q3 }
+
+    // TODO: codebookcolumn should be changeble
     companion object {
         fun fromDataMap(data: Map<Int, List<String>>): NumericVariable {
             return NumericVariable(
-                data.getValue(CodebookColumn.Variable.index)[0],
-                data.getValue(CodebookColumn.Meaning.index)[0],
-                data.getValue(CodebookColumn.Max.index)[0].toDouble(),
-                data.getValue(CodebookColumn.Min.index)[0].toDouble(),
-                data.getValue(CodebookColumn.Mean.index)[0].toDouble(),
-                data.getValue(CodebookColumn.Median.index)[0].toDouble(),
-                data.getValue(CodebookColumn.Q1.index)[0].toDouble(),
-                data.getValue(CodebookColumn.Q3.index)[0].toDouble()
+                data.getValue(LaboCodebookColumn.Variable.index)[0],
+                data.getValue(LaboCodebookColumn.Meaning.index)[0],
+                data.getValue(LaboCodebookColumn.Max.index)[0].toDouble(),
+                data.getValue(LaboCodebookColumn.Min.index)[0].toDouble(),
+                data.getValue(LaboCodebookColumn.Mean.index)[0].toDouble(),
+                data.getValue(LaboCodebookColumn.Median.index)[0].toDouble(),
+                data.getValue(LaboCodebookColumn.Q1.index)[0].toDouble(),
+                data.getValue(LaboCodebookColumn.Q3.index)[0].toDouble()
             )
         }
-
-        fun isLowValue(variable: NumericVariable) = { it: Double -> it < variable.q1 }
-        fun isHighValue(variable: NumericVariable) = { it: Double -> it > variable.q3 }
-        fun isNormalValue(variable: NumericVariable) = { it: Double -> it <= variable.q3 && it >= variable.q1}
     }
 }
