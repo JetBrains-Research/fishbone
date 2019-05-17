@@ -71,13 +71,13 @@
         <form class="navbar-form navbar-left">
             <label>
                 <input type="radio" name="action-type" onchange="runAnalysis(this)" checked="checked">
-                Run analysis on *.bed files
+                Run analysis on data files
             </label>
             <label></label>
             <label></label>
             <label>
                 <input type="radio" name="action-type" onchange="loadResultFile(this)">
-                Load result json file
+                Load result files
             </label>
 
             <br>
@@ -89,14 +89,26 @@
             <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
             <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load"
                    onclick="$('#bed-database-file').click();"/>
+            <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
+            <input type="text" id="experiment-type" name="name" required minlength="4" size="10">
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="runAnalysisOnLoadedData()"/>
 
 
-            <label id="filename" style="display: none">File</label>
+            <label id="filename" style="display: none">Fishbone</label>
             <input id="file" type="file" accept=".json" style="display: none"/>
             <input id="file-button" type="button" class="btn btn-primary" value="Load *.json" style="display: none"
                    onclick="$('#file').click();"/>
+
+            <label id="tree-filename" style="display: none">Tree</label>
+            <input id="tree-file" type="file" accept=".dot" style="display: none"/>
+            <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot" style="display: none"
+                   onclick="$('#tree-file').click();"/>
+
+            <label id="fpgrowth-filename" style="display: none">FP-growth</label>
+            <input id="fpgrowth-file" type="file" accept=".txt" style="display: none"/>
+            <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt" style="display: none"
+                   onclick="$('#fpgrowth-file').click();"/>
 
             <script>
                 function runAnalysis(x) {
@@ -106,9 +118,17 @@
                         document.getElementById("bed-database-file-button").style.display = "inline";
                         document.getElementById("bed-database-file-label").style.display = "inline";
                         document.getElementById("run-analysis-button").style.display = "inline";
+                        document.getElementById("experiment-type-label").style.display = "inline";
+                        document.getElementById("experiment-type").style.display = "inline";
+                        document.getElementById("algorithms").style.display = "inline";
+                        document.getElementById("algorithms-label").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
                         document.getElementById("file-button").style.display = "none";
+                        document.getElementById("tree-filename").style.display = "none";
+                        document.getElementById("tree-file-button").style.display = "none";
+                        document.getElementById("fpgrowth-filename").style.display = "none";
+                        document.getElementById("fpgrowth-file-button").style.display = "none";
                     }
                 }
 
@@ -119,12 +139,33 @@
                         document.getElementById("bed-database-file-button").style.display = "none";
                         document.getElementById("bed-database-file-label").style.display = "none";
                         document.getElementById("run-analysis-button").style.display = "none";
+                        document.getElementById("experiment-type-label").style.display = "none";
+                        document.getElementById("experiment-type").style.display = "none";
+                        document.getElementById("algorithms").style.display = "none";
+                        document.getElementById("algorithms-label").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
                         document.getElementById("file-button").style.display = "inline";
+                        document.getElementById("tree-filename").style.display = "inline";
+                        document.getElementById("tree-file-button").style.display = "inline";
+                        document.getElementById("fpgrowth-filename").style.display = "inline";
+                        document.getElementById("fpgrowth-file-button").style.display = "inline";
                     }
                 }
             </script>
+        </form>
+        <form class="navbar-form navbar-right">
+            <label id="algorithms-label" for="algorithms">Run other algorithms</label>
+            <div id="algorithms" class="checkbox navbar-btn">
+                <!--<input type="checkbox" id="fishboneAlgCheckbox">
+                <label for="fishboneAlgCheckbox">Fishbone</label>-->
+
+                <input type="checkbox" id="fpGrowthAlgCheckbox">
+                <label for="fpGrowthAlgCheckbox">FPGrowth</label>
+
+                <input type="checkbox" id="decisionTreeAlgCheckbox">
+                <label for="decisionTreeAlgCheckbox">Decision tree</label>
+            </div>
         </form>
     </div>
 </nav>
@@ -166,7 +207,9 @@
         <label for="show-top-filter">Show</label>
         <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="5"/>&nbsp;
 
-        <label for="alternative-results">Alternative results</label>
+    </form>
+    <form class="navbar-form navbar-right">
+        <label for="alternative-results">Show other results</label>
         <div id="alternative-results" class="checkbox navbar-btn">
             <input type="checkbox" id="fpGrowthCheckbox" onclick="showFPGrowthResults()">
             <label for="fpGrowthCheckbox">FPGrowth</label>

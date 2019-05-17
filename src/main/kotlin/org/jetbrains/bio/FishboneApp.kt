@@ -78,6 +78,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
         return result
     }
 
+    // TODO: looks ugly, rewrite
     private suspend fun multipartToMineRulesRequest(multipart: MultiPartData, tempDir: File): MineRulesRequest {
         val requestMap = mutableMapOf<String, Any>()
         multipart.forEachPart { part ->

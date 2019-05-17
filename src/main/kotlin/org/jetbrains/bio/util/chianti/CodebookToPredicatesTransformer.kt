@@ -11,12 +11,20 @@ class CodebookToPredicatesTransformer(private val codebook: Codebook) {
 
     private fun createPredicates(): Map<String, (Any) -> Boolean> {
         val predicateList = codebook.variables.map { (_, variable) ->
-            when (variable) {
-                is NumericVariable -> variable.getPredicates()
-                is DateVariable -> variable.getPredicates()
-                is EncodedVariable -> variable.getPredicates()
-                else -> throw IllegalArgumentException("Unsupported variable type: $variable")
-            } as Map<String, (Any) -> Boolean>
+            if (variable.name != "X_AGEL") {
+                when (variable) {
+                    is NumericVariable -> variable.getPredicates()
+                    is DateVariable -> variable.getPredicates()
+                    is EncodedVariable -> {
+                        variable.getPredicates()
+                    }
+                    else -> throw IllegalArgumentException("Unsupported variable type: $variable")
+                } as Map<String, (Any) -> Boolean>
+            } else {
+                val oldAgeMin = 75
+                val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() < oldAgeMin }
+                mapOf("X_AGEL_is_lower_$oldAgeMin" to isInRange) as Map<String, (Any) -> Boolean>
+            }
         }
         val result = mutableMapOf<String, (Any) -> Boolean>()
         predicateList.forEach { p -> result.putAll(p) }
