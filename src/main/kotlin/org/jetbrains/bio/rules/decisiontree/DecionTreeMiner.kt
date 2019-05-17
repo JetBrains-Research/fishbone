@@ -12,7 +12,7 @@ class DecionTreeMiner {
             x: Array<DoubleArray>,
             y: IntArray,
             outputFilePath: Path,
-            maxNodes: Int = 1000
+            maxNodes: Int = 10
         ): String {
             val tree = DecisionTree(attributes, x, y, maxNodes)
             val outputFile = outputFilePath.toFile()
@@ -20,5 +20,4 @@ class DecionTreeMiner {
             return outputFile.absolutePath
         }
     }
-
 }

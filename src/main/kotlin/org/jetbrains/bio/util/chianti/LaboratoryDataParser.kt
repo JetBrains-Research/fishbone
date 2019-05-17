@@ -107,9 +107,6 @@ class LaboratoryDataParser {
             println(sampleIndex)
             for ((columnIndex, column) in columnsByIndex) {
                 println(column)
-                /*if (column == "X_UTPEGE") {
-                    println("f")
-                }*/
                 val cell = sample[columnIndex]
                 if (cell != null) { // could be missed data
                     val satisfiedPredicates =
@@ -137,7 +134,7 @@ class LaboratoryDataParser {
 
     companion object {
         private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_medical_to_age"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_medical_to_young"
 
         @JvmStatic
         fun main(args: Array<String>) {
