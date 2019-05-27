@@ -10,6 +10,10 @@ import java.io.File
 import java.io.FileInputStream
 import java.time.ZoneId
 import java.util.*
+import com.epam.parso.impl.CSVMetadataWriterImpl
+import com.epam.parso.impl.CSVDataWriterImpl
+import java.io.FileWriter
+
 
 /**
  * this class is used to parse labo_raw data from chianti dataset
@@ -112,9 +116,9 @@ class LaboratoryDataParser {
                     val satisfiedPredicates =
                         predicateCodebooks
                             .filter { (name, predicate) ->
-                                name.contains(column) && predicate(
-                                    if (cell is Date) cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() else cell.toString()
-                                )
+                                name.contains(column) &&
+                                        !(column == "X_AGEL" && cell.toString().toDouble() > 75) &&
+                                        predicate(if (cell is Date) cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() else cell.toString())
                             }
                             .keys
                     for (name in satisfiedPredicates) {
@@ -123,7 +127,7 @@ class LaboratoryDataParser {
                 }
             }
             sampleIndex
-        }
+        }.filter { idx -> data[idx][5].toString().toDouble() <= 75 }
         return Pair(database, dataPredicates.map {
             OveralpSamplePredicate(
                 it.key,
@@ -134,10 +138,27 @@ class LaboratoryDataParser {
 
     companion object {
         private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_medical_to_young"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_old_new"
 
         @JvmStatic
         fun main(args: Array<String>) {
+
+            /*val sasFileReader =
+                SasFileReaderImpl(
+                    FileInputStream(
+                        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw.sas7bdat"
+                    )
+                )
+
+            val metadataWriter = FileWriter("/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw_metadata.csv")
+            val csvMetadataWriter = CSVMetadataWriterImpl(metadataWriter)
+            csvMetadataWriter.writeMetadata(sasFileReader.columns)
+
+            val dataWriter = FileWriter("/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw.csv")
+            val csvDataWriter = CSVDataWriterImpl(dataWriter)
+            csvDataWriter.writeRowsArray(sasFileReader.columns, sasFileReader.readAll())
+            csvDataWriter.toString()*/
+
 
             val processor = LaboratoryDataParser()
             val codebook = processor.readCodebook()
