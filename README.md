@@ -60,8 +60,8 @@ Web UI consists of two main parts: running analysis and visualize results from l
 
 To run analysis use the following part:
 ![alt text](src/main/resources/service_ui_1.png "Run analysis UI")
-You should specify predicates files, database file and experiment type.
+Predicates files, database file and experiment type must be specified to run Fishbone algorithm. Checkboxes on the right side could be also used to run alternative algorithms.
 
 To load results use the following part:
  ![alt text](src/main/resources/service_ui_2.png "Load results UI")
- You can select local result files for different algorithms.
+Local result files for different algorithms could be selected to visualize.
