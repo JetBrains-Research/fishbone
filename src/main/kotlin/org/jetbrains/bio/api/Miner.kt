@@ -1,5 +1,8 @@
 package org.jetbrains.bio.api
 
+/**
+ * Mining algorithms
+ */
 enum class Miner(val label: String) {
     DECISION_TREE("tree"),
     FISHBONE("fishbone"),

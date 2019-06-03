@@ -5,6 +5,9 @@ import smile.association.AssociationRule
 import java.nio.file.Path
 import java.util.*
 
+/**
+ * Miner run FP-growth algorithm on specified data
+ */
 class FPGrowthMiner {
 
     companion object {
@@ -13,6 +16,9 @@ class FPGrowthMiner {
             .comparingDouble(AssociationRule::support)
             .thenComparing(AssociationRule::confidence)!!
 
+        /**
+         * Method runs fp-growth algorithm, gets top predicates, writes them to file and returns path to this file
+         */
         fun mine(
             items: Array<IntArray>,
             predicateIdsToNames: Map<Int, String>,
