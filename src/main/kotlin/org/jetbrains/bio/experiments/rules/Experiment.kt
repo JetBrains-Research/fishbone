@@ -21,17 +21,34 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+/**
+ * Experiment class provides methods for data analysis.
+ * Abstract parts are related to specific preprocessing steps of data for different experiment types.
+ */
 abstract class Experiment(private val outputFolder: String) {
 
     class PredicateInfo(val id: Int, val name: String, val satisfactionOnIds: BitSet)
 
     private val fpGrowthRuleRegex = """\[.*?\] ==> \[.*?\]""".toRegex()
 
+    /**
+     * Main method to run analysis on specified data files. Should be implemented in the following manner:
+     * - parse mine request to get parameters
+     * - prepare data files according to experiment type
+     * - call [mine] method to get results
+     */
     abstract fun run(mineRulesRequest: MineRulesRequest): Map<Miner, String>
+
+    /**
+     * Function to check predicate on database. Depends on experiment type
+     */
     abstract fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean
 
     private val logger = Logger.getLogger(Experiment::class.java)
 
+    /**
+     * Run patterns mining according to mine request.
+     */
     fun <V> mine(
         mineRulesRequest: MineRulesRequest,
         database: List<V>,
@@ -78,7 +95,7 @@ abstract class Experiment(private val outputFolder: String) {
                 database,
                 sourcesToTargets,
                 { rulesLogger.log("test", it) },
-                3
+                7
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()

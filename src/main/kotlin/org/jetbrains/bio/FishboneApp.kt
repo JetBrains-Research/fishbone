@@ -37,6 +37,9 @@ import java.io.File
 class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
     private val jacksonObjectMapper = jacksonObjectMapper()
 
+    /**
+     * HTTP API for Fishbone service
+     */
     fun run(port: Int = defaultServerPort) {
         val server = embeddedServer(Netty, port) {
             install(CallLogging)
