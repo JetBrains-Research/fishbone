@@ -42,7 +42,7 @@ dependencies {
 
     compile group: 'com.github.haifengl', name: 'smile-core', version: '1.5.2'
     compile 'com.opencsv:opencsv:4.5'
-    // compile group: 'nz.ac.waikato.cms.weka', name: 'weka-stable', version: '3.8.3'
+    compile group: 'nz.ac.waikato.cms.weka', name: 'weka-stable', version: '3.8.3'
     compile group: 'com.epam', name: 'parso', version: '2.0.9'
     compile group: 'org.apache.poi', name: 'poi', version: '3.9'
     compile group: 'org.apache.poi', name: 'poi-ooxml', version: '3.9'
