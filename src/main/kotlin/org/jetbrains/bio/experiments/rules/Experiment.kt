@@ -11,15 +11,20 @@ import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
 import org.jetbrains.bio.rules.decisiontree.DecionTreeMiner
 import org.jetbrains.bio.rules.fpgrowth.FPGrowthMiner
+import org.jetbrains.bio.rules.ripper.RipperMiner
 import org.jetbrains.bio.util.div
 import org.jetbrains.bio.util.toPath
 import smile.data.NumericAttribute
+import weka.core.Attribute
+import weka.core.Instances
+import weka.core.SparseInstance
 import java.awt.Color
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Experiment class provides methods for data analysis.
@@ -61,6 +66,7 @@ abstract class Experiment(private val outputFolder: String) {
                 Miner.FISHBONE -> mineByFishbone(database, predicates, target)
                 Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, target)
                 Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(database, predicates, target!!) else ""
+                Miner.RIPPER -> if (isTargetPresented) mineByRipper(database, predicates, target!!) else ""
             }
         }.toMap().toMutableMap()
 
@@ -80,7 +86,7 @@ abstract class Experiment(private val outputFolder: String) {
     ): String {
         try {
             logger.info("Processing fishbone")
-            val rulesResults = getOutpuFilePath(Miner.FISHBONE)
+            val rulesResults = getOutputFilePath(Miner.FISHBONE)
             val rulesLogger = RulesLogger(rulesResults)
 
             val indexedPredicates = predicates.withIndex()
@@ -156,6 +162,43 @@ abstract class Experiment(private val outputFolder: String) {
         return if (cell?.name == "OD") color.darker() else color
     }
 
+    private fun <V> mineByRipper(
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>
+    ): String {
+        logger.info("Processing ripper")
+
+        val instances = createInstancesWithAttributesFromPredicates(target, predicates, database.size)
+        addInstances(database, predicates + target, instances)
+
+        RipperMiner.mine(instances)
+
+        return ""
+    }
+
+    private fun <V> createInstancesWithAttributesFromPredicates(
+        target: Predicate<V>,
+        predicates: List<Predicate<V>>,
+        capacity: Int,
+        name: String = timestamp()
+    ): Instances {
+        val classAttribute = Attribute(target.name(), listOf("1.0", "0.0"))
+        val attributes = predicates.map { predicate -> Attribute(predicate.name()) } + classAttribute
+        val instances = Instances(name, ArrayList(attributes), capacity)
+        instances.setClassIndex(instances.numAttributes() - 1)
+        return instances
+    }
+
+    private fun <V> addInstances(database: List<V>, predicates: List<Predicate<V>>, instances: Instances) {
+        (0 until database.size).map { i ->
+            val attributesValues = predicates.map { predicate ->
+                if (predicateCheck(predicate, i, database)) 1.0 else 0.0
+            }.toDoubleArray()
+            instances.add(SparseInstance(1.0, attributesValues)) //TODO: type of instance?
+        }
+    }
+
     private fun <V> mineByFPGrowth(
         database: List<V>,
         predicates: List<Predicate<V>>,
@@ -163,7 +206,7 @@ abstract class Experiment(private val outputFolder: String) {
     ): String {
         try {
             logger.info("Processing fp-growth")
-            val rulesResults = getOutpuFilePath(Miner.FP_GROWTH)
+            val rulesResults = getOutputFilePath(Miner.FP_GROWTH)
 
             val allPredicates = if (target != null) predicates + target else predicates
             val predicatesInfo = getPredicatesInfoOverDatabase(allPredicates, database)
@@ -240,7 +283,7 @@ abstract class Experiment(private val outputFolder: String) {
     ): String {
         try {
             logger.info("Processing decision tree")
-            val rulesResults = getOutpuFilePath(Miner.DECISION_TREE)
+            val rulesResults = getOutputFilePath(Miner.DECISION_TREE)
 
             val attributes = sourcePredicates.map { NumericAttribute(it.name()) }.toTypedArray()
             val x = (0 until database.size).map { i ->
@@ -263,17 +306,20 @@ abstract class Experiment(private val outputFolder: String) {
         }
     }
 
-    private fun getOutpuFilePath(miner: Miner): Path {
+    private fun getOutputFilePath(miner: Miner): Path {
         val timestamp = timestamp()
+        // TODO: move this to Miner class fields
         val prefix = when (miner) {
             Miner.DECISION_TREE -> "tree"
             Miner.FISHBONE -> "fishbone"
             Miner.FP_GROWTH -> "fpgrowth"
+            Miner.RIPPER -> "ripper"
         }
         val ext = when (miner) {
             Miner.DECISION_TREE -> "dot"
             Miner.FISHBONE -> "csv"
             Miner.FP_GROWTH -> "txt"
+            Miner.RIPPER -> "txt"
         }
         return outputFolder / ("$prefix _rules_$timestamp.$ext")
     }
