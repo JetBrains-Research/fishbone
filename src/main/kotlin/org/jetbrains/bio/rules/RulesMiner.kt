@@ -12,13 +12,14 @@ import org.jetbrains.bio.util.parallelismLevel
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import kotlin.math.min
 
 
 object RulesMiner {
 
     const val TOP_PER_COMPLEXITY = 100
     const val TOP_LEVEL_PREDICATES_INFO = 10
-    const val CONVICTION_DELTA = 1E-3
+    const val FUNCTION_DELTA = 1E-3
     const val KL_DELTA = 1E-3
 
 
@@ -41,14 +42,15 @@ object RulesMiner {
     /**
      * Dynamic programming algorithm storing optimization results by complexity.
      */
-    internal fun <T> mineByComplexity(predicates: List<Predicate<T>>,
-                                      target: Predicate<T>,
-                                      database: List<T>,
-                                      maxComplexity: Int,
-                                      topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                                      topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
-                                      convictionDelta: Double = CONVICTION_DELTA,
-                                      klDelta: Double = KL_DELTA): Array<RulesBPQ<T>> {
+    private fun <T> mineByComplexity(predicates: List<Predicate<T>>,
+                                     target: Predicate<T>,
+                                     database: List<T>,
+                                     maxComplexity: Int,
+                                     topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                                     topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
+                                     function: (Rule<T>) -> Double,
+                                     functionDelta: Double = FUNCTION_DELTA,
+                                     klDelta: Double = KL_DELTA): Array<RulesBPQ<T>> {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
@@ -56,8 +58,8 @@ object RulesMiner {
             "Expected klDelta <= 1 (100%), got: $klDelta"
         }
         // Invariant: best[k] - best optimization results with complexity = k
-        val bestByComplexity = Array(maxComplexity + 1) { RulesBPQ(topPerComplexity, database, convictionDelta, klDelta) }
-        (1..Math.min(maxComplexity, predicates.size)).forEach { k ->
+        val bestByComplexity = Array(maxComplexity + 1) { RulesBPQ(topPerComplexity, database, function, functionDelta, klDelta) }
+        (1..min(maxComplexity, predicates.size)).forEach { k ->
             val queue = bestByComplexity[k]
             if (k == 1) {
                 predicates.forEach { p ->
@@ -66,7 +68,7 @@ object RulesMiner {
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
                 // Collect all the top level predicates pairwise joint distributions
-                val topLevelNodes = queue.sortedWith(RulesBPQ.comparator()).take(topLevelToPredicatesInfo)
+                val topLevelNodes = queue.sortedWith(RulesBPQ.comparator(function)).take(topLevelToPredicatesInfo)
                 val topLevelPairwiseDistributions = arrayListOf<DistributionPP>()
                 for (i in 0 until topLevelNodes.size) {
                     val n1 = topLevelNodes[i]
@@ -106,13 +108,15 @@ object RulesMiner {
                           maxComplexity: Int,
                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
                           topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
-                          convictionDelta: Double = CONVICTION_DELTA,
+                          function: (Rule<T>) -> Double,
+                          functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA): List<Node<T>> {
         val best = mineByComplexity(predicates, target, database,
-                maxComplexity, topPerComplexity, topLevelToPredicatesInfo, convictionDelta, klDelta)
+                maxComplexity, topPerComplexity, topLevelToPredicatesInfo,
+                function, functionDelta, klDelta)
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
-        return best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator())
+        return best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
     }
 
 
@@ -120,7 +124,7 @@ object RulesMiner {
      * Result of optimization is a graph, [Node] represents a single node of a graph.
      *
      * For each edge Parent -> Child, the following **invariant** is hold.
-     * 1.   conviction(Child) >= conviction(Parent) + [convictionDelta]
+     * 1.   f(Child) >= f(Parent) + [functionDelta]
      * 2.   klDelta < 0 OR kullbackLeibler(dEmpirical, dChild) <= kullbackLeibler(dEmpirical, dParent) - [klDelta]
      *
      * How information is used?
@@ -145,7 +149,8 @@ object RulesMiner {
                  maxComplexity: Int,
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
                  topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
-                 convictionDelta: Double = CONVICTION_DELTA,
+                 function: (Rule<T>) -> Double = Rule<T>::conviction,
+                 functionDelta: Double = FUNCTION_DELTA,
                  klDelta: Double = KL_DELTA) {
         LOG.info("Rules mining: $title")
         // Mine each target separately
@@ -156,7 +161,8 @@ object RulesMiner {
                             conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
                     Callable {
                         val mineResult = mine(conditions, target, database,
-                                maxComplexity, topPerComplexity, topLevelToPredicatesInfo, convictionDelta, klDelta)
+                                maxComplexity, topPerComplexity, topLevelToPredicatesInfo,
+                                function, functionDelta, klDelta)
                         logFunction(mineResult)
                         MultitaskProgress.finishTask(target.name())
                     }

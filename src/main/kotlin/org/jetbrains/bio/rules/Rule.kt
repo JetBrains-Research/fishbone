@@ -3,6 +3,8 @@ package org.jetbrains.bio.rules
 import org.apache.commons.csv.CSVRecord
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.predicates.PredicateParser
+import java.lang.Math.pow
+import kotlin.math.sqrt
 
 /**
  * Association Rule
@@ -65,6 +67,22 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
     val conviction: Double = 1.0 * condition / database * (database - target) / (errorType1 + 1.0)
 
     /**
+     * Scenario1: The expert Er tolerates the appearance of a certain number of counter-examples
+     * X ∩ ¬Y to a decision rule. In this case, the rejection of a rule is postponed until enough
+     * counter-examples are found.
+     *
+     * Scenario2: The expert Er refuses the appearance of too many counter-examples to a
+     * decision rule. The rejection of the rule must be done rapidly with respect to the number of
+     * counter-examples.
+     *
+     * Conviction works perfectly in Scenario1. LOE is well placed in both scenarios. It stands for a good compromise.
+     *
+     * LOE(X -> Y) = (n*sup(X∩Y)−sup(X)sup(Y)) / sup(X)sup(¬Y) = (p(Y|X) - P(Y)) / P(not Y)
+     * Important: in case A < B < C, LOE(A => C) == LOE(B => C). We use pow to fix this.
+     */
+    val loe: Double = (1.0 * database * pow(intersection.toDouble(), 1.1) / (condition + 1.0) - target) / (database - target + 1.0)
+
+    /**
      * Computes correlation between condition and target.
      * In case of binary values this can be estimated as Phi coefficient: https://en.wikipedia.org/wiki/Phi_coefficient
      * NOTE: coefficient is NaN in case when any of the values have zero variance.
@@ -80,7 +98,7 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
         val n_1 = target
         val n_0 = database - target
         val phi = (1.0 * n11.toDouble() * n00.toDouble() - 1.0 * n10.toDouble() * n01.toDouble()) /
-                Math.sqrt(1.0 * n1_.toDouble() * n0_.toDouble() * n_1.toDouble() * n_0.toDouble())
+                sqrt(1.0 * n1_.toDouble() * n0_.toDouble() * n_1.toDouble() * n_0.toDouble())
         // NaN in case when any of the values have zero variance
         check(phi.isNaN() || -1 <= phi && phi <= 1) { phi }
         phi
@@ -95,7 +113,7 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
             RuleRecord(id, conditionPredicate, targetPredicate,
                     database, condition, target, intersection,
                     condition.toDouble() / database, intersection.toDouble() / condition,
-                    correlation, lift, conviction,
+                    correlation, lift, conviction, loe,
                     conditionPredicate.complexity())
 
     override fun equals(other: Any?): Boolean {
@@ -123,6 +141,7 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
                     val correlation: Double,
                     val lift: Double,
                     val conviction: Double,
+                    val loe: Double,
                     val complexity: Int) {
 
     fun toCSV() = listOf(
@@ -138,6 +157,7 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
             if (!correlation.isNaN()) correlation else 0.0,
             if (!lift.isNaN()) lift else 0.0,
             if (!conviction.isNaN()) conviction else 0.0,
+            if (!loe.isNaN()) loe else 0.0,
             complexity)
 
 
@@ -156,6 +176,7 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
         private const val KEY_CORRELATION = "correlation"
         private const val KEY_LIFT = "lift"
         private const val KEY_CONVICTION = "conviction"
+        private const val KEY_LOE = "loe"
         private const val KEY_COMPLEXITY = "complexity"
 
         val PARAMS = listOf(
@@ -171,6 +192,7 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
                 KEY_CORRELATION,
                 KEY_LIFT,
                 KEY_CONVICTION,
+                KEY_LOE,
                 KEY_COMPLEXITY)
 
 
@@ -185,6 +207,7 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
                     correlation = d(it, KEY_CORRELATION),
                     lift = d(it, KEY_LIFT),
                     conviction = d(it, KEY_CONVICTION),
+                    loe = d(it, KEY_LOE),
                     complexity = i(it, KEY_COMPLEXITY))
         }
 
