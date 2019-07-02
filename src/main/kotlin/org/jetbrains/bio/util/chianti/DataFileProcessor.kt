@@ -4,7 +4,7 @@ import com.epam.parso.impl.SasFileReaderImpl
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.WorkbookFactory
-import org.jetbrains.bio.predicates.OveralpSamplePredicate
+import org.jetbrains.bio.predicates.OverlapSamplePredicate
 import org.jetbrains.bio.util.chianti.model.*
 import java.io.File
 import java.io.FileInputStream
@@ -79,7 +79,7 @@ class DataFileProcessor {
     }
 
     fun createPredicatesFromData(predicateCodebooks: Map<String, (Any) -> Boolean>)
-            : Pair<List<Int>, List<OveralpSamplePredicate>> {
+            : Pair<List<Int>, List<OverlapSamplePredicate>> {
         val sasFileReader = SasFileReaderImpl(FileInputStream(dataFilename))
         val columnsByIndex = sasFileReader.columns.withIndex().map { (idx, column) -> idx to column.name }.toMap()
         val data = sasFileReader.readAll() // todo: readNext
@@ -103,7 +103,7 @@ class DataFileProcessor {
             sampleIndex
         }
         return Pair(database, dataPredicates.map {
-            OveralpSamplePredicate(
+            OverlapSamplePredicate(
                 it.key,
                 it.value
             )

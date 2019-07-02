@@ -7,7 +7,7 @@ class EncodedVariable(name: String, meaning: String, val values: Set<String>) : 
     enum class EncodedVariableType {
         NUMERATED, // predicate = number
         RANGE, // predicate = range
-        FREE_CODED // example: "X_USEDIA: No sediment code or Sediment coded: see lab assay methods" | predicate = none or string from sample
+        FREE_CODED // example: "USEDIA: No sediment code or Sediment coded: see lab assay methods" | predicate = none or string from sample
     }
 
     fun getPredicates(): Map<String, (String) -> Boolean> {
