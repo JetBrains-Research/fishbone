@@ -22,7 +22,7 @@ class CodebookToPredicatesTransformer(private val codebook: Codebook) {
                 } as Map<String, (Any) -> Boolean>
             } else {
                 val oldAgeMin = 75
-                val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() < 65.0 }
+                val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() >= 65.0 && sample_value.toDouble() <= 75.0 }
                 mapOf("X_AGEL_is_old" to isInRange) as Map<String, (Any) -> Boolean>
             }
         }
