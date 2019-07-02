@@ -58,15 +58,19 @@ abstract class Experiment(private val outputFolder: String) {
         mineRulesRequest: MineRulesRequest,
         database: List<V>,
         predicates: List<Predicate<V>>,
-        target: Predicate<V>? = null
+        targets: List<Predicate<V>>? = null
     ): MutableMap<Miner, String> {
-        val isTargetPresented = target != null
+        val isTargetPresented = targets != null
         val results = mineRulesRequest.miners.map { miner ->
             miner to when (miner) {
-                Miner.FISHBONE -> mineByFishbone(database, predicates, target)
-                Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, target)
-                Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(database, predicates, target!!) else ""
-                Miner.RIPPER -> if (isTargetPresented) mineByRipper(database, predicates, target!!) else ""
+                Miner.FISHBONE -> mineByFishbone(database, predicates, targets?.getOrNull(0))
+                Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets?.getOrNull(0))
+                Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(
+                    database,
+                    predicates,
+                    targets!![0]
+                ) else ""
+                Miner.RIPPER -> if (isTargetPresented) mineByRipper(database, predicates, targets!!) else ""
             }
         }.toMap().toMutableMap()
 
@@ -101,7 +105,7 @@ abstract class Experiment(private val outputFolder: String) {
                 database,
                 sourcesToTargets,
                 { rulesLogger.log("test", it) },
-                10//predicates.size
+                3//predicates.size
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()
@@ -165,12 +169,12 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> mineByRipper(
         database: List<V>,
         predicates: List<Predicate<V>>,
-        target: Predicate<V>
+        targets: List<Predicate<V>>
     ): String {
         logger.info("Processing ripper")
 
-        val instances = createInstancesWithAttributesFromPredicates(target, predicates, database.size)
-        addInstances(database, predicates + target, instances)
+        val instances = createInstancesWithAttributesFromPredicates(targets, predicates, database.size)
+        addInstances(database, predicates + targets, instances)
 
         val rulesPath = RipperMiner.mine(instances, getOutputFilePath(Miner.RIPPER))
         logger.info("Ripper rules saved to $rulesPath")
@@ -179,14 +183,16 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> createInstancesWithAttributesFromPredicates(
-        target: Predicate<V>,
+        targets: List<Predicate<V>>,
         predicates: List<Predicate<V>>,
         capacity: Int,
         name: String = timestamp()
     ): Instances {
-        val classAttribute = Attribute(target.name(), listOf("1.0", "0.0"))
-        val attributes = predicates.map { predicate -> Attribute(predicate.name()) } + classAttribute
+        // TODO: fix
+        val classAttributes = targets.map { target -> Attribute(target.name(), listOf("1.0", "0.0")) }
+        val attributes = predicates.map { predicate -> Attribute(predicate.name()) } + classAttributes
         val instances = Instances(name, ArrayList(attributes), capacity)
+        // TODO: fix
         instances.setClassIndex(instances.numAttributes() - 1)
         return instances
     }

@@ -116,8 +116,11 @@ class LaboratoryDataParser {
                     val satisfiedPredicates =
                         predicateCodebooks
                             .filter { (name, predicate) ->
+                                column != "X_AGEL" ||
+                                        (column == "X_AGEL" && (cell.toString().toDouble() < 40 || cell.toString().toDouble() in 65.0..75.0))
+                            }
+                            .filter { (name, predicate) ->
                                 name.contains(column) &&
-                                        !(column == "X_AGEL" && cell.toString().toDouble() > 75) &&
                                         predicate(if (cell is Date) cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() else cell.toString())
                             }
                             .keys

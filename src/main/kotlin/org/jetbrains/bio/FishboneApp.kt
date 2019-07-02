@@ -98,7 +98,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
                 is PartData.FileItem -> {
                     val file = File(tempDir, part.originalFileName)
                     part.streamProvider().use { its -> file.outputStream().buffered().use { its.copyTo(it) } }
-                    requestMap[name] = if (name == "database" || name == "target") {
+                    requestMap[name] = if (name == "database") {
                         file.absolutePath
                     } else {
                         (requestMap.getOrDefault(name, listOf<String>()) as List<String>) + file.absolutePath
