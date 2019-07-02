@@ -17,13 +17,13 @@ class CiofaniDataExperiment(outputFolder: String) : Experiment("$outputFolder/ci
         val databasePath = Paths.get(mineRulesRequest.database)
         val database = LocationsMergingList.load(genomeQuery, databasePath).toList()
         val predicates = PredicatesHelper.createBedPredicates(genomeQuery, mineRulesRequest.predicates)
-        val target = if (mineRulesRequest.target != null) {
-            PredicatesHelper.createBedPredicates(genomeQuery, listOf(mineRulesRequest.target))[0]
+        val targets = if (mineRulesRequest.target.isNotEmpty()) {
+            PredicatesHelper.createBedPredicates(genomeQuery, mineRulesRequest.target)
         } else {
             null
         }
 
-        return mine(mineRulesRequest, database, predicates, target)
+        return mine(mineRulesRequest, database, predicates, targets)
     }
 
 }
