@@ -142,7 +142,7 @@ class LaboratoryDataParser {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val sasFileReader =
+            /*val sasFileReader =
                 SasFileReaderImpl(
                     FileInputStream(
                         "/home/nlukashina/education/bioinf/spring/fishbone_materials/InCHIANTI_zip/follow-up3_v3/4.data/sas_datasets/pQCT/pqcf3raw.sas7bdat"
@@ -156,9 +156,9 @@ class LaboratoryDataParser {
             val dataWriter = FileWriter("/home/nlukashina/education/bioinf/spring/fishbone_materials/InCHIANTI_zip/follow-up3_v3/4.data/sas_datasets/pQCT/pqcf3raw.csv")
             val csvDataWriter = CSVDataWriterImpl(dataWriter)
             csvDataWriter.writeRowsArray(sasFileReader.columns, sasFileReader.readAll())
-            csvDataWriter.toString()
+            csvDataWriter.toString()*/
 
-            /*val processor = LaboratoryDataParser()
+            val processor = LaboratoryDataParser()
             val codebook = processor.readCodebook()
             val (database, predicates) = processor.createPredicatesFromData(
                 CodebookToPredicatesTransformer(codebook).predicates
@@ -176,7 +176,7 @@ class LaboratoryDataParser {
                 output.absolutePath
             }
 
-            predicateFilenames.forEach { println(it) }*/
+            predicateFilenames.forEach { println(it) }
         }
     }
 }

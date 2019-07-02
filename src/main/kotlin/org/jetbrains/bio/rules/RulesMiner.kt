@@ -62,7 +62,7 @@ object RulesMiner {
             if (k == 1) {
                 predicates.forEach { p ->
                     MultitaskProgress.reportTask(target.name())
-                    (if (p.canNegate()) listOf(p/*, p.not()*/) else listOf(p))
+                    (if (p.canNegate()) listOf(p, p.not()) else listOf(p))
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
                 // Collect all the top level predicates pairwise joint distributions
@@ -87,7 +87,7 @@ object RulesMiner {
                 bestByComplexity[k - 1].flatMap { parent ->
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
                     predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
-                            .flatMap { p -> if (p.canNegate()) listOf(p/*, p.not()*/) else listOf(p) }
+                            .flatMap { p -> if (p.canNegate()) listOf(p, p.not()) else listOf(p) }
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
                                         .filter(Predicate<T>::defined)

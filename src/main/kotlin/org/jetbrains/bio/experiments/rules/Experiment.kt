@@ -101,7 +101,7 @@ abstract class Experiment(private val outputFolder: String) {
                 database,
                 sourcesToTargets,
                 { rulesLogger.log("test", it) },
-                7
+                10//predicates.size
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()
@@ -172,9 +172,10 @@ abstract class Experiment(private val outputFolder: String) {
         val instances = createInstancesWithAttributesFromPredicates(target, predicates, database.size)
         addInstances(database, predicates + target, instances)
 
-        RipperMiner.mine(instances)
+        val rulesPath = RipperMiner.mine(instances, getOutputFilePath(Miner.RIPPER))
+        logger.info("Ripper rules saved to $rulesPath")
 
-        return ""
+        return rulesPath
     }
 
     private fun <V> createInstancesWithAttributesFromPredicates(
@@ -321,7 +322,7 @@ abstract class Experiment(private val outputFolder: String) {
             Miner.FP_GROWTH -> "txt"
             Miner.RIPPER -> "txt"
         }
-        return outputFolder / ("$prefix _rules_$timestamp.$ext")
+        return outputFolder / ("${prefix}_rules_$timestamp.$ext")
     }
 
     private fun timestamp() = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH:mm:ss"))
