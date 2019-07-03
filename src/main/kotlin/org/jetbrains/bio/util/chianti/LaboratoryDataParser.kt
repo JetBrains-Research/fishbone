@@ -25,6 +25,7 @@ class LaboratoryDataParser {
         "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw.sas7bdat"
     private val codebookFilename =
         "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/labo_raw_fixed.xlsx"
+    private val referenceFilename = "/home/nlukashina/education/bioinf/spring/fishbone_materials/qualified_features/csv_numerical_references/ref_bl.csv"
     private val ignoredVariables = setOf(
         "CODE98", // will be used only as sample id
         "SITE",
@@ -175,7 +176,7 @@ class LaboratoryDataParser {
 
     companion object {
         private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_young_new"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_with_ref"
 
         @JvmStatic
         fun main(args: Array<String>) {
