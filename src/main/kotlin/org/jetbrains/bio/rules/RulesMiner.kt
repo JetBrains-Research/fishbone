@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesMiner.mine
+import org.jetbrains.bio.rules.validation.ChiSquaredStatisticalSignificance
 import org.jetbrains.bio.util.MultitaskProgress
 import org.jetbrains.bio.util.awaitAll
 import org.jetbrains.bio.util.bufferedReader
@@ -49,6 +50,7 @@ object RulesMiner {
                                      maxComplexity: Int,
                                      and: Boolean = true,
                                      or: Boolean = true,
+                                     negate: Boolean = true,
                                      topPerComplexity: Int = TOP_PER_COMPLEXITY,
                                      topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                                      function: (Rule<T>) -> Double,
@@ -67,7 +69,7 @@ object RulesMiner {
             if (k == 1) {
                 predicates.forEach { p ->
                     MultitaskProgress.reportTask(target.name())
-                    (if (p.canNegate()) listOf(p/*, p.not()*/) else listOf(p))
+                    (if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p))
                             .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
                 }
                 // Collect all the top level predicates pairwise joint distributions
@@ -92,9 +94,9 @@ object RulesMiner {
                 bestByComplexity[k - 1].flatMap { parent ->
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
                     predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
-                            .flatMap { p -> if (p.canNegate()) listOf(p/*, p.not()*/) else listOf(p) }
+                            .flatMap { p -> if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p) }
                             .flatMap { p ->
-                                PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p)
+                                PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p, and = and, or = or)
                                         .filter(Predicate<T>::defined)
                                         .map { Node(Rule(it, target, database), p, parent) }
                             }
@@ -112,13 +114,14 @@ object RulesMiner {
                           maxComplexity: Int,
                           and: Boolean = true,
                           or: Boolean = true,
+                          negate: Boolean = true,
                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
                           topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA): List<Node<T>> {
         val best = mineByComplexity(predicates, target, database,
-                maxComplexity, and, or,
+                maxComplexity, and, or, negate,
                 topPerComplexity, topLevelToPredicatesInfo,
                 function, functionDelta, klDelta)
         // Since we use FishBone visualization as an analysis method,
@@ -156,11 +159,13 @@ object RulesMiner {
                  maxComplexity: Int,
                  and: Boolean = true,
                  or: Boolean = true,
+                 negate: Boolean = true,
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
                  topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA) {
+                 klDelta: Double = KL_DELTA,
+                 filterBySignificance: Boolean = false) {
         LOG.info("Rules mining: $title")
         // Mine each target separately
         val executor = Executors.newWorkStealingPool(parallelismLevel())
@@ -170,10 +175,19 @@ object RulesMiner {
                             conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
                     Callable {
                         val mineResult = mine(conditions, target, database,
-                                maxComplexity, and, or,
+                                maxComplexity, and, or, negate,
                                 topPerComplexity, topLevelToPredicatesInfo,
                                 function, functionDelta, klDelta)
-                        logFunction(mineResult)
+
+                        val filteredMineResult = if (filterBySignificance) {
+                            mineResult.filter { ChiSquaredStatisticalSignificance.test(it.rule, database) }
+                        } else {
+                            mineResult
+                        }
+
+                        LOG.info("Significant rules: ${filteredMineResult.size} / ${mineResult.size}")
+
+                        logFunction(filteredMineResult)
                         MultitaskProgress.finishTask(target.name())
                     }
                 })

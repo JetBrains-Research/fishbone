@@ -90,7 +90,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
 
     private fun Color.toHex(): String = "#%02x%02x%02x".format(red, green, blue)
 
-    fun getJson(palette: (String) -> Color, criterion: String): String {
+    fun getJson(palette: (String) -> Color, criterion: String = "conviction"): String {
         // We want null modification to map to "null"
         val json = mapOf(
                 "records" to graphRecords.toList(),

@@ -116,7 +116,9 @@ abstract class Experiment(private val outputFolder: String) {
                     sourcesToTargets,
                     { rulesLogger.log("test", it) },
                     maxComplexity,
-                    function = criterion
+                    function = criterion,
+                    or = false,
+                    negate = false
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()

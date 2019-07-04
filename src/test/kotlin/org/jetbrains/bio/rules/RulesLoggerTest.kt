@@ -283,7 +283,7 @@ class RulesLoggerTest {
     "[40;50)": "#ffffff",
     "[20;35)": "#ffffff"
   }
-}""", logger.getJson { Color.WHITE })
+}""", logger.getJson({ Color.WHITE }))
     }
 
 
