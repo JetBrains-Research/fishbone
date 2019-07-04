@@ -1,5 +1,6 @@
 package org.jetbrains.bio.rules
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Maps
 import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
@@ -46,6 +47,8 @@ object RulesMiner {
                                      target: Predicate<T>,
                                      database: List<T>,
                                      maxComplexity: Int,
+                                     and: Boolean = true,
+                                     or: Boolean = true,
                                      topPerComplexity: Int = TOP_PER_COMPLEXITY,
                                      topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                                      function: (Rule<T>) -> Double,
@@ -102,17 +105,21 @@ object RulesMiner {
     }
 
 
+    @VisibleForTesting
     internal fun <T> mine(predicates: List<Predicate<T>>,
                           target: Predicate<T>,
                           database: List<T>,
                           maxComplexity: Int,
+                          and: Boolean = true,
+                          or: Boolean = true,
                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
                           topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA): List<Node<T>> {
         val best = mineByComplexity(predicates, target, database,
-                maxComplexity, topPerComplexity, topLevelToPredicatesInfo,
+                maxComplexity, and, or,
+                topPerComplexity, topLevelToPredicatesInfo,
                 function, functionDelta, klDelta)
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
@@ -147,6 +154,8 @@ object RulesMiner {
                  toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
                  logFunction: (List<Node<T>>) -> Unit,
                  maxComplexity: Int,
+                 and: Boolean = true,
+                 or: Boolean = true,
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
                  topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
@@ -161,7 +170,8 @@ object RulesMiner {
                             conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
                     Callable {
                         val mineResult = mine(conditions, target, database,
-                                maxComplexity, topPerComplexity, topLevelToPredicatesInfo,
+                                maxComplexity, and, or,
+                                topPerComplexity, topLevelToPredicatesInfo,
                                 function, functionDelta, klDelta)
                         logFunction(mineResult)
                         MultitaskProgress.finishTask(target.name())

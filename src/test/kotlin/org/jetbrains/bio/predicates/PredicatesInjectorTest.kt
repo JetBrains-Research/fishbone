@@ -62,9 +62,27 @@ class PredicatesInjectorTest : TestCase() {
     fun testInjectParenthesisPredicate() {
         val predicates = PredicatesInjector.injectPredicate(p("(0)"), p("1"))
         assertEquals("""0 AND 1
-0 OR 1""",
-                ts(predicates))
+0 OR 1""", ts(predicates))
     }
+
+    @Throws(Exception::class)
+    fun testAndOnly() {
+        val predicates = PredicatesInjector.injectPredicate(p("(0)"), p("1"), and = true, or = false)
+        assertEquals("0 AND 1", ts(predicates))
+    }
+
+    @Throws(Exception::class)
+    fun testOrOnly() {
+        val predicates = PredicatesInjector.injectPredicate(p("(0)"), p("1"), and = false, or = true)
+        assertEquals("0 OR 1", ts(predicates))
+    }
+
+    @Throws(Exception::class)
+    fun testNothing() {
+        val predicates = PredicatesInjector.injectPredicate(p("(0)"), p("1"), and = false, or = false)
+        assertEquals("", ts(predicates))
+    }
+
 
     private fun ts(predicates: Collection<Predicate<Int>>): String =
             predicates.map { it.name() }.sorted().joinToString("\n")

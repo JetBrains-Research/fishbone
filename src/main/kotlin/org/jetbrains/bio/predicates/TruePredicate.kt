@@ -5,7 +5,7 @@ package org.jetbrains.bio.predicates
  * @since 18.2.15
  */
 class TruePredicate<T> : Predicate<T>() {
-    override fun name() = "TRUE"
+    override fun name() = PredicateParser.TRUE.token
 
     override fun test(item: T): Boolean {
         return true
@@ -13,6 +13,10 @@ class TruePredicate<T> : Predicate<T>() {
 
     override fun not(): Predicate<T> {
         return FalsePredicate()
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {

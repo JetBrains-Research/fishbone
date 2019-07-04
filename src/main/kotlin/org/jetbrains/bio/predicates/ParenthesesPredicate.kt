@@ -9,7 +9,7 @@ import java.util.*
  */
 class ParenthesesPredicate<T> internal constructor(val operand: Predicate<T>) : Predicate<T>() {
     override fun name(): String {
-        return "(${operand.name()})"
+        return "${PredicateParser.LPAR.token}${operand.name()}${PredicateParser.RPAR.token}"
     }
 
     override fun canNegate(): Boolean {
@@ -50,7 +50,9 @@ class ParenthesesPredicate<T> internal constructor(val operand: Predicate<T>) : 
                 return UndefinedPredicate()
             }
             // Optimize complexity
-            return if (predicate is AndPredicate<*> || predicate is OrPredicate<*>) ParenthesesPredicate(predicate) else predicate
+            return if (predicate is AndPredicate<*> || predicate is OrPredicate<*>)
+                ParenthesesPredicate(predicate)
+            else predicate
         }
     }
 }
