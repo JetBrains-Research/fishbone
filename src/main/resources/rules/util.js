@@ -18,10 +18,11 @@ let support = 0;
 let confidence = 0;
 let conviction = 0;
 let complexity = 10;
-let convictionMax = 1.0;
+let criterionMax = 1.0;
 let showTop = 100;
 
 let palette = {};
+let criterion = "conviction";
 
 // Records grouped by Condition -> Target
 let groupedRecordsMap = {};
@@ -244,9 +245,6 @@ function renderFishboneResults(response) {
 
 function getMinwers() {
     var miners = "fishbone";
-    /*if (document.getElementById("fishboneAlgCheckbox").checked == true) {
-        miners += "fishbone";
-    }*/
     if (document.getElementById("fpGrowthAlgCheckbox").checked == true) {
         miners += ", fp-growth";
     }
@@ -279,6 +277,8 @@ function runAnalysisOnLoadedData() {
 
             window.myForm.delete('experiment');
             window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+            window.myForm.delete('criterion');
+            window.myForm.append("criterion", document.getElementById("info-criterion").value);
             var miners = getMinwers();
             if (miners == "") {
                 $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
@@ -375,8 +375,8 @@ function load(content) {
     $('#conviction-filter').removeAttr('disabled');
     $('#complexity-filter').removeAttr('disabled');
     $('#show-top-filter').removeAttr('disabled');
-    ({records: records, palette: palette} = JSON.parse(content.replace("NaN", "0")));
-    $.notify("Loaded " + records.length + " records", {className: "success", position: 'bottom right'});
+    ({records: records, palette: palette, criterion: criterion} = JSON.parse(content.replace("NaN", "0")));
+    $.notify("Loaded " + records.length + " records. Fishbone used " + criterion + " criterion", {className: "success", position: 'bottom right'});
     groupRecordsByConditionTarget();
     filterAndRender();
 }
@@ -437,7 +437,7 @@ function filterAndRender() {
     filteredRecords = records.filter(el => filter_record(el));
     // Sort records to show top
     filteredRecords.sort(function (r1, r2) {
-        return r2.conviction - r1.conviction;
+        return r2[criterion] - r1[criterion];
     });
     console.info("Filtered records: " + filteredRecords.length);
     if (filteredRecords.length > showTop) {
@@ -450,9 +450,9 @@ function filterAndRender() {
     } else {
         $.notify("Displayed " + filteredRecords.length, {className: "info", position: 'bottom right'});
     }
-    convictionMax = Math.max(...filteredRecords.map(r => r.conviction));
+    criterionMax = Math.max(...filteredRecords.map(r => r[criterion]));
     if (filteredRecords.length > 0) {
-        $.notify("Max conviction: " + convictionMax, {className: "info", position: 'bottom right'});
+        $.notify("Max " + criterion + ":" + criterionMax, {className: "info", position: 'bottom right'});
     }
     if ($('#visualize-method').val() === "Fishbone") {
         renderFishBone();
@@ -751,7 +751,7 @@ function showInfoEdge(edge) {
 <table class="table table-condensed">
     <thead class="thead-default">
         <tr>
-            <th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th><th></th>
+            <th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>${criterion}</th><th></th>
         </tr>
     </thead>
     <tbody>
@@ -783,7 +783,7 @@ function showInfoEdge(edge) {
     <td>${r.correlation.toFixed(2)}</td>
     <td>${r.support.toFixed(2)}</td>
     <td>${r.confidence.toFixed(2)}</td>
-    <td>${r.conviction.toFixed(2)}</td>
+    <td>${r[criterion].toFixed(2)}</td>
     <td>
         <input type="button" onclick="toggleAuxInfo(this, '${infoId}');" value="+"/>
     </td>

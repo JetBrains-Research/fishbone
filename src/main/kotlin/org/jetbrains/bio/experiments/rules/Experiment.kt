@@ -7,6 +7,7 @@ import org.jetbrains.bio.dataset.CellId
 import org.jetbrains.bio.dataset.DataConfig
 import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.rules.Rule
 import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
 import org.jetbrains.bio.rules.decisiontree.DecionTreeMiner
@@ -55,20 +56,25 @@ abstract class Experiment(private val outputFolder: String) {
      * Run patterns mining according to mine request.
      */
     fun <V> mine(
-        mineRulesRequest: MineRulesRequest,
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        targets: List<Predicate<V>>? = null
+            mineRulesRequest: MineRulesRequest,
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            targets: List<Predicate<V>>? = null
     ): MutableMap<Miner, String> {
         val isTargetPresented = targets != null
         val results = mineRulesRequest.miners.map { miner ->
             miner to when (miner) {
-                Miner.FISHBONE -> mineByFishbone(database, predicates, targets?.getOrNull(0))
+                Miner.FISHBONE -> mineByFishbone(
+                        database,
+                        predicates,
+                        targets?.getOrNull(0),
+                        mineRulesRequest.criterion
+                )
                 Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets?.getOrNull(0))
                 Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(
-                    database,
-                    predicates,
-                    targets!![0]
+                        database,
+                        predicates,
+                        targets!![0]
                 ) else ""
                 Miner.RIPPER -> if (isTargetPresented) mineByRipper(database, predicates, targets!!) else ""
             }
@@ -76,17 +82,19 @@ abstract class Experiment(private val outputFolder: String) {
 
         // Decision tree is the only algorithm, which needs target explicitly
         return if (isTargetPresented) results else addDecisionTreeResults(
-            mineRulesRequest,
-            database,
-            predicates,
-            results
+                mineRulesRequest,
+                database,
+                predicates,
+                results
         )
     }
 
     private fun <V> mineByFishbone(
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        target: Predicate<V>? = null
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            target: Predicate<V>? = null,
+            criterionName: String,
+            maxComplexity: Int = 5
     ): String {
         try {
             logger.info("Processing fishbone")
@@ -100,16 +108,19 @@ abstract class Experiment(private val outputFolder: String) {
                 mapAllPredicatesToAll(predicates, indexedPredicates)
             }
 
+            val criterion = getInformationFunctionByName<V>(criterionName)
+
             RulesMiner.mine(
-                "All => All",
-                database,
-                sourcesToTargets,
-                { rulesLogger.log("test", it) },
-                3//predicates.size
+                    "All => All",
+                    database,
+                    sourcesToTargets,
+                    { rulesLogger.log("test", it) },
+                    maxComplexity,
+                    function = criterion
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()
-            rulesLogger.done(rulesPath, generatePalette())
+            rulesLogger.done(rulesPath, generatePalette(), criterionName)
             logger.info("Fishbone rules saved to $rulesResults")
 
             return rulesPath.toString()
@@ -120,9 +131,19 @@ abstract class Experiment(private val outputFolder: String) {
         }
     }
 
+    private fun <V> getInformationFunctionByName(name: String): (Rule<V>) -> Double {
+        logger.info("Fishbone algorithm will use $name")
+        return when (name) {
+            "conviction" -> Rule<V>::conviction
+            "loe" -> Rule<V>::loe
+            "correlation" -> Rule<V>::correlation
+            else -> Rule<V>::conviction
+        }
+    }
+
     private fun <V> mapAllPredicatesToAll(
-        predicates: List<Predicate<V>>,
-        indexedPredicates: Iterable<IndexedValue<Predicate<V>>>
+            predicates: List<Predicate<V>>,
+            indexedPredicates: Iterable<IndexedValue<Predicate<V>>>
     ): List<Pair<List<Predicate<V>>, Predicate<V>>> {
         return (0 until predicates.size).map { i ->
             val target = predicates[i]
@@ -167,9 +188,9 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> mineByRipper(
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        targets: List<Predicate<V>>
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            targets: List<Predicate<V>>
     ): String {
         logger.info("Processing ripper")
 
@@ -183,10 +204,10 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> createInstancesWithAttributesFromPredicates(
-        targets: List<Predicate<V>>,
-        predicates: List<Predicate<V>>,
-        capacity: Int,
-        name: String = timestamp()
+            targets: List<Predicate<V>>,
+            predicates: List<Predicate<V>>,
+            capacity: Int,
+            name: String = timestamp()
     ): Instances {
         // TODO: fix
         val classAttributes = targets.map { target -> Attribute(target.name(), listOf("1.0", "0.0")) }
@@ -207,9 +228,9 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> mineByFPGrowth(
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        target: Predicate<V>? = null
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            target: Predicate<V>? = null
     ): String {
         try {
             logger.info("Processing fp-growth")
@@ -244,17 +265,17 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun getSatisfiedPredicateIds(predicates: List<PredicateInfo>, itemIdx: Int) =
-        predicates.filter { it.satisfactionOnIds[itemIdx] }.map { it.id }
+            predicates.filter { it.satisfactionOnIds[itemIdx] }.map { it.id }
 
     private fun <V> addDecisionTreeResults(
-        mineRulesRequest: MineRulesRequest,
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        results: MutableMap<Miner, String>
+            mineRulesRequest: MineRulesRequest,
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            results: MutableMap<Miner, String>
     ): MutableMap<Miner, String> {
         if (mineRulesRequest.miners.contains(Miner.DECISION_TREE) /*&& results.containsKey(Miner.FP_GROWTH)*/) {
             results[Miner.DECISION_TREE] = runDecisionTreeAlg(
-                database, predicates, results.getValue(Miner.FP_GROWTH)
+                    database, predicates, results.getValue(Miner.FP_GROWTH)
             )
         }
         return results
@@ -262,9 +283,9 @@ abstract class Experiment(private val outputFolder: String) {
 
     // TODO: use all targets
     private fun <V> runDecisionTreeAlg(
-        database: List<V>,
-        predicates: List<Predicate<V>>,
-        fpGrowthResultsFilename: String
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            fpGrowthResultsFilename: String
     ): String {
         val fpGrowthResultsFile = File(fpGrowthResultsFilename)
         return if (fpGrowthResultsFile.canRead()) {
@@ -284,9 +305,9 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> mineByDecisionTree(
-        database: List<V>,
-        sourcePredicates: List<Predicate<V>>,
-        targetPredicate: Predicate<V>
+            database: List<V>,
+            sourcePredicates: List<Predicate<V>>,
+            targetPredicate: Predicate<V>
     ): String {
         try {
             logger.info("Processing decision tree")

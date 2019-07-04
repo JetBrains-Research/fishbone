@@ -91,6 +91,10 @@
                    onclick="$('#bed-database-file').click();"/>
             <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
             <input type="text" id="experiment-type" name="name" required minlength="4" size="10">
+            <select id="info-criterion">
+                <option value="conviction">conviction</option>
+                <option value="loe">loe</option>
+            </select>
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="runAnalysisOnLoadedData()"/>
 
@@ -122,6 +126,7 @@
                         document.getElementById("experiment-type").style.display = "inline";
                         document.getElementById("algorithms").style.display = "inline";
                         document.getElementById("algorithms-label").style.display = "inline";
+                        document.getElementById("info-criterion").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
                         document.getElementById("file-button").style.display = "none";
@@ -143,6 +148,7 @@
                         document.getElementById("experiment-type").style.display = "none";
                         document.getElementById("algorithms").style.display = "none";
                         document.getElementById("algorithms-label").style.display = "none";
+                        document.getElementById("info-criterion").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
                         document.getElementById("file-button").style.display = "inline";
