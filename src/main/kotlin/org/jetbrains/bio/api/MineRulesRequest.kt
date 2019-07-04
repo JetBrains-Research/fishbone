@@ -5,5 +5,6 @@ class MineRulesRequest(
     val predicates: List<String>,
     val target: List<String> = emptyList(),
     val database: String,
-    val miners: Set<Miner>
+    val miners: Set<Miner>,
+    val criterion: String = "conviction"
 )

@@ -244,9 +244,6 @@ function renderFishboneResults(response) {
 
 function getMinwers() {
     var miners = "fishbone";
-    /*if (document.getElementById("fishboneAlgCheckbox").checked == true) {
-        miners += "fishbone";
-    }*/
     if (document.getElementById("fpGrowthAlgCheckbox").checked == true) {
         miners += ", fp-growth";
     }
@@ -279,6 +276,8 @@ function runAnalysisOnLoadedData() {
 
             window.myForm.delete('experiment');
             window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+            window.myForm.delete('criterion');
+            window.myForm.append("criterion", document.getElementById("info-criterion").value);
             var miners = getMinwers();
             if (miners == "") {
                 $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
