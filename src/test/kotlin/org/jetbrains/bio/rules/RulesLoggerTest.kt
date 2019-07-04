@@ -1,6 +1,7 @@
 package org.jetbrains.bio.rules
 
 import junit.framework.TestCase.assertEquals
+import org.jetbrains.bio.predicates.FalsePredicate
 import org.junit.Test
 import java.awt.Color
 
@@ -9,7 +10,7 @@ import java.awt.Color
  * @date 16/12/2016
  */
 
-class RulesMinerLoggerTest {
+class RulesLoggerTest {
 
     @Test
     fun testGetJson() {
@@ -35,6 +36,7 @@ class RulesMinerLoggerTest {
       "correlation": 1.0,
       "lift": 3.3333333333333335,
       "conviction": 21.0,
+      "loe": 1.4926612809863424,
       "complexity": 3,
       "node": "[30;40)",
       "parent_node": "[40;50)",
@@ -72,6 +74,7 @@ class RulesMinerLoggerTest {
       "correlation": 0.8819171036881969,
       "lift": 3.3333333333333335,
       "conviction": 17.5,
+      "loe": 1.44600441693014,
       "complexity": 2,
       "node": "[40;50)",
       "parent_node": "[20;35)",
@@ -109,6 +112,7 @@ class RulesMinerLoggerTest {
       "correlation": 0.641688947919748,
       "lift": 3.3333333333333335,
       "conviction": 10.5,
+      "loe": 1.3085643790137544,
       "complexity": 1,
       "node": "[20;35)",
       "aux": {
@@ -158,6 +162,7 @@ class RulesMinerLoggerTest {
       "correlation": 1.0,
       "lift": 3.3333333333333335,
       "conviction": 21.0,
+      "loe": 1.4926612809863424,
       "complexity": 3,
       "node": "[40;50)",
       "parent_node": "[35;48)",
@@ -195,6 +200,7 @@ class RulesMinerLoggerTest {
       "correlation": 0.9525793444156804,
       "lift": 3.3333333333333335,
       "conviction": 19.6,
+      "loe": 1.4751207883642163,
       "complexity": 2,
       "node": "[35;48)",
       "parent_node": "[20;35)",
@@ -232,6 +238,7 @@ class RulesMinerLoggerTest {
       "correlation": 0.5904735420248883,
       "lift": 3.3333333333333335,
       "conviction": 9.1,
+      "loe": 1.2677161841198006,
       "complexity": 1,
       "node": "[35;48)",
       "aux": {
@@ -277,6 +284,26 @@ class RulesMinerLoggerTest {
     "[20;35)": "#ffffff"
   }
 }""", logger.getJson { Color.WHITE })
+    }
+
+
+    @Test
+    fun testRuleRecordCSV() {
+        val rule = Rule(FalsePredicate<Any>().named("foo"), FalsePredicate<Any>().named("bar"), 10, 8, 9, 7)
+        assertEquals(listOf("id", "foo", "bar", 10, 8, 9, 7, 0.8, 0.875,
+                -0.16666666666666666, 0.9722222222222222, 0.4, 0.22427683792970576, 1),
+                RuleRecord.fromRule(rule, "id").toCSV())
+    }
+
+    @Test
+    fun testRuleRecordMap() {
+        val rule = Rule(FalsePredicate<Any>().named("foo"), FalsePredicate<Any>().named("bar"), 10, 8, 9, 7)
+        assertEquals("{id=id, condition=foo, target=bar, " +
+                "database_count=10, condition_count=8, target_count=9, intersection_count=7, " +
+                "support=0.8, confidence=0.875, " +
+                "correlation=-0.16666666666666666, lift=0.9722222222222222, conviction=0.4, loe=0.22427683792970576, " +
+                "complexity=1}",
+                RuleRecord.fromRule(rule, "id").toMap().toString())
     }
 
 }
