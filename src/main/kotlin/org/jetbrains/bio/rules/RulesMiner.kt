@@ -1,7 +1,6 @@
 package org.jetbrains.bio.rules
 
 import com.google.common.annotations.VisibleForTesting
-import com.google.common.collect.Maps
 import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
@@ -182,24 +181,20 @@ object RulesMiner {
     }
 
     fun loadRules(path: Path): List<RuleRecord<Any>> {
-        @Synchronized
-        fun MutableMap<String, Predicate<Any>>.parse(name: String): Predicate<Any> {
-            if (name in this) {
-                return this[name]!!
-            }
-            val p = object : Predicate<Any>() {
-                override fun test(item: Any) = false
-                override fun name(): String = name
-            }
-            put(name, p)
-            return p
-        }
-
-        val predicates = Maps.newConcurrentMap<String, Predicate<Any>>()
-
+        val predicatesMap = hashMapOf<String, Predicate<Any>>()
         return CSVFormat.DEFAULT.withCommentMarker('#').withHeader().parse(path.bufferedReader()).use { parser ->
             parser.records.map {
-                RuleRecord.fromCSV(it, predicates::parse)
+                RuleRecord.fromCSV(it) { name ->
+                    if (name in predicatesMap) {
+                        return@fromCSV predicatesMap[name]!!
+                    }
+                    val p = object : Predicate<Any>() {
+                        override fun test(item: Any) = false
+                        override fun name(): String = name
+                    }
+                    predicatesMap[name] = p
+                    return@fromCSV p
+                }
             }
         }
     }
