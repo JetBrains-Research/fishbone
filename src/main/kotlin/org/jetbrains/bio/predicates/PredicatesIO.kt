@@ -105,7 +105,7 @@ object PredicatesIO {
                 LOG.error("Failed to resolve $s at line ${i + 2}")
             }
             indexMap.put(value, i)
-            database.add(i, value!!)
+            database.add(i, value)
         }
         val predicates = names.zip(negatesInfo).map { (name, negate) ->
             val positives = df.sliceAsBool(name.intern())

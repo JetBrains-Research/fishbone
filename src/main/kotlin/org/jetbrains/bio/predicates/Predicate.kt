@@ -7,7 +7,7 @@ import java.util.*
 
 /**
  * Predicate, used in predicates mining.
- * NOTE It doesn't extend interface [java.util.function.Predicate] because of clashes in methods #and, #or, etc
+ * NOTE It doesn't extend interface [java.util.function.Predicate] because of clashes in methods `and`, `or`, etc.
 
  * @author Oleg Shpynov
  * @since 17/11/14
@@ -19,7 +19,7 @@ abstract class Predicate<T> {
     abstract fun name(): String
 
     /**
-     * Predicate is defined, in case when all the subpredicates are defined.
+     * Predicate is defined, in case when all the sub predicates are defined.
      * The only atomic undefined predicate considered to be [UndefinedPredicate]
      */
     open fun defined(): Boolean = true
@@ -45,6 +45,7 @@ abstract class Predicate<T> {
 
     @Volatile
     private var cachedDataBase: List<T>? = null
+
     @Volatile
     private var cache = WeakReference<BitSet>(null)
 
@@ -105,7 +106,7 @@ abstract class Predicate<T> {
          */
         fun <T> or(operands: List<Predicate<T>>): Predicate<T> {
             check(operands.isNotEmpty())
-            if (!operands.all { it.defined() }) {
+            if (operands.any { !it.defined() }) {
                 return UndefinedPredicate()
             }
             val processedOperands = operands
@@ -125,7 +126,7 @@ abstract class Predicate<T> {
 
         @SafeVarargs
         fun <T> or(vararg operands: Predicate<T>): Predicate<T> {
-            return or(Arrays.asList(*operands))
+            return or(listOf(*operands))
         }
 
         /**
@@ -135,12 +136,12 @@ abstract class Predicate<T> {
          */
         fun <T> and(operands: List<Predicate<T>>): Predicate<T> {
             check(operands.isNotEmpty())
-            if (!operands.all { it.defined() }) {
+            if (operands.any { !it.defined() }) {
                 return UndefinedPredicate()
             }
             val processedOperands = operands
                     // Insert parenthesis within Or operands
-                    .map { o -> if (o is OrPredicate<*>) ParenthesesPredicate.of(o) else o }
+                    .map { o -> if (o is OrPredicate<*>) ParenthesesPredicate.of(o as Predicate<T>) else o }
                     // Remove unnecessary ()
                     .map { o ->
                         if (o is ParenthesesPredicate<*> && o.operand !is OrPredicate<*>)
@@ -162,7 +163,7 @@ abstract class Predicate<T> {
 
         @SafeVarargs
         fun <T> and(vararg operands: Predicate<T>): Predicate<T> {
-            return and(Arrays.asList(*operands))
+            return and(listOf(*operands))
         }
     }
 }

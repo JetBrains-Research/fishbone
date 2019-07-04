@@ -1,8 +1,5 @@
 package org.jetbrains.bio.predicates
 
-import com.google.common.base.Preconditions
-import com.google.common.collect.ImmutableSet
-import com.google.common.collect.Lists
 import org.jetbrains.bio.util.Lexeme
 import org.jetbrains.bio.util.Match
 import org.jetbrains.bio.util.Tokenizer
@@ -21,12 +18,12 @@ object PredicateParser {
     internal val NOT = Lexeme("NOT")
     internal val AND = Lexeme("AND")
     internal val OR = Lexeme("OR")
-    private val LPAR = Lexeme("(")
-    private val RPAR = Lexeme(")")
+    internal val LPAR = Lexeme("(")
+    internal val RPAR = Lexeme(")")
     internal val TRUE = Lexeme("TRUE")
     internal val FALSE = Lexeme("FALSE")
 
-    val KEYWORDS: Set<Lexeme> = ImmutableSet.of(NOT, AND, OR, LPAR, RPAR, IMPL, TRUE, FALSE)
+    private val KEYWORDS: Set<Lexeme> = setOf(NOT, AND, OR, LPAR, RPAR, IMPL, TRUE, FALSE)
 
     fun <T> parse(text: String, factory: (String) -> Predicate<T>?): Predicate<T>? {
         return parse(Tokenizer(text, KEYWORDS), factory)
@@ -45,12 +42,12 @@ object PredicateParser {
         if (lexeme !== OR) {
             return operand1
         }
-        val operands = Lists.newArrayList(operand1!!)
+        val operands = arrayListOf(operand1)
         while (lexeme === OR) {
             tokenizer.next()
             val nextOperand = parseAnd(tokenizer, factory)
             checkNotNull(nextOperand) { error(tokenizer) }
-            operands.add(nextOperand!!)
+            operands.add(nextOperand)
             lexeme = tokenizer.fetch()
         }
 
@@ -59,17 +56,17 @@ object PredicateParser {
 
     private fun <T> parseAnd(tokenizer: Tokenizer, factory: (String) -> Predicate<T>?): Predicate<T>? {
         val operand1 = parseTerm(tokenizer, factory)
-        Preconditions.checkNotNull<Predicate<T>>(operand1, error(tokenizer))
+        checkNotNull(operand1) { error(tokenizer) }
 
         var lexeme: Lexeme? = tokenizer.fetch()
         if (lexeme !== AND) {
             return operand1
         }
-        val operands = Lists.newArrayList(operand1!!)
+        val operands = arrayListOf(operand1)
         while (lexeme === AND) {
             tokenizer.next()
             val nextOperand = parseTerm(tokenizer, factory)
-            Preconditions.checkNotNull<Predicate<T>>(nextOperand, error(tokenizer))
+            checkNotNull(nextOperand) { error(tokenizer) }
             operands.add(nextOperand)
             lexeme = tokenizer.fetch()
         }
@@ -91,15 +88,15 @@ object PredicateParser {
             tokenizer.next()
             val p = parse(tokenizer, factory)
             tokenizer.check(RPAR)
-            Preconditions.checkNotNull<Predicate<T>>(p)
+            checkNotNull(p) { error(tokenizer) }
             // Use direct constructor, because of method can perform complexity transformations
-            return ParenthesesPredicate(p!!)
+            return ParenthesesPredicate(p)
         }
         if (lexeme === NOT) {
             tokenizer.next()
             val p = parseTerm(tokenizer, factory)
-            Preconditions.checkNotNull<Predicate<T>>(p)
-            return NotPredicate(p!!)
+            checkNotNull(p) { error(tokenizer) }
+            return NotPredicate(p)
         }
 
         if (!KEYWORDS.contains(lexeme)) {

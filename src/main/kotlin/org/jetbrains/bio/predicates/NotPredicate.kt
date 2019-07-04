@@ -9,7 +9,7 @@ import java.util.*
  */
 class NotPredicate<T>(val operand: Predicate<T>) : Predicate<T>() {
     override fun name(): String {
-        return "NOT ${operand.name()}"
+        return "${PredicateParser.NOT.token} ${operand.name()}"
     }
 
 
