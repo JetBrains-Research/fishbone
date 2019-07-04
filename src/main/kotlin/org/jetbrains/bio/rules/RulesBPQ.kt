@@ -97,7 +97,7 @@ class RulesBPQ<T>(private val limit: Int,
             val klParent = Distribution.kullbackLeibler(empirical, independent.learn(parent.rule))
             val klIndependent = Distribution.kullbackLeibler(empirical, independent)
             val klRule = Distribution.kullbackLeibler(empirical, independent.learn(node.rule))
-            check(klRule < klIndependent) {
+            check(klRule < klIndependent + 1e-10) {
                 "kullbackLeibler after learning rule should be closer to empirical than independent"
             }
             // Check that we gained at least klDelta improvement
