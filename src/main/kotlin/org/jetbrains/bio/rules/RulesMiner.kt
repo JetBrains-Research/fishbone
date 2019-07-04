@@ -1,5 +1,6 @@
 package org.jetbrains.bio.rules
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Maps
 import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
@@ -102,6 +103,7 @@ object RulesMiner {
     }
 
 
+    @VisibleForTesting
     internal fun <T> mine(predicates: List<Predicate<T>>,
                           target: Predicate<T>,
                           database: List<T>,
