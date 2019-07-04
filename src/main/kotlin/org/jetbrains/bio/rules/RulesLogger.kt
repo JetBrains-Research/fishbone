@@ -78,23 +78,24 @@ class RulesLogger(val path: Path?, vararg params: String) {
         }
     }
 
-    fun done(jsonPath: Path?, palette: (String) -> Color) {
+    fun done(jsonPath: Path?, palette: (String) -> Color, criterion: String) {
         if (path != null) {
             csvPrinter.close()
         }
         if (jsonPath != null) {
             jsonPath.deleteIfExists()
-            jsonPath.write(getJson(palette))
+            jsonPath.write(getJson(palette, criterion))
         }
     }
 
     private fun Color.toHex(): String = "#%02x%02x%02x".format(red, green, blue)
 
-    fun getJson(palette: (String) -> Color): String {
+    fun getJson(palette: (String) -> Color, criterion: String): String {
         // We want null modification to map to "null"
         val json = mapOf(
                 "records" to graphRecords.toList(),
-                "palette" to atomics.associateBy({ it }, { palette(it).toHex() })
+                "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
+                "criterion" to criterion
         )
         return GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create().toJson(json)
     }

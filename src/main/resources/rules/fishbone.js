@@ -32,12 +32,12 @@ function buildFishbone() {
 
     let nodeId = 0;
 
-    function getWidth(conviction) {
-        return Math.round(1 + 10 * conviction / convictionMax);
+    function getWidth(criterionVal) {
+        return Math.round(1 + 10 * criterionVal / criterionMax);
     }
 
     function addEdge(start, end, record, classes) {
-        let width = getWidth(record.conviction);
+        let width = getWidth(record[criterion]);
         const id = edgeId(start, end);
         console.info("EDGE: " + id + " [" + classes + " " + width + "] " + record.condition + "=>" + record.target);
         if (id in edges) {
@@ -164,7 +164,7 @@ function buildFishbone() {
     function renderFish(target, fish, boneLength, headId, xHead, yHead, boneAngle) {
         let bones = Object.values(fish.bones);
         bones.sort(function (a, b) {
-            return b.conviction - a.conviction;
+            return b[criterion] - a[criterion];
         });
         let chunks = bones.length + 1;
         const delta = Math.max(30, boneLength / chunks);
@@ -177,7 +177,7 @@ function buildFishbone() {
             y = y + Math.sin(boneAngle) * delta;
             const boneStartNode = addNode(target, "", x, y);
             const boneId = addBone(boneStartNode, lastBoneStartNode, null);
-            edges[boneId]['data']['width'] = getWidth(bone.conviction);
+            edges[boneId]['data']['width'] = getWidth(bone[criterion]);
             lastBoneStartNode = boneStartNode;
             let boneEndAngle;
             if (boneAngle === Math.PI) {
@@ -225,15 +225,15 @@ function buildFishbone() {
                 const node = rec.node;
                 if (node in currentFish.bones) {
                     currentFish = currentFish.bones[node];
-                    currentFish.conviction = Math.max(currentFish.conviction, r.conviction);
+                    currentFish[criterion] = Math.max(currentFish[criterion], r[criterion]);
                     currentFish.records.push(rec);
                 } else {
                     currentFish.bones[node] = {
                         node: node,
                         bones: {},
-                        conviction: r.conviction,
                         records: [rec]
                     };
+                    currentFish.bones[node][criterion] = r[criterion];
                     currentFish = currentFish.bones[node];
                 }
             }
@@ -247,7 +247,7 @@ function buildFishbone() {
     for (let target of new Set(filteredRecords.map(el => el.target))) {
         let fishRecords = filteredRecords.filter(el => el.target === target);
         fishRecords.sort(function (a, b) {
-            return b.conviction - a.conviction;
+            return b[criterion] - a[criterion];
         });
         const fish = buildFish(target, fishRecords);
         const headId = addNode(target, target, xHead, fishY);
@@ -270,7 +270,7 @@ function buildFishbone() {
         };
 
         const tailBone = addBone(tailId, lastBoneStartNode, null);
-        edges[tailBone]['data']['width'] = getWidth(convictionMax);
+        edges[tailBone]['data']['width'] = getWidth(criterionMax);
         fishY = fishY + boneLength;
     }
 }

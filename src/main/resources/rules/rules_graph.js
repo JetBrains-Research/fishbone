@@ -89,7 +89,7 @@ function buildGraph() {
     }
 
     function addEdge(start, end, record, classes) {
-        let width = Math.round(1 + 5 * record.conviction / convictionMax);
+        let width = Math.round(1 + 5 * record[criterion] / criterionMax);
         const id = edgeId(start, end);
         console.info("EDGE: " + id + " [" + classes + " " + width + "] " + record.condition + "=>" + record.target);
         if (id in edges) {

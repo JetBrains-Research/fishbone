@@ -1,6 +1,5 @@
 package org.jetbrains.bio.experiments.rules
 
-import org.apache.commons.collections4.functors.ComparatorPredicate
 import org.apache.log4j.Logger
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.Miner
@@ -69,7 +68,7 @@ abstract class Experiment(private val outputFolder: String) {
                         database,
                         predicates,
                         targets?.getOrNull(0),
-                        getInformationFunctionByName(mineRulesRequest.criterion)
+                        mineRulesRequest.criterion
                 )
                 Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets?.getOrNull(0))
                 Miner.DECISION_TREE -> if (isTargetPresented) mineByDecisionTree(
@@ -90,21 +89,11 @@ abstract class Experiment(private val outputFolder: String) {
         )
     }
 
-    private fun <V> getInformationFunctionByName(name: String): (Rule<V>) -> Double {
-        logger.info("Fishbone algorithm will use $name")
-        return when (name) {
-            "conviction" -> Rule<V>::conviction
-            "loe" -> Rule<V>::loe
-            "correlation" -> Rule<V>::correlation
-            else -> Rule<V>::conviction
-        }
-    }
-
     private fun <V> mineByFishbone(
             database: List<V>,
             predicates: List<Predicate<V>>,
             target: Predicate<V>? = null,
-            function: (Rule<V>) -> Double = Rule<V>::conviction,
+            criterionName: String,
             maxComplexity: Int = 5
     ): String {
         try {
@@ -119,17 +108,19 @@ abstract class Experiment(private val outputFolder: String) {
                 mapAllPredicatesToAll(predicates, indexedPredicates)
             }
 
+            val criterion = getInformationFunctionByName<V>(criterionName)
+
             RulesMiner.mine(
                     "All => All",
                     database,
                     sourcesToTargets,
                     { rulesLogger.log("test", it) },
                     maxComplexity,
-                    function = function
+                    function = criterion
             )
 
             val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()
-            rulesLogger.done(rulesPath, generatePalette())
+            rulesLogger.done(rulesPath, generatePalette(), criterionName)
             logger.info("Fishbone rules saved to $rulesResults")
 
             return rulesPath.toString()
@@ -137,6 +128,16 @@ abstract class Experiment(private val outputFolder: String) {
             t.printStackTrace()
             logger.error(t.message)
             return ""
+        }
+    }
+
+    private fun <V> getInformationFunctionByName(name: String): (Rule<V>) -> Double {
+        logger.info("Fishbone algorithm will use $name")
+        return when (name) {
+            "conviction" -> Rule<V>::conviction
+            "loe" -> Rule<V>::loe
+            "correlation" -> Rule<V>::correlation
+            else -> Rule<V>::conviction
         }
     }
 

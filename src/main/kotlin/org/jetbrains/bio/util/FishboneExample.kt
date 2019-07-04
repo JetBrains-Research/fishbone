@@ -71,7 +71,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                         { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
         rulesLogger.done(rulesLogger.path.toString().replace(".csv", ".json").toPath(),
-            generatePalette()
+            generatePalette(), "conviction"
         )
         LOG.info("Rules saved to $rulesResults")
     }
