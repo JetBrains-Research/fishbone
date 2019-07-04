@@ -28,6 +28,10 @@ class UndefinedPredicate<T> : Predicate<T>() {
         return this
     }
 
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
     override fun equals(other: Any?): Boolean {
         return other is UndefinedPredicate<*>
     }
