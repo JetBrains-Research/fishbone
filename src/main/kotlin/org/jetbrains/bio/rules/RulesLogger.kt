@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder
 import org.apache.commons.csv.CSVFormat.DEFAULT
 import org.apache.commons.csv.CSVRecord
 import org.apache.log4j.Logger
+import org.jetbrains.bio.predicates.AndPredicate
+import org.jetbrains.bio.predicates.OrPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.predicates.PredicateParser
 import org.jetbrains.bio.util.bufferedWriter
@@ -54,9 +56,19 @@ class RulesLogger(val path: Path?, vararg params: String) {
                         "node" to node.element.name(),
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
                         "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
-                        "aux" to node.aux))
+                        "aux" to node.aux,
+                        "operator" to getOperatorName(r.conditionPredicate))
+                )
                 node = node.parent
             }
+        }
+    }
+
+    private fun <T> getOperatorName(predicate: Predicate<T>): String {
+        return when (predicate) {
+            is AndPredicate<T> -> "and"
+            is OrPredicate<T> -> "or"
+            else -> "none"
         }
     }
 

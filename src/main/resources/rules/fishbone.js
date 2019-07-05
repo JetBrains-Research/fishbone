@@ -95,22 +95,13 @@ function buildFishbone() {
             };
             return id
         }
-        if (r.hasOwnProperty("parent_node")) {
-            // Show target link in case we don't have any direct path
-            let classes = CLASS_MISSING_RULE;
-            if (filter_record(r)) {
-                classes = CLASS_PARENT_CHILD;
-            }
-            return addEdge(start, end, r, classes);
-        } else {
-            let classes;
-            if (filter_record(r)) {
-                classes = CLASS_CONDITION_TARGET;
-            } else {
-                classes = CLASS_MISSING_RULE;
-            }
-           return addEdge(start, end, r, classes);
+        let classes = CLASS_MISSING_RULE;
+        if (r['operator'] == 'and' && filter_record(r)) {
+            classes = CLASS_AND;
+        } else if (['operator'] == 'or' && filter_record(r)) {
+            classes = CLASS_OR;
         }
+        return addEdge(start, end, r, classes);
     }
 
     function addNode(target, n, x, y) {

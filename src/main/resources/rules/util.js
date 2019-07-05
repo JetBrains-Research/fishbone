@@ -1,7 +1,9 @@
 "use strict";
 
 const CLASS_CONDITION_TARGET = "condition-target";
+const CLASS_AND = "and";
 const CLASS_PARENT_CHILD = "parent-child";
+const CLASS_OR = "or";
 const CLASS_MISSING_RULE = "missing-rule";
 const CLASS_NOT_EDGE = "not";
 const CLASS_GROUP = "group";
@@ -546,6 +548,15 @@ function RULE_GRAPH_STYLE(line_type) {
             }
         },
         {
+            selector: "edge.and",
+            style: {
+                "target-arrow-shape": "triangle-backcurve",
+                "line-color": "red",
+                "target-arrow-color": "red",
+                "width": "data(width)"
+            }
+        },
+        {
             selector: "edge.missing-rule",
             style: {
                 "target-arrow-shape": "triangle-backcurve",
@@ -557,6 +568,15 @@ function RULE_GRAPH_STYLE(line_type) {
         },
         {
             selector: "edge.parent-child",
+            style: {
+                "target-arrow-shape": "triangle-backcurve",
+                "line-color": "blue",
+                "target-arrow-color": "blue",
+                "width": "data(width)"
+            }
+        },
+        {
+            selector: "edge.or",
             style: {
                 "target-arrow-shape": "triangle-backcurve",
                 "line-color": "blue",

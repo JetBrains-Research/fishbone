@@ -117,7 +117,7 @@ abstract class Experiment(private val outputFolder: String) {
                     { rulesLogger.log("test", it) },
                     maxComplexity,
                     function = criterion,
-                    or = false,
+                    or = true,
                     negate = false
             )
 
