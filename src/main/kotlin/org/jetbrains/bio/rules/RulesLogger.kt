@@ -187,10 +187,10 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
             }
         }
 
-        fun <T> fromCSV(it: CSVRecord, function: (String) -> Predicate<T>): RuleRecord<T> {
+        fun <T> fromCSV(it: CSVRecord, factory: (String) -> Predicate<T>): RuleRecord<T> {
             return RuleRecord(id = s(it, KEY_ID),
-                    conditionPredicate = PredicateParser.parse(s(it, KEY_CONDITION), function)!!,
-                    targetPredicate = PredicateParser.parse(s(it, KEY_TARGET), function)!!,
+                    conditionPredicate = PredicateParser.parse(s(it, KEY_CONDITION), factory)!!,
+                    targetPredicate = PredicateParser.parse(s(it, KEY_TARGET), factory)!!,
                     database = i(it, KEY_DATABASE_COUNT),
                     condition = i(it, KEY_CONDITION_COUNT), target = i(it, KEY_TARGET_COUNT),
                     intersection = i(it, KEY_INTERSECTION_COUNT),

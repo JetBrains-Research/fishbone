@@ -3,7 +3,6 @@ package org.jetbrains.bio.util
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.Logger
-import org.jetbrains.bio.dataset.CellId
 import org.jetbrains.bio.dataset.DataConfig
 import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.genome.Genome
@@ -66,7 +65,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
         val rulesLogger = RulesLogger(rulesResults)
 
         RulesMiner.mine("All => All @ ${FilenameUtils.getName(databaseUrl)} ${genomeQuery.id}",
-                        database.toList(),
+                database.toList(),
                         targetPredicates.map { sourcePredicates to it },
                         { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
@@ -102,7 +101,17 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
         fun generatePalette(): (String) -> Color = { name ->
             val modification = modification(name)
             if (modification != null) {
-                trackColor(modification, null)
+                when (modification.toLowerCase()) {
+                    "h3k27ac" -> Color(255, 0, 0)
+                    "h3k27me3" -> Color(153, 0, 255)
+                    "h3k4me1" -> Color(255, 153, 0)
+                    "h3k4me3" -> Color(51, 204, 51)
+                    "h3k36me3" -> Color(0, 0, 204)
+                    "h3k9me3" -> Color(255, 0, 255)
+                    DataType.METHYLATION.name.toLowerCase() -> Color.green
+                    DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
+                    else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
+                }
             } else {
                 Color.WHITE
             }
@@ -114,24 +123,6 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                 return null
             }
             return m.value
-        }
-
-        /**
-         * Default colors by dataTypes
-         */
-        private fun trackColor(dataTypeId: String, cell: CellId? = null): Color {
-            val color = when (dataTypeId.toLowerCase()) {
-                "H3K27ac".toLowerCase() -> Color(255, 0, 0)
-                "H3K27me3".toLowerCase() -> Color(153, 0, 255)
-                "H3K4me1".toLowerCase() -> Color(255, 153, 0)
-                "H3K4me3".toLowerCase() -> Color(51, 204, 51)
-                "H3K36me3".toLowerCase() -> Color(0, 0, 204)
-                "H3K9me3".toLowerCase() -> Color(255, 0, 255)
-                DataType.METHYLATION.name.toLowerCase() -> Color.green
-                DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
-                else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
-            }
-            return if (cell?.name == "OD") color.darker() else color
         }
     }
 }
