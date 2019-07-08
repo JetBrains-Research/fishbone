@@ -1,11 +1,15 @@
 package org.jetbrains.bio.rules.ripper
 
+import org.jetbrains.bio.predicates.AndPredicate
+import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.rules.Rule
+import org.jetbrains.bio.rules.RulesMiner
 import weka.classifiers.rules.JRip
 import weka.classifiers.rules.RuleStats
 import weka.core.Attribute
 import weka.core.Instances
-import java.io.File
-import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 
 /**
  * This miner rus Ripper algorithm (see: https://www.sciencedirect.com/science/article/pii/B9781558603776500232)
@@ -14,17 +18,53 @@ import java.nio.file.Path
  */
 class RipperMiner {
     companion object {
-        fun mine(instances: Instances, outputFilePath: Path): String {
-            val jRip = JRip()
-            jRip.buildClassifier(instances)
+        fun <V> mine(
+                instancesByTarget: Map<Predicate<V>, Instances>,
+                predicates: Map<String, Predicate<V>>,
+                database: List<V>
+        ): List<Future<List<RulesMiner.Node<V>>>> {
+            return instancesByTarget.map { (target, instances) ->
+                val jRip = JRip()
+                jRip.buildClassifier(instances)
+                val classAttribute = instances.attribute(instances.numAttributes() - 1)
 
-            val classAttribute = instances.attribute(instances.numAttributes() - 1)
+                println(rulesetString(jRip, classAttribute, instances))
 
-            val rulesDescription = rulesetString(jRip, classAttribute, instances)
-            println(rulesDescription)
+                CompletableFuture.completedFuture(buildRuleNodes(jRip, predicates, target, database))
+            }
+        }
 
-            val outputFile = writeRulesToFile(outputFilePath, rulesDescription)
-            return outputFile.absolutePath
+        private fun <V> buildRuleNodes(
+                jRip: JRip, predicates: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
+        ): List<RulesMiner.Node<V>> {
+            return (0 until 2).map { classIndex ->
+                val ruleStats = jRip.getRuleStats(classIndex)
+                val rules = ruleStats.ruleset
+                rules
+                        .filter { it.hasAntds() } //TODO: what to do with default rule?
+                        .map {
+                            val rule = it as JRip.RipperRule
+                            val antdsPredicates = rule.antds
+                                    .filter { predicates.containsKey(it.attr.name()) }
+                                    .map {
+                                        val predicate = predicates.getValue(it.attr.name())
+                                        if (it.attrValue.toInt() == 0) predicate.not() else predicate
+                                    }
+                            if (antdsPredicates.isNotEmpty()) {
+                                val first = antdsPredicates.first()
+                                antdsPredicates.drop(1).fold(
+                                        listOf(RulesMiner.Node(Rule(first, target, database), first, null)),
+                                        { nodes, p ->
+                                            val parent = nodes.last()
+                                            val newPredicate = AndPredicate(listOf(parent.rule.conditionPredicate, p))
+                                            nodes + RulesMiner.Node(Rule(newPredicate, target, database), p, parent)
+                                        }
+                                )
+                            } else {
+                                emptyList()
+                            }
+                        }.flatten()
+            }.flatten()
         }
 
         private fun rulesetString(jRip: JRip, classAttribute: Attribute?, instances: Instances): String {
@@ -59,13 +99,6 @@ class RipperMiner {
 
         private fun round(value: Double): String {
             return "%.4f".format(value)
-        }
-
-        private fun writeRulesToFile(outputFilePath: Path, rulesDescription: String): File {
-            val outputFile = outputFilePath.toFile()
-            outputFile.createNewFile()
-            outputFile.printWriter().use { out -> out.println(rulesDescription) }
-            return outputFile
         }
     }
 }

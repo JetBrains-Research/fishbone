@@ -6,5 +6,7 @@ class MineRulesRequest(
     val target: List<String> = emptyList(),
     val database: String,
     val miners: Set<Miner>,
-    val criterion: String = "conviction"
+    val criterion: String = "conviction",
+    val checkSignificance: Boolean = true,
+    val runName: String? = null
 )

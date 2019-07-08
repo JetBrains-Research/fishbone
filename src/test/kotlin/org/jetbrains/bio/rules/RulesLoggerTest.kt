@@ -59,7 +59,8 @@ class RulesLoggerTest {
             0.05
           ]
         }
-      }
+      },
+      "operator": "or"
     },
     {
       "id": "id",
@@ -97,7 +98,8 @@ class RulesLoggerTest {
             0.0
           ]
         }
-      }
+      },
+      "operator": "or"
     },
     {
       "id": "id",
@@ -147,7 +149,8 @@ class RulesLoggerTest {
             ]
           }
         ]
-      }
+      },
+      "operator": "none"
     },
     {
       "id": "id",
@@ -185,7 +188,8 @@ class RulesLoggerTest {
             0.08
           ]
         }
-      }
+      },
+      "operator": "or"
     },
     {
       "id": "id",
@@ -223,7 +227,8 @@ class RulesLoggerTest {
             0.0
           ]
         }
-      }
+      },
+      "operator": "or"
     },
     {
       "id": "id",
@@ -273,7 +278,8 @@ class RulesLoggerTest {
             ]
           }
         ]
-      }
+      },
+      "operator": "none"
     }
   ],
   "palette": {
@@ -282,7 +288,8 @@ class RulesLoggerTest {
     "[20;50)": "#ffffff",
     "[40;50)": "#ffffff",
     "[20;35)": "#ffffff"
-  }
+  },
+  "criterion": "conviction"
 }""", logger.getJson({ Color.WHITE }))
     }
 

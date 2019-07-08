@@ -13,6 +13,7 @@ import org.jetbrains.bio.util.parallelismLevel
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.math.min
 
 
@@ -163,12 +164,11 @@ object RulesMiner {
                  topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA,
-                 filterBySignificance: Boolean = false) {
+                 klDelta: Double = KL_DELTA): List<Future<List<Node<T>>>> {
         LOG.info("Rules mining: $title")
         // Mine each target separately
         val executor = Executors.newWorkStealingPool(parallelismLevel())
-        executor.awaitAll(
+        val mineResults = executor.invokeAll(
                 toMine.map { (conditions, target) ->
                     MultitaskProgress.addTask(target.name(),
                             conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
@@ -177,21 +177,14 @@ object RulesMiner {
                                 maxComplexity, and, or, negate,
                                 topPerComplexity, topLevelToPredicatesInfo,
                                 function, functionDelta, klDelta)
-
-                        val filteredMineResult = if (filterBySignificance) {
-                            mineResult.filter { ChiSquaredStatisticalSignificance.test(it.rule, database) }
-                        } else {
-                            mineResult
-                        }
-
-                        LOG.info("Significant rules: ${filteredMineResult.size} / ${mineResult.size}")
-
-                        logFunction(filteredMineResult)
+                        logFunction(mineResult)
                         MultitaskProgress.finishTask(target.name())
+                        mineResult
                     }
                 })
         check(executor.shutdownNow().isEmpty())
         LOG.info("DONE rules mining: $title")
+        return mineResults
     }
 
     fun loadRules(path: Path): List<RuleRecord<Any>> {
