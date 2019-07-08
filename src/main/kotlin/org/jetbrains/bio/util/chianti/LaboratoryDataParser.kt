@@ -1,6 +1,8 @@
 package org.jetbrains.bio.util.chianti
 
 import com.epam.parso.impl.SasFileReaderImpl
+import joptsimple.BuiltinHelpFormatter
+import joptsimple.OptionParser
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
@@ -9,6 +11,7 @@ import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.jetbrains.bio.predicates.OverlapSamplePredicate
 import org.jetbrains.bio.util.chianti.model.*
+import org.jetbrains.bio.util.parse
 import org.jetbrains.bio.util.toPath
 import java.io.File
 import java.io.FileInputStream
@@ -20,31 +23,28 @@ import java.util.*
 /**
  * This class is used to parse labo_raw data from chianti dataset
  */
-class LaboratoryDataParser {
-    val dataFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Assays/labo_raw.sas7bdat"
-    private val codebookFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/labo_raw_fixed.xlsx"
-    private val referenceFilename = "/home/nlukashina/education/bioinf/spring/fishbone_materials/qualified_features/csv_numerical_references/ref_bl.csv"
+class LaboratoryDataParser(
+        private val codebookFilename: String, private val referenceFilename: String, private val dataFilename: String
+) {
     private val ignoredVariables = setOf(
-        "CODE98", // will be used only as sample id
-        "SITE",
-        "DATA_NAS",
-        "DATEL",
-        "VUOTO",
-        "PIENO",
-        "BUSTE",
-        "INIZIO",
-        "FINE",
-        "PPAIR",
-        "CASCTL",
-        "U_SEDI",
-        "USEDIA",
-        "LNOTES",
-        "LCODE",
-        "U_CLAR",
-        "U_COLO",
-        "U_NOTE"
+            "CODE98", // will be used only as sample id
+            "SITE",
+            "DATA_NAS",
+            "DATEL",
+            "VUOTO",
+            "PIENO",
+            "BUSTE",
+            "INIZIO",
+            "FINE",
+            "PPAIR",
+            "CASCTL",
+            "U_SEDI",
+            "USEDIA",
+            "LNOTES",
+            "LCODE",
+            "U_CLAR",
+            "U_COLO",
+            "U_NOTE"
     )
 
     fun readCodebook(): Codebook {
@@ -56,37 +56,37 @@ class LaboratoryDataParser {
         val sheetData = getSheetData(rowIterator, emptyList()).map { data ->
             data.map { (key, value) ->
                 if (key == EpicCodebookColumn.Variable.index) {
-                    Pair(key, value.map { Regex("""^[XYZQC]_""").replaceFirst(it,"") })
+                    Pair(key, value.map { Regex("""^[XYZQC]_""").replaceFirst(it, "") })
                 } else {
                     Pair(key, value)
                 }
             }.toMap()
         }
         val variables = sheetData
-            // filter ignoring variables
-            .filter { data -> !ignoredVariables.contains(data.getValue(EpicCodebookColumn.Variable.index)[0]) }
-            .map { data ->
-                println(data.getValue(EpicCodebookColumn.Variable.index)[0])
-                when {
-                    data.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(data)
-                    data.getValue(EpicCodebookColumn.Meaning.index)[0].toLowerCase().contains("date") ->
-                        DateVariable.fromDataMap(data)
-                    else -> NumericVariable.fromDataMap(data)
-                }
-            }.toList()
+                // filter ignoring variables
+                .filter { data -> !ignoredVariables.contains(data.getValue(EpicCodebookColumn.Variable.index)[0]) }
+                .map { data ->
+                    println(data.getValue(EpicCodebookColumn.Variable.index)[0])
+                    when {
+                        data.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(data)
+                        data.getValue(EpicCodebookColumn.Meaning.index)[0].toLowerCase().contains("date") ->
+                            DateVariable.fromDataMap(data)
+                        else -> NumericVariable.fromDataMap(data)
+                    }
+                }.toList()
         return Codebook(variables.map { it.name to it }.toMap())
     }
 
     fun readReferences(): List<CSVRecord> {
         val reader = Files.newBufferedReader(referenceFilename.toPath())
-        return CSVParser(reader, CSVFormat.DEFAULT.withDelimiter('\t')).map { csvRecord ->
+        return CSVParser(reader, CSVFormat.DEFAULT.withDelimiter(',')).map { csvRecord ->
             csvRecord
         }
     }
 
     private fun getSheetData(
-        rowIterator: Iterator<Row>,
-        data: List<Map<Int, List<String>>>
+            rowIterator: Iterator<Row>,
+            data: List<Map<Int, List<String>>>
     ): List<Map<Int, List<String>>> {
         if (!rowIterator.hasNext()) {
             return data
@@ -101,8 +101,8 @@ class LaboratoryDataParser {
 
     // TODO: rewrite with streams
     private fun addVariablesToLastRow(
-        data: List<Map<Int, List<String>>>,
-        rowData: Map<Int, List<String>>
+            data: List<Map<Int, List<String>>>,
+            rowData: Map<Int, List<String>>
     ): MutableMap<Int, List<String>> {
         val lastRow = data.last()
         val updatedLastRow = mutableMapOf<Int, List<String>>()
@@ -127,14 +127,18 @@ class LaboratoryDataParser {
             : Pair<List<Int>, List<OverlapSamplePredicate>> {
         val sasFileReader = SasFileReaderImpl(FileInputStream(dataFilename))
         val data = sasFileReader.readAll() // todo: readNext
-        val ageColumnIndex = sasFileReader.columns.withIndex().first { Regex("""^[XYZQC]_AGEL""")
-                .matches(it.value.name) }.index
-        val columnsByIndex = sasFileReader.columns.withIndex().map { (idx, column) -> idx to
-                Regex("""^[XYZQC]_""").replaceFirst(column.name, "") }.filter { (idx, _) ->
+        val ageColumnIndex = sasFileReader.columns.withIndex().first {
+            Regex("""^[XYZQC]_AGEL""")
+                    .matches(it.value.name)
+        }.index
+        val columnsByIndex = sasFileReader.columns.withIndex().map { (idx, column) ->
+            idx to
+                    Regex("""^[XYZQC]_""").replaceFirst(column.name, "")
+        }.filter { (idx, _) ->
             val youngData = data.filter { it[ageColumnIndex].toString().toInt() < 40 }
             val oldData = data.filter { it[ageColumnIndex].toString().toInt() in 65..75 }
-            youngData.map { if(it[idx] != null) 1 else 0 }.sum() >= 0.8 * youngData.size &&
-                    oldData.map { if(it[idx] != null) 1 else 0 }.sum() >= 0.8 * oldData.size
+            youngData.map { if (it[idx] != null) 1 else 0 }.sum() >= 0.8 * youngData.size &&
+                    oldData.map { if (it[idx] != null) 1 else 0 }.sum() >= 0.8 * oldData.size
         }.toMap()
 
         val dataPredicates = mutableMapOf<String, List<Int>>()
@@ -145,19 +149,19 @@ class LaboratoryDataParser {
                 val cell = sample[columnIndex]
                 if (cell != null) { // could be missed data
                     val satisfiedPredicates =
-                        predicateCodebooks
-                            .filter { (name, predicate) ->
-                                ("(low|high|normal|above_ref|below_ref|inside_ref)_$column".toRegex().matches(name) ||
-                                        (!"(low|high|normal|above_ref|below_ref|inside_ref).*".toRegex().matches(name)
-                                                && name.contains(column))) &&
-                                        !(column == "AGEL" && !(cell.toString().toDouble() in 65.0..75.0 ||
-                                                cell.toString().toDouble() < 40)) &&
+                            predicateCodebooks
+                                    .filter { (name, predicate) ->
+                                        ("(low|high|normal|above_ref|below_ref|inside_ref)_$column".toRegex().matches(name) ||
+                                                (!"(low|high|normal|above_ref|below_ref|inside_ref).*".toRegex().matches(name)
+                                                        && name.contains(column))) &&
+                                                !(column == "AGEL" && !(cell.toString().toDouble() in 65.0..75.0 ||
+                                                        cell.toString().toDouble() < 40)) &&
 //                                        !(column == "SEX" && cell.toString().toInt() == 2) &&
-                                        predicate(if (cell is Date)
-                                                      cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                                  else cell.toString())
-                            }
-                            .keys
+                                                predicate(if (cell is Date)
+                                                    cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                                                else cell.toString())
+                                    }
+                                    .keys
                     for (name in satisfiedPredicates) {
                         dataPredicates[name] = (dataPredicates.getOrDefault(name, emptyList()) + sampleIndex)
                     }
@@ -168,44 +172,56 @@ class LaboratoryDataParser {
 
         return Pair(database, dataPredicates.map {
             OverlapSamplePredicate(
-                it.key,
-                it.value
+                    it.key,
+                    it.value
             )
         })
     }
 
     companion object {
-        private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments_with_ref"
+        private const val defaultDataOutputFolder =
+                "/home/nina.lukashina/projects/fishbone_materials/output/chianti_output/exp1"
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val processor = LaboratoryDataParser()
-            val codebook = processor.readCodebook()
-            val references = processor.readReferences()
-            val predicatesMap = mutableMapOf<String, (Any) -> Boolean>()
-            val filteredCodebook = Codebook(codebook.variables
-                                                    .filter { variable -> variable.key !in references.map { it[0] } })
-            CodebookToPredicatesTransformer(filteredCodebook).predicates.forEach { (t, u) -> predicatesMap[t] = u }
-            ReferencesToPredicatesTransformer(references).predicates.forEach { (t, u) -> predicatesMap[t] = u }
 
-            val (database, predicates) = processor.createPredicatesFromData(predicatesMap)
+            OptionParser().apply {
+                accepts("dataFilename", "Filename of laboratory data file").withRequiredArg().ofType(String::class.java)
+                accepts("codebookFilename", "Filename of laboratory codebook").withRequiredArg().ofType(String::class.java)
+                accepts("referenceFilename", "Filename of laboratory variables references").withRequiredArg().ofType(String::class.java)
+                formatHelpWith(BuiltinHelpFormatter(200, 2))
+            }.parse(args) { options ->
+                val processor = LaboratoryDataParser(
+                        options.valueOf("codebookFilename").toString(),
+                        options.valueOf("referenceFilename").toString(),
+                        options.valueOf("dataFilename").toString()
+                )
+                val codebook = processor.readCodebook()
+                val references = processor.readReferences()
+                val predicatesMap = mutableMapOf<String, (Any) -> Boolean>()
+                val filteredCodebook = Codebook(codebook.variables
+                        .filter { variable -> variable.key !in references.map { it[0] } })
+                CodebookToPredicatesTransformer(filteredCodebook).predicates.forEach { (t, u) -> predicatesMap[t] = u }
+                ReferencesToPredicatesTransformer(references).predicates.forEach { (t, u) -> predicatesMap[t] = u }
 
-            File(defaultDataoutputFolder).mkdirs()
-            val databaseOutput = File("$defaultDataoutputFolder/database.txt")
-            databaseOutput.createNewFile()
-            databaseOutput.printWriter().use { out ->
-                database.forEach { out.println(it) }
-            }
-            val predicateFilenames = predicates.map { predicate ->
-                val output = File("$defaultDataoutputFolder/${predicate.name}")
-                output.printWriter().use { out ->
-                    predicate.samples.forEach { out.println(it) }
+                val (database, predicates) = processor.createPredicatesFromData(predicatesMap)
+
+                File(defaultDataOutputFolder).mkdirs()
+                val databaseOutput = File("$defaultDataOutputFolder/database.txt")
+                databaseOutput.createNewFile()
+                databaseOutput.printWriter().use { out ->
+                    database.forEach { out.println(it) }
                 }
-                output.absolutePath
-            }
+                val predicateFilenames = predicates.map { predicate ->
+                    val output = File("$defaultDataOutputFolder/${predicate.name}")
+                    output.printWriter().use { out ->
+                        predicate.samples.forEach { out.println(it) }
+                    }
+                    output.absolutePath
+                }
 
-            predicateFilenames.forEach { println(it) }
+                predicateFilenames.forEach { println(it) }
+            }
         }
     }
 }
