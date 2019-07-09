@@ -5,6 +5,7 @@ import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.OrPredicate
 import org.jetbrains.bio.rules.Rule
+import java.lang.IllegalArgumentException
 
 /**
  * This class implements Chi-squared statistical significance test (see: https://www.tandfonline.com/eprint/aMdSMrAGuEHsHWSzIuqm/full)
@@ -20,10 +21,18 @@ class ChiSquaredStatisticalSignificance {
 
         fun <T> test(rule: Rule<T>, database: List<T>): Boolean {
             LOG.info("Testing rule's significance: $rule")
+            val conditionPredicate = rule.conditionPredicate
             val sources = when {
-                rule.conditionPredicate is AndPredicate -> rule.conditionPredicate.operands
-                rule.conditionPredicate is OrPredicate -> rule.conditionPredicate.operands
-                else -> listOf(rule.conditionPredicate)
+                conditionPredicate is AndPredicate -> conditionPredicate.operands
+                conditionPredicate is OrPredicate -> {
+                    val operands = conditionPredicate.operands
+                    if (operands.size < 2) {
+                        throw IllegalArgumentException("Operands size is less than 2") //TODO: refactor
+                    }
+                    val initial = operands[0].not()
+                    listOf(operands.drop(1).map { it.not() }.fold(initial, {acc, p -> acc.and(p.not())}).not())
+                }
+                else -> listOf(conditionPredicate)
             }
             val target = rule.targetPredicate
 

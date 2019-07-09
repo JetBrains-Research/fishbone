@@ -98,7 +98,7 @@ function buildFishbone() {
         let classes = CLASS_MISSING_RULE;
         if (r['operator'] == 'and' && filter_record(r)) {
             classes = CLASS_AND;
-        } else if (['operator'] == 'or' && filter_record(r)) {
+        } else if (r['operator'] == 'or' && filter_record(r)) {
             classes = CLASS_OR;
         }
         return addEdge(start, end, r, classes);

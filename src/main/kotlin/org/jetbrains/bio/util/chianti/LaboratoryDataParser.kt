@@ -180,7 +180,7 @@ class LaboratoryDataParser(
 
     companion object {
         private const val defaultDataOutputFolder =
-                "/home/nina.lukashina/projects/fishbone_materials/output/chianti_output/exp1"
+                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp3"
 
         @JvmStatic
         fun main(args: Array<String>) {

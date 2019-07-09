@@ -146,7 +146,7 @@ abstract class Experiment(private val outputFolder: String) {
                     { },
                     maxComplexity,
                     function = getInformationFunctionByName(criterionName),
-                    or = false,
+                    or = true,
                     negate = true
             )
 
