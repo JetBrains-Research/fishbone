@@ -326,12 +326,16 @@ abstract class Experiment(private val outputFolder: String) {
         val nonFilteredRules = mineResults.map {it.get()}
         val filteredMineResult = nonFilteredRules.map { rules ->
             if (checkSignificance) {
-                rules.filter { ChiSquaredStatisticalSignificance.test(it.rule, database) }
+                rules.filter {
+                    ChiSquaredStatisticalSignificance.test(it.rule, database) <
+                            ChiSquaredStatisticalSignificance.SIGNIFICANCE_LEVEL
+                }
             } else {
                 rules
             }
         }
-        logger.info("Significant rules: ${filteredMineResult.flatten().size} / ${nonFilteredRules.flatten().size}")
+        logger.info("Significant rules P<${ChiSquaredStatisticalSignificance.SIGNIFICANCE_LEVEL}: " +
+                "${filteredMineResult.flatten().size} / ${nonFilteredRules.flatten().size}")
         return filteredMineResult
     }
 

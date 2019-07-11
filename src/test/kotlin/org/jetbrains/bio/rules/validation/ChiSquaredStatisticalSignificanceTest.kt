@@ -3,6 +3,7 @@ package org.jetbrains.bio.rules.validation
 import junit.framework.TestCase
 import org.jetbrains.bio.predicates.OverlapSamplePredicate
 import org.jetbrains.bio.rules.Rule
+import org.jetbrains.bio.rules.validation.ChiSquaredStatisticalSignificance.Companion.SIGNIFICANCE_LEVEL
 import org.junit.Test
 
 class ChiSquaredStatisticalSignificanceTest : TestCase() {
@@ -15,10 +16,10 @@ class ChiSquaredStatisticalSignificanceTest : TestCase() {
         val target = OverlapSamplePredicate("T", listOf(1, 2, 3, 5))
 
         val trueRule = Rule(a, target, database)
-        assertTrue(ChiSquaredStatisticalSignificance.test(trueRule, database))
+        assertTrue(ChiSquaredStatisticalSignificance.test(trueRule, database) < SIGNIFICANCE_LEVEL)
 
         val falseRule = Rule(b, target, database)
-        assertFalse(ChiSquaredStatisticalSignificance.test(falseRule, database))
+        assertFalse(ChiSquaredStatisticalSignificance.test(falseRule, database) < SIGNIFICANCE_LEVEL)
     }
 
 }
