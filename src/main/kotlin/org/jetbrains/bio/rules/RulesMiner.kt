@@ -5,9 +5,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesMiner.mine
-import org.jetbrains.bio.rules.validation.ChiSquaredStatisticalSignificance
 import org.jetbrains.bio.util.MultitaskProgress
-import org.jetbrains.bio.util.awaitAll
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.parallelismLevel
 import java.nio.file.Path
@@ -36,9 +34,9 @@ object RulesMiner {
      * Auxiliary info for visualization purposes.
      *
      * @param rule represents joint distribution (condition, parent?, target)
-     * @param target represents all the top level predicates pairwise joint distributions
+     * @param target represents all the top level predicates pairwise combinations
      */
-    data class Aux(val rule: DistributionPP, val target: List<DistributionPP>? = null)
+    data class Aux(val rule: Upset, val target: List<Upset>? = null)
 
 
     /**
@@ -74,21 +72,21 @@ object RulesMiner {
                 }
                 // Collect all the top level predicates pairwise joint distributions
                 val topLevelNodes = queue.sortedWith(RulesBPQ.comparator(function)).take(topLevelToPredicatesInfo)
-                val topLevelPairwiseDistributions = arrayListOf<DistributionPP>()
+                val topLevelPairwiseCombinations = arrayListOf<Upset>()
                 for (i in 0 until topLevelNodes.size) {
                     val n1 = topLevelNodes[i]
                     (i + 1 until topLevelNodes.size).forEach { j ->
                         val n2 = topLevelNodes[j]
-                        topLevelPairwiseDistributions.add(EmpiricalDistribution(database, listOf(
-                                n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)).pp())
+                        topLevelPairwiseCombinations.add(
+                                Upset.of(database, listOf(n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)))
                     }
                 }
                 // NOTE[shpynov] hacks adding target information to all the nodes
                 for (i in 0 until topLevelNodes.size) {
                     val nI = topLevelNodes[i]
                     nI.aux = Aux(
-                            rule = EmpiricalDistribution(database, listOf(nI.rule.conditionPredicate, target)).pp(),
-                            target = topLevelPairwiseDistributions)
+                            rule = Upset.of(database, listOf(nI.rule.conditionPredicate, target)),
+                            target = topLevelPairwiseCombinations)
                 }
             } else {
                 bestByComplexity[k - 1].flatMap { parent ->

@@ -108,9 +108,8 @@ class RulesBPQ<T>(private val limit: Int,
                 return false
             }
             if (node.aux == null) {
-                node.aux = RulesMiner.Aux(rule = EmpiricalDistribution(database,
-                        listOf(node.element, node.parent!!.rule.conditionPredicate, node.rule.targetPredicate))
-                        .pp())
+                node.aux = RulesMiner.Aux(rule =
+                Upset.of(database, listOf(node.element, node.parent!!.rule.conditionPredicate, node.rule.targetPredicate)))
             }
         }
         LOG.debug("PASS rule\n" +
