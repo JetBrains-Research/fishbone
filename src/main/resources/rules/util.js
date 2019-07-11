@@ -245,7 +245,7 @@ function renderFishboneResults(response) {
     })
 }
 
-function getMinwers() {
+function getMiners() {
     var miners = "fishbone";
     if (document.getElementById("fpGrowthAlgCheckbox").checked == true) {
         miners += ", fp-growth";
@@ -262,7 +262,7 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
-    var miners = getMinwers();
+    var miners = getMiners();
     if (miners == "") {
         $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
         return
@@ -281,7 +281,7 @@ function runAnalysisOnLoadedData() {
             window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
             window.myForm.delete('criterion');
             window.myForm.append("criterion", document.getElementById("info-criterion").value);
-            var miners = getMinwers();
+            var miners = getMiners();
             if (miners == "") {
                 $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
                 return
@@ -295,9 +295,15 @@ function runAnalysisOnLoadedData() {
                 processData: false,
                 contentType: false,
                 success: function (res) {
-                    renderFishboneResults(res);
-                    renderFpGrowthAlgorithmResults(res);
-                    renderDecisionTreeAlgorithmsResults(res);
+                    if (res["FISHBONE"] != null) {
+                        renderFishboneResults(res);
+                    }
+                    if (res["FP_GROWTH"] != null) {
+                        renderFpGrowthAlgorithmResults(res);
+                    }
+                    if (res["DECISION_TREE"] != null) {
+                        renderDecisionTreeAlgorithmsResults(res);
+                    }
                 },
                 error: function (error) {
                     console.log(error);

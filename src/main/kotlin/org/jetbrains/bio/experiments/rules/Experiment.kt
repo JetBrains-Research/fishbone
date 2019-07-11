@@ -82,7 +82,7 @@ abstract class Experiment(private val outputFolder: String) {
                 }
                 .map { (miner, r) ->
                     saveRulesToFile(r, mineRulesRequest.criterion, miner, mineRulesRequest.criterion)
-                    Pair(miner, r.first)
+                    Pair(miner, r.first.replace(".csv", ".json"))
                 }
                 .toMap()
                 .toMutableMap()
