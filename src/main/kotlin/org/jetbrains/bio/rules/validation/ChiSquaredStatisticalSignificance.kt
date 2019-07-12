@@ -16,7 +16,6 @@ class ChiSquaredStatisticalSignificance {
 
         private val LOG = Logger.getLogger(ChiSquaredStatisticalSignificance::class.java)
         private val chiSquaredDistribution = ChiSquaredDistribution(1.0)
-        const val SIGNIFICANCE_LEVEL = 0.05
 
         /**
          * Returns pvalue for Null Hypothesis that Left and Right parts of the rule are independent.

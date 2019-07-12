@@ -130,6 +130,13 @@ function initialize() {
         window.myForm.append('database', this.files[0]);
         $.notify("Uploaded database", {className: "success", position: 'bottom right'});
     });
+    $('#targets-file').change(function () {
+        window.myForm.delete('targets');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('targets', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " targets", {className: "success", position: 'bottom right'});
+    });
 
     // Load by hash if possible, this is useful for pipeline
     const {hash} = window.location;
@@ -262,6 +269,7 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     var miners = getMiners();
     if (miners == "") {
         $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
@@ -279,6 +287,7 @@ function runAnalysisOnLoadedData() {
 
             window.myForm.delete('experiment');
             window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+            window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
             window.myForm.delete('criterion');
             window.myForm.append("criterion", document.getElementById("info-criterion").value);
             var miners = getMiners();

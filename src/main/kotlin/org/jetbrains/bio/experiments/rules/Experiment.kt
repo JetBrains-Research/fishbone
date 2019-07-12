@@ -62,22 +62,22 @@ abstract class Experiment(private val outputFolder: String) {
             mineRulesRequest: MineRulesRequest,
             database: List<V>,
             predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>? = null
+            targets: List<Predicate<V>> = emptyList()
     ): MutableMap<Miner, String> {
         val results = mineRulesRequest.miners
                 .map { miner ->
                     logger.info("Processing $miner")
                     miner to when (miner) {
                         Miner.FISHBONE -> mineByFishbone(
-                                database, predicates, targets?.getOrNull(0), mineRulesRequest.criterion, runName = mineRulesRequest.runName.orEmpty()
+                                database, predicates, targets, mineRulesRequest.criterion, runName = mineRulesRequest.runName.orEmpty()
                         )
-                        Miner.RIPPER -> mineByRipper(database, predicates, targets!!, runName = mineRulesRequest.runName.orEmpty())
-                        Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets?.getOrNull(0))
+                        Miner.RIPPER -> mineByRipper(database, predicates, targets, runName = mineRulesRequest.runName.orEmpty())
+                        Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets)
                         Miner.DECISION_TREE -> mineByDecisionTree(database, predicates, targets)
                     }
                 }
                 .map { (miner, r) ->
-                    val filteredRules = statisticalSignificant(r.second, mineRulesRequest.checkSignificance, database)
+                    val filteredRules = statisticalSignificant(r.second, mineRulesRequest.significanceLevel, database)
                     Pair(miner, Pair(r.first, filteredRules))
                 }
                 .map { (miner, r) ->
@@ -125,7 +125,7 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> mineByFishbone(
             database: List<V>,
             predicates: List<Predicate<V>>,
-            target: Predicate<V>? = null,
+            targets: List<Predicate<V>> = emptyList(),
             criterionName: String,
             maxComplexity: Int = 6,
             runName: String = ""
@@ -133,8 +133,8 @@ abstract class Experiment(private val outputFolder: String) {
         try {
             logger.info("Processing fishbone")
 
-            val sourcesToTargets = if (target != null) {
-                listOf(predicates to target)
+            val sourcesToTargets = if (targets.isNotEmpty()) {
+                targets.map { target -> predicates to target }
             } else {
                 mapAllPredicatesToAll(predicates, predicates.withIndex())
             }
@@ -212,22 +212,22 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> mineByFPGrowth(
             database: List<V>,
             predicates: List<Predicate<V>>,
-            target: Predicate<V>? = null
+            targets: List<Predicate<V>> = emptyList()
     ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
         try {
             logger.info("Processing fp-growth")
             val rulesResults = getOutputFilePath(Miner.FP_GROWTH)
 
-            val allPredicates = if (target != null) predicates + target else predicates
+            val allPredicates = if (targets.isNotEmpty()) predicates + targets else predicates
             val predicatesInfo = getPredicatesInfoOverDatabase(allPredicates, database)
             val idsToNames = predicatesInfo.map { it.id to it.name }.toMap()
-            val targetId = predicatesInfo.find { it.name == target?.name() }?.id
+            val targetsIds = targets.mapNotNull { target -> predicatesInfo.find { it.name == target.name() }?.id }
 
             val items = database.withIndex().map { (idx, _) ->
                 getSatisfiedPredicateIds(predicatesInfo, idx).toIntArray()
             }.toTypedArray()
 
-            val rulesPath = FPGrowthMiner.mine(items, idsToNames, rulesResults, target = targetId)
+            val rulesPath = FPGrowthMiner.mine(items, idsToNames, rulesResults, targets = targetsIds)
 
             return Pair(rulesPath, emptyList())
         } catch (t: Throwable) {
@@ -320,23 +320,22 @@ abstract class Experiment(private val outputFolder: String) {
 
     private fun <V> statisticalSignificant(
             mineResults: List<Future<List<RulesMiner.Node<V>>>>,
-            checkSignificance: Boolean,
+            significanceLevel: Double?,
             database: List<V>
     ): List<List<RulesMiner.Node<V>>> {
         val nonFilteredRules = mineResults.map {it.get()}
-        val filteredMineResult = nonFilteredRules.map { rules ->
-            if (checkSignificance) {
+        return if (significanceLevel != null) {
+            val filteredMineResult = nonFilteredRules.map { rules ->
                 rules.filter {
-                    ChiSquaredStatisticalSignificance.test(it.rule, database) <
-                            ChiSquaredStatisticalSignificance.SIGNIFICANCE_LEVEL
+                    ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
                 }
-            } else {
-                rules
             }
+            logger.info("Significant rules P < $significanceLevel: " +
+                                "${filteredMineResult.flatten().size} / ${nonFilteredRules.flatten().size}")
+            filteredMineResult
+        } else {
+            nonFilteredRules
         }
-        logger.info("Significant rules P<${ChiSquaredStatisticalSignificance.SIGNIFICANCE_LEVEL}: " +
-                "${filteredMineResult.flatten().size} / ${nonFilteredRules.flatten().size}")
-        return filteredMineResult
     }
 
     private fun getOutputFilePath(miner: Miner, runName: String = ""): Path {

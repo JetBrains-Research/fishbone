@@ -89,12 +89,21 @@
             <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
             <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load"
                    onclick="$('#bed-database-file').click();"/>
+            <label id="targets-file-label" for="targets-file-button">Targets</label>
+            <input id="targets-file" type="file" style="display: none" multiple="multiple"/>
+            <input id="targets-file-button" type="button" class="btn btn-primary" value="Load"
+                   onclick="$('#targets-file').click();"/>
             <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
-            <input type="text" id="experiment-type" name="name" required minlength="4" size="10">
+            <select id="experiment-type" name="name" required>
+                <option value="CIOFANI" selected="selected">CIOFANI</option>
+                <option value="CHIANTI">CHIANTI</option>
+            </select>
             <select id="info-criterion">
                 <option value="conviction">conviction</option>
                 <option value="loe">loe</option>
             </select>
+            <label id="significance-level-label" for="significance-level">Significance level:</label>
+            <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1">
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="runAnalysisOnLoadedData()"/>
 
@@ -121,9 +130,13 @@
                         document.getElementById("predicates-file-label").style.display = "inline";
                         document.getElementById("bed-database-file-button").style.display = "inline";
                         document.getElementById("bed-database-file-label").style.display = "inline";
+                        document.getElementById("targets-file-button").style.display = "inline";
+                        document.getElementById("targets-file-label").style.display = "inline";
                         document.getElementById("run-analysis-button").style.display = "inline";
                         document.getElementById("experiment-type-label").style.display = "inline";
                         document.getElementById("experiment-type").style.display = "inline";
+                        document.getElementById("significance-level-label").style.display = "inline";
+                        document.getElementById("significance-level").style.display = "inline";
                         document.getElementById("algorithms").style.display = "inline";
                         document.getElementById("algorithms-label").style.display = "inline";
                         document.getElementById("info-criterion").style.display = "inline";
@@ -143,9 +156,13 @@
                         document.getElementById("predicates-file-label").style.display = "none";
                         document.getElementById("bed-database-file-button").style.display = "none";
                         document.getElementById("bed-database-file-label").style.display = "none";
+                        document.getElementById("targets-file-button").style.display = "none";
+                        document.getElementById("targets-file-label").style.display = "none";
                         document.getElementById("run-analysis-button").style.display = "none";
                         document.getElementById("experiment-type-label").style.display = "none";
                         document.getElementById("experiment-type").style.display = "none";
+                        document.getElementById("significance-level-label").style.display = "none";
+                        document.getElementById("significance-level").style.display = "none";
                         document.getElementById("algorithms").style.display = "none";
                         document.getElementById("algorithms-label").style.display = "none";
                         document.getElementById("info-criterion").style.display = "none";
