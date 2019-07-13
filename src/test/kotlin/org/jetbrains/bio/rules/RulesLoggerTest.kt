@@ -25,7 +25,7 @@ class RulesLoggerTest {
   "records": [
     {
       "id": "id",
-      "condition": "[20;35) OR [30;40) OR [40;50)",
+      "condition": "[20;35) OR [35;48) OR [40;50)",
       "target": "[20;50)",
       "database_count": 100,
       "condition_count": 30,
@@ -38,13 +38,13 @@ class RulesLoggerTest {
       "conviction": 21.0,
       "loe": 1.4926612809863424,
       "complexity": 3,
-      "node": "[30;40)",
+      "node": "[35;48)",
       "parent_node": "[40;50)",
       "parent_condition": "[20;35) OR [40;50)",
       "aux": {
         "rule": {
           "names": [
-            "[30;40)",
+            "[35;48)",
             "[20;35) OR [40;50)",
             "[20;50)"
           ],
@@ -55,8 +55,8 @@ class RulesLoggerTest {
             0,
             0,
             5,
-            20,
-            5
+            17,
+            8
           ]
         }
       },
@@ -154,7 +154,7 @@ class RulesLoggerTest {
     },
     {
       "id": "id",
-      "condition": "[20;35) OR [35;48) OR [40;50)",
+      "condition": "[20;35) OR [30;40) OR [40;50)",
       "target": "[20;50)",
       "database_count": 100,
       "condition_count": 30,
@@ -167,14 +167,14 @@ class RulesLoggerTest {
       "conviction": 21.0,
       "loe": 1.4926612809863424,
       "complexity": 3,
-      "node": "[40;50)",
-      "parent_node": "[35;48)",
-      "parent_condition": "[20;35) OR [35;48)",
+      "node": "[30;40)",
+      "parent_node": "[40;50)",
+      "parent_condition": "[20;35) OR [40;50)",
       "aux": {
         "rule": {
           "names": [
-            "[40;50)",
-            "[20;35) OR [35;48)",
+            "[30;40)",
+            "[20;35) OR [40;50)",
             "[20;50)"
           ],
           "combinations": [
@@ -183,9 +183,9 @@ class RulesLoggerTest {
             0,
             0,
             0,
-            2,
+            5,
             20,
-            8
+            5
           ]
         }
       },

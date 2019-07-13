@@ -5,13 +5,10 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesMiner.mine
-import org.jetbrains.bio.util.MultitaskProgress
-import org.jetbrains.bio.util.bufferedReader
-import org.jetbrains.bio.util.parallelismLevel
+import org.jetbrains.bio.util.*
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import kotlin.math.min
 
 
@@ -50,7 +47,6 @@ object RulesMiner {
                                      or: Boolean = true,
                                      negate: Boolean = true,
                                      topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                                     topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                                      function: (Rule<T>) -> Double,
                                      functionDelta: Double = FUNCTION_DELTA,
                                      klDelta: Double = KL_DELTA): Array<RulesBPQ<T>> {
@@ -61,46 +57,40 @@ object RulesMiner {
             "Expected klDelta <= 1 (100%), got: $klDelta"
         }
         // Invariant: best[k] - best optimization results with complexity = k
-        val bestByComplexity = Array(maxComplexity + 1) { RulesBPQ(topPerComplexity, database, function, functionDelta, klDelta) }
+        val bestByComplexity = Array(maxComplexity + 1) {
+            RulesBPQ(topPerComplexity, database, function, functionDelta, klDelta)
+        }
+        val executor = Executors.newWorkStealingPool(parallelismLevel())
         (1..min(maxComplexity, predicates.size)).forEach { k ->
             val queue = bestByComplexity[k]
             if (k == 1) {
-                predicates.forEach { p ->
-                    MultitaskProgress.reportTask(target.name())
+                executor.awaitAll(predicates.flatMap { p ->
                     (if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p))
-                            .forEach { queue.add(Node(Rule(it, target, database), it, null)) }
-                }
-                // Collect all the top level predicates pairwise joint distributions
-                val topLevelNodes = queue.sortedWith(RulesBPQ.comparator(function)).take(topLevelToPredicatesInfo)
-                val topLevelPairwiseCombinations = arrayListOf<Upset>()
-                for (i in 0 until topLevelNodes.size) {
-                    val n1 = topLevelNodes[i]
-                    (i + 1 until topLevelNodes.size).forEach { j ->
-                        val n2 = topLevelNodes[j]
-                        topLevelPairwiseCombinations.add(
-                                Upset.of(database, listOf(n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)))
+                }.map { p ->
+                    Callable {
+                        queue.add(Node(Rule(p, target, database), p, null))
                     }
-                }
-                // NOTE[shpynov] hacks adding target information to all the nodes
-                for (i in 0 until topLevelNodes.size) {
-                    val nI = topLevelNodes[i]
-                    nI.aux = Aux(
-                            rule = Upset.of(database, listOf(nI.rule.conditionPredicate, target)),
-                            target = topLevelPairwiseCombinations)
-                }
+                })
             } else {
-                bestByComplexity[k - 1].flatMap { parent ->
+                executor.awaitAll(bestByComplexity[k - 1].flatMap { parent ->
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
-                    predicates.filter { MultitaskProgress.reportTask(target.name()); it !in startAtomics }
+                    predicates.filter { it !in startAtomics }
                             .flatMap { p -> if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p) }
                             .flatMap { p ->
                                 PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p, and = and, or = or)
-                                        .filter(Predicate<T>::defined)
-                                        .map { Node(Rule(it, target, database), p, parent) }
+                                        .filter(Predicate<T>::defined).map {
+                                            Triple(parent, p, it)
+                                        }
                             }
-                }.forEach { queue.add(it) }
+                }.map { (parent, p, candidate) ->
+                    Callable {
+                        queue.add(Node(Rule(candidate, target, database), p, parent))
+                    }
+                })
             }
+            MultitaskProgress.reportTask(target.name())
         }
+        executor.shutdown()
         return bestByComplexity
     }
 
@@ -118,13 +108,43 @@ object RulesMiner {
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA): List<Node<T>> {
-        val best = mineByComplexity(predicates, target, database,
-                maxComplexity, and, or, negate,
-                topPerComplexity, topLevelToPredicatesInfo,
-                function, functionDelta, klDelta)
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
-        return best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
+        val best = mineByComplexity(predicates, target, database,
+                maxComplexity, and, or, negate,
+                topPerComplexity, function,
+                functionDelta, klDelta)
+        // Fill aux information
+        val topLevelNodes = best[1].sortedWith(RulesBPQ.comparator(function)).take(topLevelToPredicatesInfo)
+        // Collect all the top level predicates pairwise joint distributions
+        val topLevelPairwiseCombinations = arrayListOf<Upset>()
+        for (i in 0 until topLevelNodes.size) {
+            val n1 = topLevelNodes[i]
+            (i + 1 until topLevelNodes.size).forEach { j ->
+                val n2 = topLevelNodes[j]
+                topLevelPairwiseCombinations.add(Upset.of(database,
+                        listOf(n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)))
+            }
+        }
+        // NOTE[shpynov] hacks adding target information to all the nodes
+        for (i in 0 until topLevelNodes.size) {
+            val nI = topLevelNodes[i]
+            nI.aux = Aux(
+                    rule = Upset.of(database, listOf(nI.rule.conditionPredicate, target)),
+                    target = topLevelPairwiseCombinations)
+        }
+
+        val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
+        result.map {
+            Callable {
+                if (it.parent != null) {
+                    it.aux = Aux(rule =
+                    Upset.of(database, listOf(it.element, it.parent.rule.conditionPredicate, it.rule.targetPredicate)))
+                }
+            }
+        }.await(parallel = true)
+        MultitaskProgress.finishTask(target.name())
+        return result
     }
 
 
@@ -162,25 +182,22 @@ object RulesMiner {
                  topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA): List<Future<List<Node<T>>>> {
+                 klDelta: Double = KL_DELTA): List<List<Node<T>>> {
         LOG.info("Rules mining: $title")
-        // Mine each target separately
-        val executor = Executors.newWorkStealingPool(parallelismLevel())
-        val mineResults = executor.invokeAll(
-                toMine.map { (conditions, target) ->
-                    MultitaskProgress.addTask(target.name(),
-                            conditions.size + conditions.size.toLong() * (maxComplexity - 1) * topPerComplexity)
-                    Callable {
-                        val mineResult = mine(conditions, target, database,
-                                maxComplexity, and, or, negate,
-                                topPerComplexity, topLevelToPredicatesInfo,
-                                function, functionDelta, klDelta)
-                        logFunction(mineResult)
-                        MultitaskProgress.finishTask(target.name())
-                        mineResult
-                    }
-                })
-        check(executor.shutdownNow().isEmpty())
+        toMine.forEach { (conditions, target) ->
+            // For each complexity level and for aux info computation
+            MultitaskProgress.addTask(target.name(), min(conditions.size, maxComplexity) + 1L)
+        }
+        val mineResults = toMine.map { (conditions, target) ->
+            // Cleanup predicates cache
+            Predicate.dbCache = null
+            val mineResult = mine(conditions, target, database,
+                    maxComplexity, and, or, negate,
+                    topPerComplexity, topLevelToPredicatesInfo,
+                    function, functionDelta, klDelta)
+            logFunction(mineResult)
+            mineResult
+        }
         LOG.info("DONE rules mining: $title")
         return mineResults
     }

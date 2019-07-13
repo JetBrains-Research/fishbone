@@ -1,8 +1,9 @@
 package org.jetbrains.bio.predicates
 
 import com.google.common.base.Preconditions.checkState
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import com.google.common.collect.Sets
-import java.lang.ref.WeakReference
 import java.util.*
 
 /**
@@ -12,7 +13,7 @@ import java.util.*
  * @author Oleg Shpynov
  * @since 17/11/14
  */
-abstract class Predicate<T> {
+abstract class Predicate<T>(val evalListFunction: ((List<T>) -> BitSet)? = null) {
 
     abstract fun test(item: T): Boolean
 
@@ -43,30 +44,37 @@ abstract class Predicate<T> {
 
     fun or(other: Predicate<T>): Predicate<T> = or(this, other)
 
-    @Volatile
-    private var cachedDataBase: List<T>? = null
-
-    @Volatile
-    private var cache = WeakReference<BitSet>(null)
-
     /**
      * Please use [testUncached] to implement custom behavior.
-     * NOTE: we don't use Cache here, because items is the same object, so that cache miss should be quite rare.
      */
-    @Synchronized
     open fun test(items: List<T>): BitSet {
-        // NOTE: We use reference equality check instead of Lists equality because it can be slow on large databases.
-        var result = if (cachedDataBase !== items) {
-            null
-        } else {
-            cache.get()
+        var lastDbCache: Pair<List<*>, Cache<Predicate<*>, BitSet>>? = dbCache
+        var cache: Cache<Predicate<*>, BitSet>? = null
+        // NOTE: We use reference equality check instead of Lists equality
+        // because it can be slow on large databases.
+        if (lastDbCache?.first === items) {
+            cache = lastDbCache.second
         }
-        if (result == null) {
-            cachedDataBase = items
-            result = testUncached(items)
-            cache = WeakReference(result)
+        if (cache == null) {
+            // Use double synchronized check
+            synchronized(Predicate::class.java) {
+                lastDbCache = dbCache
+                if (lastDbCache?.first === items) {
+                    cache = lastDbCache!!.second
+                } else {
+                    cache = CacheBuilder
+                            .newBuilder()
+                            .maximumSize(1000) // To make it LRU
+                            .weakKeys()        // To use reference equality ===
+                            .softValues()      // To be memory friendly
+                            .build()
+                    dbCache = items to cache!!
+                }
+            }
         }
-        return result
+        return cache!!.get(this) {
+            testUncached(items)
+        }
     }
 
     protected open fun testUncached(items: List<T>): BitSet {
@@ -98,6 +106,11 @@ abstract class Predicate<T> {
     }
 
     companion object {
+        /**
+         * Single database cache for predicates
+         */
+        @Volatile
+        internal var dbCache: Pair<List<*>, Cache<Predicate<*>, BitSet>>? = null
 
         /**
          * Returns [OrPredicate] if all operands are defined and the

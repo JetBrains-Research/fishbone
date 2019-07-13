@@ -1,5 +1,6 @@
 package org.jetbrains.bio.rules.ripper
 
+import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.Rule
@@ -8,8 +9,6 @@ import weka.classifiers.rules.JRip
 import weka.classifiers.rules.RuleStats
 import weka.core.Attribute
 import weka.core.Instances
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
 
 /**
  * This miner rus Ripper algorithm (see: https://www.sciencedirect.com/science/article/pii/B9781558603776500232)
@@ -18,19 +17,21 @@ import java.util.concurrent.Future
  */
 class RipperMiner {
     companion object {
+        private val LOG = Logger.getLogger(RipperMiner::class.java)
+
         fun <V> mine(
                 instancesByTarget: Map<Predicate<V>, Instances>,
                 predicates: Map<String, Predicate<V>>,
                 database: List<V>
-        ): List<Future<List<RulesMiner.Node<V>>>> {
+        ): List<List<RulesMiner.Node<V>>> {
             return instancesByTarget.map { (target, instances) ->
                 val jRip = JRip()
                 jRip.buildClassifier(instances)
                 val classAttribute = instances.attribute(instances.numAttributes() - 1)
 
-                println(rulesetString(jRip, classAttribute, instances))
+                LOG.info(rulesetString(jRip, classAttribute, instances))
 
-                CompletableFuture.completedFuture(buildRuleNodes(jRip, predicates, target, database))
+                buildRuleNodes(jRip, predicates, target, database)
             }
         }
 
