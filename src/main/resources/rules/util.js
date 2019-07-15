@@ -270,6 +270,7 @@ function runAnalysisOnLoadedData() {
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
+    window.myForm.append("criterion", document.getElementById("info-criterion").value);
     var miners = getMiners();
     if (miners == "") {
         $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
@@ -277,6 +278,7 @@ function runAnalysisOnLoadedData() {
     }
     window.myForm.append("miners", miners);
 
+    showProgress();
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "POST",
@@ -284,40 +286,16 @@ function runAnalysisOnLoadedData() {
         processData: false,
         contentType: false,
         success: function (response) {
-
-            window.myForm.delete('experiment');
-            window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
-            window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
-            window.myForm.delete('criterion');
-            window.myForm.append("criterion", document.getElementById("info-criterion").value);
-            var miners = getMiners();
-            if (miners == "") {
-                $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
-                return
+            if (response["FISHBONE"] != null) {
+                renderFishboneResults(response);
             }
-            window.myForm.append("miners", miners);
-
-            $.ajax({
-                url: 'http://localhost:8080/rules',
-                type: "POST",
-                data: window.myForm,
-                processData: false,
-                contentType: false,
-                success: function (res) {
-                    if (res["FISHBONE"] != null) {
-                        renderFishboneResults(res);
-                    }
-                    if (res["FP_GROWTH"] != null) {
-                        renderFpGrowthAlgorithmResults(res);
-                    }
-                    if (res["DECISION_TREE"] != null) {
-                        renderDecisionTreeAlgorithmsResults(res);
-                    }
-                },
-                error: function (error) {
-                    console.log(error);
-                }
-            });
+            if (response["FP_GROWTH"] != null) {
+                renderFpGrowthAlgorithmResults(response);
+            }
+            if (response["DECISION_TREE"] != null) {
+                renderDecisionTreeAlgorithmsResults(response);
+            }
+            spinner.stop();
         },
         error: function (errResponse) {
             console.log(errResponse);
