@@ -277,6 +277,7 @@ function runAnalysisOnLoadedData() {
     }
     window.myForm.append("miners", miners);
 
+    showProgress();
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "POST",
@@ -313,6 +314,7 @@ function runAnalysisOnLoadedData() {
                     if (res["DECISION_TREE"] != null) {
                         renderDecisionTreeAlgorithmsResults(res);
                     }
+                    spinner.stop();
                 },
                 error: function (error) {
                     console.log(error);
