@@ -9,7 +9,6 @@ import java.lang.IllegalArgumentException
 
 /**
  * This class implements Chi-squared statistical significance test (see: https://www.tandfonline.com/eprint/aMdSMrAGuEHsHWSzIuqm/full)
- * TODO: it's not clear if we can use this approach for conjunction
  */
 class ChiSquaredStatisticalSignificance {
 
@@ -46,10 +45,13 @@ class ChiSquaredStatisticalSignificance {
                 val d = AndPredicate(reducedSources + x.not() + target.not()).test(database).cardinality().toDouble() / len
 
                 val chiStat = ((a * d - b * c) * (a + b + c + d)) / ((a + b) * (c + d) * (a + c) * (b + d))
+                println("p: ${1.0 - chiSquaredDistribution.cumulativeProbability(chiStat)}, chi-stat: $chiStat")
                 1.0 - chiSquaredDistribution.cumulativeProbability(chiStat)
             }.max()!!
 
-            return p < SIGNIFICANCE_LEVEL
+            val result = p < SIGNIFICANCE_LEVEL
+            LOG.info("Tested rule's significance: $result")
+            return result
         }
     }
 }

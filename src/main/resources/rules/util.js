@@ -283,7 +283,7 @@ function runAnalysisOnLoadedData() {
             window.myForm.append("criterion", document.getElementById("info-criterion").value);
             var miners = getMinwers();
             if (miners == "") {
-                $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
+                $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
                 return
             }
             window.myForm.append("miners", miners);
