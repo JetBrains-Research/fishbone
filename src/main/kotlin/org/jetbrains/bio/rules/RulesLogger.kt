@@ -36,10 +36,10 @@ class RulesLogger(val path: Path?, vararg params: String) {
     }
 
     @Synchronized
-    fun log(id: String, tree: List<RulesMiner.Node<*>>) {
+    fun log(id: String, tree: List<FishboneMiner.Node<*>>) {
         val visited = hashSetOf<String>()
         tree.forEach { n ->
-            var node: RulesMiner.Node<*>? = n
+            var node: FishboneMiner.Node<*>? = n
             while (node != null) {
                 val rule = node.rule
                 val r = RuleRecord.fromRule(rule, id)

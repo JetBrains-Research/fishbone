@@ -30,27 +30,35 @@ compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 
 dependencies {
+    // Kotlin dependencies
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1'
 
-    compile 'log4j:log4j:1.2.17'
-    compile("ch.qos.logback:logback-classic:1.2.3")
-
+    // Server: Ktor dependencies
     compile "io.ktor:ktor-server-netty:$ktor_version"
     compile "io.ktor:ktor-jackson:$ktor_version"
 
-    compile group: 'com.github.haifengl', name: 'smile-core', version: '1.5.2'
-    compile 'com.opencsv:opencsv:4.5'
+    // Logging dependencies
+    compile 'log4j:log4j:1.2.17'
+    compile("ch.qos.logback:logback-classic:1.2.3")
+
+    //ML dependencies
+    compile group: 'com.github.haifengl', name: 'smile-core', version: '1.5.2' //TODO: remove
     compile group: 'nz.ac.waikato.cms.weka', name: 'weka-stable', version: '3.8.3'
+    compile group: 'guru.nidi', name: 'graphviz-kotlin', version: '0.8.10'
+
+    // Bioinformatics dependencies
+    compile 'org.jetbrains.bio:bioinf-commons:0.0.5'
+    compile 'org.nield:kotlin-statistics:1.2.1'
     compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+
+    // Parsing files dependencies
     compile group: 'com.epam', name: 'parso', version: '2.0.9'
     compile group: 'org.apache.poi', name: 'poi', version: '3.9'
     compile group: 'org.apache.poi', name: 'poi-ooxml', version: '3.9'
 
-    compile 'org.jetbrains.bio:bioinf-commons:0.0.5'
-    compile 'org.nield:kotlin-statistics:1.2.1'
-
+    // Testing dependencies
     testCompile 'junit:junit:4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
 }

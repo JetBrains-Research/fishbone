@@ -2,7 +2,7 @@ package org.jetbrains.bio.rules
 
 import com.google.common.collect.ComparisonChain
 import org.apache.log4j.Logger
-import org.jetbrains.bio.rules.RulesMiner.mine
+import org.jetbrains.bio.rules.FishboneMiner.mine
 import java.util.*
 
 /**
@@ -14,13 +14,13 @@ class RulesBPQ<T>(private val limit: Int,
                   private val function: (Rule<T>) -> Double = Rule<T>::conviction,
                   private val functionDelta: Double,
                   private val klDelta: Double,
-                  private val comparator: Comparator<RulesMiner.Node<T>> = comparator(function),
-                  private val queue: Queue<RulesMiner.Node<T>> = PriorityQueue(limit, comparator.reversed()))
-    : Queue<RulesMiner.Node<T>> by queue {
+                  private val comparator: Comparator<FishboneMiner.Node<T>> = comparator(function),
+                  private val queue: Queue<FishboneMiner.Node<T>> = PriorityQueue(limit, comparator.reversed()))
+    : Queue<FishboneMiner.Node<T>> by queue {
 
-    override fun add(element: RulesMiner.Node<T>): Boolean = offer(element)
+    override fun add(element: FishboneMiner.Node<T>): Boolean = offer(element)
 
-    override fun offer(node: RulesMiner.Node<T>): Boolean {
+    override fun offer(node: FishboneMiner.Node<T>): Boolean {
         val rule = node.rule
         val parent = node.parent
         val condition = rule.conditionPredicate
@@ -73,8 +73,8 @@ class RulesBPQ<T>(private val limit: Int,
      * See [mine] for details on thresholds
      */
     private fun checkHierarchy(
-            node: RulesMiner.Node<T>,
-            parent: RulesMiner.Node<T>,
+            node: FishboneMiner.Node<T>,
+            parent: FishboneMiner.Node<T>,
             function: (Rule<T>) -> Double): Boolean {
         // Check order
         val elementF = function(Rule(node.element, node.rule.targetPredicate, database))
@@ -124,7 +124,7 @@ class RulesBPQ<T>(private val limit: Int,
          * @return Comparator by max function and min complexity
          */
         fun <T> comparator(function: (Rule<T>) -> Double) =
-                Comparator<RulesMiner.Node<T>> { (r1, _), (r2, _) ->
+                Comparator<FishboneMiner.Node<T>> { (r1, _), (r2, _) ->
                     ComparisonChain.start()
                             .compare(function(r2), function(r1))
                             .compare(r1.conditionPredicate.complexity(), r2.conditionPredicate.complexity())

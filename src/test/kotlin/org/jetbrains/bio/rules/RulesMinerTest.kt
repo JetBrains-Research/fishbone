@@ -18,14 +18,14 @@ class RulesMinerTest : TestCase() {
                                        database: List<T>,
                                        conditions: List<Predicate<T>>,
                                        maxComplexity: Int = 10,
-                                       topPerComplexity: Int = RulesMiner.TOP_PER_COMPLEXITY,
-                                       topLevelToPredicatesInfo: Int = RulesMiner.TOP_LEVEL_PREDICATES_INFO,
+                                       topPerComplexity: Int = FishboneMiner.TOP_PER_COMPLEXITY,
+                                       topLevelToPredicatesInfo: Int = FishboneMiner.TOP_LEVEL_PREDICATES_INFO,
                                        function: (Rule<T>) -> Double,
-                                       functionDelta: Double = RulesMiner.FUNCTION_DELTA,
-                                       klDelta: Double = RulesMiner.KL_DELTA): RulesMiner.Node<T> {
+                                       functionDelta: Double = FishboneMiner.FUNCTION_DELTA,
+                                       klDelta: Double = FishboneMiner.KL_DELTA): FishboneMiner.Node<T> {
         // 10% of predicates are probes
         val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
-        return RulesMiner.mine(conditions + probes, target, database,
+        return FishboneMiner.mine(conditions + probes, target, database,
                 maxComplexity = maxComplexity,
                 topPerComplexity = topPerComplexity,
                 topLevelToPredicatesInfo = topLevelToPredicatesInfo,
@@ -38,12 +38,12 @@ class RulesMinerTest : TestCase() {
         return 0.until(number).map { RangePredicate(it * dataSize / number, (it + 1) * dataSize / number) }
     }
 
-    private fun <T> RulesMiner.Node<T>.structure(database: List<T>,
-                                                 logConviction: Boolean = true,
-                                                 logKL: Boolean = true,
-                                                 function: (Rule<T>) -> Double): String {
+    private fun <T> FishboneMiner.Node<T>.structure(database: List<T>,
+                                                    logConviction: Boolean = true,
+                                                    logKL: Boolean = true,
+                                                    function: (Rule<T>) -> Double): String {
         val result = arrayListOf<String>()
-        var node: RulesMiner.Node<T>? = this
+        var node: FishboneMiner.Node<T>? = this
         val atomics = (rule.conditionPredicate.collectAtomics() + rule.targetPredicate.collectAtomics()).toList()
         val empirical = EmpiricalDistribution(database, atomics)
         val independent = Distribution(database, atomics)
@@ -96,7 +96,7 @@ class RulesMinerTest : TestCase() {
         val database = (0..100).toList()
 
         val r0 = optimizeWithProbes(RangePredicate(0, 80), database, predicates,
-                functionDelta = RulesMiner.FUNCTION_DELTA, klDelta = -1.0, function = Rule<Int>::conviction)
+                functionDelta = FishboneMiner.FUNCTION_DELTA, klDelta = -1.0, function = Rule<Int>::conviction)
         assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
         assertEquals("[32;64)(6.65,0.79),[16;32)(9.98,0.62),[8;16)(11.64,0.50),[4;8)(12.48,0.42),[2;4)(12.89,0.38),[1;2)(13.10,0.35)",
                 r0.structure(database, function = Rule<Int>::conviction))
@@ -160,7 +160,7 @@ class RulesMinerTest : TestCase() {
 
             assertEquals("[32;64)(),[16;32)(),[8;16)(),[4;8)(),[2;4)(),[1;2)()",
                     optimizeWithProbes(RangePredicate(0, 80), database, predicates,
-                            function = Rule<Int>::conviction, functionDelta = 0.0, klDelta = RulesMiner.KL_DELTA)
+                            function = Rule<Int>::conviction, functionDelta = 0.0, klDelta = FishboneMiner.KL_DELTA)
                             .structure(database, logConviction = false, logKL = false,
                                     function = Rule<Int>::conviction))
 
@@ -229,7 +229,7 @@ class RulesMinerTest : TestCase() {
             val solutionX = Predicate.and(order.subList(0, order.size - 1))
             val bestRule = Rule(solutionX, target, database)
             LOG.info("Best rule ${bestRule.name}")
-            val correctOrderRule = RulesMiner.mine(order, target, database,
+            val correctOrderRule = FishboneMiner.mine(order, target, database,
                     function = function, maxComplexity = 20).first().rule
             LOG.info("Rule correct order ${correctOrderRule.name}")
             if (function(correctOrderRule) > function(bestRule)) {
@@ -238,7 +238,7 @@ class RulesMinerTest : TestCase() {
 
             LOG.time(level = Level.INFO, message = "RM") {
                 for (top in 1..maxTop) {
-                    val rule = RulesMiner.mine(order, target, database,
+                    val rule = FishboneMiner.mine(order, target, database,
                             function = function,
                             maxComplexity = 20,
                             topPerComplexity = maxTop).first().rule

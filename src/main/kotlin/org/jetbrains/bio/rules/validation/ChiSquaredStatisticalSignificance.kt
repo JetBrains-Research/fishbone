@@ -21,8 +21,7 @@ class ChiSquaredStatisticalSignificance {
          */
         fun <T> test(rule: Rule<T>, database: List<T>): Double {
             LOG.debug("Testing rule's significance: $rule")
-            val conditionPredicate = rule.conditionPredicate
-            val sources = when (conditionPredicate) {
+            val sources = when (val conditionPredicate = rule.conditionPredicate) {
                 is AndPredicate -> conditionPredicate.operands
                 is OrPredicate -> {
                     val operands = conditionPredicate.operands
@@ -40,7 +39,7 @@ class ChiSquaredStatisticalSignificance {
             val a = AndPredicate(sources + target).test(database).cardinality().toDouble() / len
             val b = AndPredicate(sources + target.not()).test(database).cardinality().toDouble() / len
 
-            val p = sources.map { x ->
+            return sources.map { x ->
                 val reducedSources = sources.filter { source -> source != x }
                 val c = AndPredicate(reducedSources + x.not() + target).test(database).cardinality().toDouble() / len
                 val d = AndPredicate(reducedSources + x.not() + target.not()).test(database).cardinality().toDouble() / len
@@ -48,8 +47,6 @@ class ChiSquaredStatisticalSignificance {
                 val chiStat = ((a * d - b * c) * (a + b + c + d)) / ((a + b) * (c + d) * (a + c) * (b + d))
                 1.0 - chiSquaredDistribution.cumulativeProbability(chiStat)
             }.max()!!
-
-            return p
         }
     }
 }

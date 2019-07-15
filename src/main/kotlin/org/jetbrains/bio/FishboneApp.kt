@@ -26,7 +26,7 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.jetbrains.bio.api.ExperimentType
 import org.jetbrains.bio.api.MineRulesRequest
-import org.jetbrains.bio.api.Miner
+import org.jetbrains.bio.api.MiningAlgorithm
 import org.jetbrains.bio.experiments.rules.ChiantiDataExperiment
 import org.jetbrains.bio.experiments.rules.CiofaniDataExperiment
 import org.jetbrains.bio.experiments.rules.Experiment
@@ -72,7 +72,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
     }
 
     // TODO: run miners async
-    private suspend fun mineRules(multipart: MultiPartData): Map<Miner, String> {
+    private suspend fun mineRules(multipart: MultiPartData): Map<MiningAlgorithm, String> {
         val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
         val request = multipartToMineRulesRequest(multipart, tempDir)
         val experiment = experiments[request.experiment] ?: throw IllegalArgumentException("Unexpected experiment name")
@@ -90,7 +90,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
                 is PartData.FormItem -> {
                     if (part.name == "miners") {
                         requestMap[name] =
-                            part.value.split(", ").map { Miner.byLable(it) }.toSet() //TODO: process array correctly
+                            part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet() //TODO: process array correctly
                     } else {
                         requestMap[name] = part.value
                     }

@@ -19,7 +19,7 @@ class RulesLoggerTest {
                 0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
         val database = 0.until(100).toList()
         val logger = RulesLogger(null)
-        RulesMiner.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
+        FishboneMiner.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
                 { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2)
         assertEquals("""{
   "records": [

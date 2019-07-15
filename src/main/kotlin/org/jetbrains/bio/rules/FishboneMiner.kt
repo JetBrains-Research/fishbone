@@ -4,7 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.rules.RulesMiner.mine
+import org.jetbrains.bio.rules.FishboneMiner.mine
 import org.jetbrains.bio.util.*
 import java.nio.file.Path
 import java.util.concurrent.Callable
@@ -12,15 +12,14 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 
 
-object RulesMiner {
-
+object FishboneMiner: Miner {
     const val TOP_PER_COMPLEXITY = 100
     const val TOP_LEVEL_PREDICATES_INFO = 10
     const val FUNCTION_DELTA = 1E-3
     const val KL_DELTA = 1E-3
 
 
-    private val LOG = Logger.getLogger(RulesMiner::class.java)
+    private val LOG = Logger.getLogger(FishboneMiner::class.java)
 
     /**
      * Result of [mine] procedure.
@@ -35,6 +34,48 @@ object RulesMiner {
      */
     data class Aux(val rule: Upset, val target: List<Upset>? = null)
 
+    override fun <V> mine(
+            database: List<V>,
+            predicates: List<Predicate<V>>,
+            targets: List<Predicate<V>>,
+            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+            params: Map<String, Any>
+    ): List<List<Node<V>>> {
+        try {
+            LOG.info("Processing fishbone")
+
+            val sourcesToTargets = if (targets.isNotEmpty()) {
+                targets.map { target -> predicates to target }
+            } else {
+                mapAllPredicatesToAll(predicates, predicates.withIndex())
+            }
+
+            return mine(
+                    "All => All",
+                    database,
+                    sourcesToTargets,
+                    { },
+                    maxComplexity = params.getOrDefault("maxComplexity", 6) as Int,
+                    function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
+                    or = true,
+                    negate = true
+            )
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            LOG.error(t.message)
+            return emptyList()
+        }
+    }
+
+    private fun <V> mapAllPredicatesToAll(
+            predicates: List<Predicate<V>>, indexedPredicates: Iterable<IndexedValue<Predicate<V>>>
+    ): List<Pair<List<Predicate<V>>, Predicate<V>>> {
+        return (0 until predicates.size).map { i ->
+            val target = predicates[i]
+            val sources = indexedPredicates.filter { (j, _) -> j != i }.map { (_, value) -> value }
+            sources to target
+        }.toList()
+    }
 
     /**
      * Dynamic programming algorithm storing optimization results by complexity.

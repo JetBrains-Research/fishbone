@@ -1,7 +1,7 @@
 package org.jetbrains.bio.experiments.rules
 
 import org.jetbrains.bio.api.MineRulesRequest
-import org.jetbrains.bio.api.Miner
+import org.jetbrains.bio.api.MiningAlgorithm
 import org.jetbrains.bio.genome.Genome
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.containers.LocationsMergingList
@@ -14,15 +14,11 @@ class CiofaniDataExperiment(outputFolder: String) : Experiment("$outputFolder/ci
 
     private val genomeQuery = GenomeQuery(Genome["mm10"])
 
-    override fun run(mineRulesRequest: MineRulesRequest): Map<Miner, String> {
+    override fun run(mineRulesRequest: MineRulesRequest): Map<MiningAlgorithm, String> {
         val databasePath = Paths.get(mineRulesRequest.database)
         val database = LocationsMergingList.load(genomeQuery, databasePath).toList()
         val predicates = PredicatesHelper.createBedPredicates(genomeQuery, mineRulesRequest.predicates)
-        val targets = if (mineRulesRequest.targets.isNotEmpty()) {
-            PredicatesHelper.createBedPredicates(genomeQuery, mineRulesRequest.targets)
-        } else {
-            emptyList()
-        }
+        val targets = PredicatesHelper.createBedPredicates(genomeQuery, mineRulesRequest.targets)
 
         return mine(mineRulesRequest, database, predicates, targets)
     }
