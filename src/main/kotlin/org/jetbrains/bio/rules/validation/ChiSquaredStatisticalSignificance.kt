@@ -5,7 +5,6 @@ import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.OrPredicate
 import org.jetbrains.bio.rules.Rule
-import java.lang.IllegalArgumentException
 
 /**
  * This class implements Chi-squared statistical significance test (see: https://www.tandfonline.com/eprint/aMdSMrAGuEHsHWSzIuqm/full)
@@ -16,14 +15,16 @@ class ChiSquaredStatisticalSignificance {
 
         private val LOG = Logger.getLogger(ChiSquaredStatisticalSignificance::class.java)
         private val chiSquaredDistribution = ChiSquaredDistribution(1.0)
-        private const val SIGNIFICANCE_LEVEL = 0.05
 
-        fun <T> test(rule: Rule<T>, database: List<T>): Boolean {
-            LOG.info("Testing rule's significance: $rule")
+        /**
+         * Returns pvalue for Null Hypothesis that Left and Right parts of the rule are independent.
+         */
+        fun <T> test(rule: Rule<T>, database: List<T>): Double {
+            LOG.debug("Testing rule's significance: $rule")
             val conditionPredicate = rule.conditionPredicate
-            val sources = when {
-                conditionPredicate is AndPredicate -> conditionPredicate.operands
-                conditionPredicate is OrPredicate -> {
+            val sources = when (conditionPredicate) {
+                is AndPredicate -> conditionPredicate.operands
+                is OrPredicate -> {
                     val operands = conditionPredicate.operands
                     if (operands.size < 2) {
                         throw IllegalArgumentException("Operands size is less than 2") //TODO: refactor
@@ -45,13 +46,10 @@ class ChiSquaredStatisticalSignificance {
                 val d = AndPredicate(reducedSources + x.not() + target.not()).test(database).cardinality().toDouble() / len
 
                 val chiStat = ((a * d - b * c) * (a + b + c + d)) / ((a + b) * (c + d) * (a + c) * (b + d))
-                println("p: ${1.0 - chiSquaredDistribution.cumulativeProbability(chiStat)}, chi-stat: $chiStat")
                 1.0 - chiSquaredDistribution.cumulativeProbability(chiStat)
             }.max()!!
 
-            val result = p < SIGNIFICANCE_LEVEL
-            LOG.info("Tested rule's significance: $result")
-            return result
+            return p
         }
     }
 }

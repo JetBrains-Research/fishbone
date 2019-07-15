@@ -14,10 +14,10 @@ class ChiantiDataExperiment(outputFolder: String) : Experiment("$outputFolder/ci
         val databasePath = Paths.get(mineRulesRequest.database)
         val database = databasePath.toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
         val predicates = PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.predicates)
-        val targets = if (mineRulesRequest.target.isNotEmpty()) {
-            PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.target)
+        val targets = if (mineRulesRequest.targets.isNotEmpty()) {
+            PredicatesHelper.createOverlapSamplePredicates(mineRulesRequest.targets)
         } else {
-            null
+            emptyList()
         }
 
         return mine(mineRulesRequest, database, predicates, targets)

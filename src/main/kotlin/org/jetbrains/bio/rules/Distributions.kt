@@ -1,19 +1,14 @@
 package org.jetbrains.bio.rules
 
 import com.google.common.primitives.Doubles
-import com.google.gson.GsonBuilder
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.commons.math3.util.Precision
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.*
-
-/**
- * Data class describing joint distribution, suitable for pretty printing and JSON serialization
- * @param names list of binary predicates names over given database
- * @param probabilities joint probability of predicates combination in binary bit-wise encoding
- */
-data class DistributionPP(val names: List<String>, val probabilities: List<Double>)
+import kotlin.math.ln
+import kotlin.math.log2
+import kotlin.math.max
 
 /**
  * Joint distribution of binary predicates over database.
@@ -116,23 +111,13 @@ open class Distribution<T>(val database: List<T>,
     private fun <T> empiricalMarginals(predicates: List<Predicate<T>>, database: List<T>) =
             DoubleArray(predicates.size) { predicates[it].test(database).cardinality().toDouble() / database.size }
 
-    private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * Math.log(x)
-
-    override fun toString(): String {
-        return GsonBuilder().setPrettyPrinting().create().toJson(pp())
-    }
-
-    fun pp(): DistributionPP {
-        return DistributionPP(
-                names = predicates.map { it.name() },
-                probabilities = (0.until(1 shl predicates.size)).map { probability(it) })
-    }
+    private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * ln(x)
 
     companion object {
         private val LOG = Logger.getLogger(Distribution::class.java)
 
         private fun createProbabilitiesArray(n: Int): DoubleArray {
-            check(Math.pow(2.0, n.toDouble()) < Int.MAX_VALUE) {
+            check(n < log2(Int.MAX_VALUE.toDouble())) {
                 "Maximum number of items which can be encoded as int exceeded $n"
             }
             return DoubleArray(1 shl n) { Double.NaN }
@@ -160,12 +145,12 @@ open class Distribution<T>(val database: List<T>,
                 }
                 // In case x -> 0, xlog(x) -> 0.
                 if (pV != 0.0) {
-                    kl += pV * Math.log(pV / qV)
+                    kl += pV * ln(pV / qV)
                 }
                 encoding++
             }
             // Fix potential floating point errors
-            return Math.max(0.0, kl)
+            return max(0.0, kl)
         }
     }
 }

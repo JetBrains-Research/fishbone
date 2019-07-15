@@ -250,18 +250,6 @@ class RulesMinerTest : TestCase() {
     }
 
 
-    fun testCorrectOrder() {
-        val predicates = listOf(RangePredicate(20, 35), RangePredicate(35, 48)) +
-                0.until(5).map { RangePredicate(it * 10, (it + 1) * 10) }
-        val database = 0.until(100).toList()
-        val optimize = RulesMiner.mine(predicates, RangePredicate(20, 50), database,
-                function = Rule<Int>::conviction, maxComplexity = 3, topPerComplexity = 3)
-        assertEquals(listOf("[20;35) OR [35;48) OR [40;50)", "[20;35) OR [30;40) OR [40;50)", "[20;35) OR [35;48)"),
-                optimize.take(3).map { it.rule.conditionPredicate.name() })
-        assertEquals(3 * 3, optimize.size)
-    }
-
-
     companion object {
         internal val LOG = Logger.getLogger(RulesMinerTest::class.java)
     }

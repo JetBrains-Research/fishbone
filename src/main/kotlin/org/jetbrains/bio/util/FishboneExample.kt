@@ -10,10 +10,10 @@ import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
 import org.jetbrains.bio.genome.downloadTo
+import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.RulesMiner
-import org.jetbrains.bio.predicates.OverlapPredicate
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

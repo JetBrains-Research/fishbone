@@ -3,7 +3,6 @@ package org.jetbrains.bio.experiments.rules
 import org.apache.log4j.Logger
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.Miner
-import org.jetbrains.bio.dataset.CellId
 import org.jetbrains.bio.dataset.DataConfig
 import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.Predicate
@@ -27,7 +26,6 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.Future
 import kotlin.collections.ArrayList
 
 /**
@@ -62,27 +60,27 @@ abstract class Experiment(private val outputFolder: String) {
             mineRulesRequest: MineRulesRequest,
             database: List<V>,
             predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>? = null
+            targets: List<Predicate<V>> = emptyList()
     ): MutableMap<Miner, String> {
         val results = mineRulesRequest.miners
                 .map { miner ->
                     logger.info("Processing $miner")
                     miner to when (miner) {
                         Miner.FISHBONE -> mineByFishbone(
-                                database, predicates, targets?.getOrNull(0), mineRulesRequest.criterion, runName = mineRulesRequest.runName.orEmpty()
+                                database, predicates, targets, mineRulesRequest.criterion, runName = mineRulesRequest.runName.orEmpty()
                         )
-                        Miner.RIPPER -> mineByRipper(database, predicates, targets!!, runName = mineRulesRequest.runName.orEmpty())
-                        Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets?.getOrNull(0))
+                        Miner.RIPPER -> mineByRipper(database, predicates, targets, runName = mineRulesRequest.runName.orEmpty())
+                        Miner.FP_GROWTH -> mineByFPGrowth(database, predicates, targets)
                         Miner.DECISION_TREE -> mineByDecisionTree(database, predicates, targets)
                     }
                 }
                 .map { (miner, r) ->
-                    val filteredRules = statisticalSignificant(r.second, mineRulesRequest.checkSignificance, database)
-                    Pair(miner, Pair(r.first, filteredRules))
+                    val filteredRules = statisticalSignificant(r.second, mineRulesRequest.significanceLevel, database)
+                    miner to (r.first to filteredRules)
                 }
                 .map { (miner, r) ->
                     saveRulesToFile(r, mineRulesRequest.criterion, miner, mineRulesRequest.criterion)
-                    Pair(miner, r.first)
+                    miner to r.first.replace(".csv", ".json")
                 }
                 .toMap()
                 .toMutableMap()
@@ -112,7 +110,7 @@ abstract class Experiment(private val outputFolder: String) {
         logger.info("$miner rules saved to $outputPath")
     }
 
-    private fun <V> getInformationFunctionByName(name: String): (Rule<V>) -> Double {
+    private fun <V> getObjectiveFunction(name: String): (Rule<V>) -> Double {
         logger.info("Fishbone algorithm will use $name")
         return when (name) {
             "conviction" -> Rule<V>::conviction
@@ -125,16 +123,16 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> mineByFishbone(
             database: List<V>,
             predicates: List<Predicate<V>>,
-            target: Predicate<V>? = null,
+            targets: List<Predicate<V>> = emptyList(),
             criterionName: String,
             maxComplexity: Int = 6,
             runName: String = ""
-    ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
+    ): Pair<String, List<List<RulesMiner.Node<V>>>> {
         try {
             logger.info("Processing fishbone")
 
-            val sourcesToTargets = if (target != null) {
-                listOf(predicates to target)
+            val sourcesToTargets = if (targets.isNotEmpty()) {
+                targets.map { target -> predicates to target }
             } else {
                 mapAllPredicatesToAll(predicates, predicates.withIndex())
             }
@@ -145,16 +143,15 @@ abstract class Experiment(private val outputFolder: String) {
                     sourcesToTargets,
                     { },
                     maxComplexity,
-                    function = getInformationFunctionByName(criterionName),
+                    function = getObjectiveFunction(criterionName),
                     or = true,
                     negate = true
             )
-
-            return Pair(getOutputFilePath(Miner.FISHBONE, runName).toString(), mineResults)
+            return getOutputFilePath(Miner.FISHBONE, runName).toString() to mineResults
         } catch (t: Throwable) {
             t.printStackTrace()
             logger.error(t.message)
-            return Pair("", emptyList())
+            return "" to emptyList()
         }
     }
 
@@ -174,17 +171,14 @@ abstract class Experiment(private val outputFolder: String) {
             predicates: List<Predicate<V>>,
             targets: List<Predicate<V>>,
             runName: String = ""
-    ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
+    ): Pair<String, List<List<RulesMiner.Node<V>>>> {
         val instancesByTarget = targets.map { target ->
             val instances = createInstancesWithAttributesFromPredicates(target, predicates, database.size)
             addInstances(database, predicates + target, instances)
             Pair(target, instances)
         }.toMap()
-        val result = RipperMiner.mine(
-                instancesByTarget, (predicates + targets).map { Pair(it.name(), it) }.toMap(), database
-        )
-
-        return Pair(getOutputFilePath(Miner.RIPPER, runName).toString(), result)
+        val result = RipperMiner.mine(instancesByTarget, (predicates + targets).associateBy { it.name() }, database)
+        return getOutputFilePath(Miner.RIPPER, runName).toString() to result
     }
 
     private fun <V> createInstancesWithAttributesFromPredicates(
@@ -212,28 +206,26 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> mineByFPGrowth(
             database: List<V>,
             predicates: List<Predicate<V>>,
-            target: Predicate<V>? = null
-    ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
+            targets: List<Predicate<V>> = emptyList()
+    ): Pair<String, List<List<RulesMiner.Node<V>>>> {
         try {
             logger.info("Processing fp-growth")
             val rulesResults = getOutputFilePath(Miner.FP_GROWTH)
 
-            val allPredicates = if (target != null) predicates + target else predicates
+            val allPredicates = if (targets.isNotEmpty()) predicates + targets else predicates
             val predicatesInfo = getPredicatesInfoOverDatabase(allPredicates, database)
             val idsToNames = predicatesInfo.map { it.id to it.name }.toMap()
-            val targetId = predicatesInfo.find { it.name == target?.name() }?.id
+            val targetsIds = targets.mapNotNull { target -> predicatesInfo.find { it.name == target.name() }?.id }
 
             val items = database.withIndex().map { (idx, _) ->
                 getSatisfiedPredicateIds(predicatesInfo, idx).toIntArray()
             }.toTypedArray()
 
-            val rulesPath = FPGrowthMiner.mine(items, idsToNames, rulesResults, target = targetId)
-
-            return Pair(rulesPath, emptyList())
+            return FPGrowthMiner.mine(items, idsToNames, rulesResults, targets = targetsIds) to emptyList()
         } catch (t: Throwable) {
             t.printStackTrace()
             logger.error(t.message)
-            return Pair("", emptyList())
+            return "" to emptyList()
         }
     }
 
@@ -267,7 +259,7 @@ abstract class Experiment(private val outputFolder: String) {
             database: List<V>,
             predicates: List<Predicate<V>>,
             fpGrowthResultsFilename: String
-    ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
+    ): Pair<String, List<List<RulesMiner.Node<V>>>> {
         val fpGrowthResultsFile = File(fpGrowthResultsFilename)
         return if (fpGrowthResultsFile.canRead()) {
             val target = getBestTargetFromFpGrowthResults(fpGrowthResultsFile)
@@ -276,7 +268,7 @@ abstract class Experiment(private val outputFolder: String) {
             val sourcePredicates = predicates.filter { it.name() != targetName }
             targetPredicate?.let { mineByDecisionTree(database, sourcePredicates, listOf(it)) }!! //TODO: check carefully
         } else {
-            Pair("", emptyList())
+            "" to emptyList()
         }
     }
 
@@ -289,9 +281,9 @@ abstract class Experiment(private val outputFolder: String) {
             database: List<V>,
             sourcePredicates: List<Predicate<V>>,
             targets: List<Predicate<V>>? = null
-    ): Pair<String, List<Future<List<RulesMiner.Node<V>>>>> {
+    ): Pair<String, List<List<RulesMiner.Node<V>>>> {
         if (targets == null) {
-            return Pair("", emptyList())
+            return "" to emptyList()
         }
         try {
             logger.info("Processing decision tree")
@@ -308,31 +300,31 @@ abstract class Experiment(private val outputFolder: String) {
                 if (predicateCheck(targetPredicate, i, database)) 1 else 0
             }.toIntArray()
 
-            val rulesPath = DecionTreeMiner.mine(attributes, x, y, rulesResults)
-
-            return Pair(rulesPath, emptyList())
+            return DecionTreeMiner.mine(attributes, x, y, rulesResults) to emptyList()
         } catch (t: Throwable) {
             t.printStackTrace()
             logger.error(t.message)
-            return Pair("", emptyList())
+            return "" to emptyList()
         }
     }
 
     private fun <V> statisticalSignificant(
-            mineResults: List<Future<List<RulesMiner.Node<V>>>>,
-            checkSignificance: Boolean,
+            mineResults: List<List<RulesMiner.Node<V>>>,
+            significanceLevel: Double?,
             database: List<V>
     ): List<List<RulesMiner.Node<V>>> {
-        val nonFilteredRules = mineResults.map {it.get()}
-        val filteredMineResult = nonFilteredRules.map { rules ->
-            if (checkSignificance) {
-                rules.filter { ChiSquaredStatisticalSignificance.test(it.rule, database) }
-            } else {
-                rules
+        return if (significanceLevel != null) {
+            val filteredMineResult = mineResults.map { rules ->
+                rules.filter {
+                    ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
+                }
             }
+            logger.info("Significant rules P < $significanceLevel: " +
+                    "${filteredMineResult.flatten().size} / ${mineResults.flatten().size}")
+            filteredMineResult
+        } else {
+            mineResults
         }
-        logger.info("Significant rules: ${filteredMineResult.flatten().size} / ${nonFilteredRules.flatten().size}")
-        return filteredMineResult
     }
 
     private fun getOutputFilePath(miner: Miner, runName: String = ""): Path {
@@ -345,7 +337,7 @@ abstract class Experiment(private val outputFolder: String) {
     private fun generatePalette(): (String) -> Color = { name ->
         val modification = modification(name)
         if (modification != null) {
-            trackColor(modification, null)
+            trackColor(modification)
         } else {
             Color.WHITE
         }
@@ -362,8 +354,8 @@ abstract class Experiment(private val outputFolder: String) {
     /**
      * Default colors by dataTypes
      */
-    private fun trackColor(dataTypeId: String, cell: CellId? = null): Color {
-        val color = when (dataTypeId.toLowerCase()) {
+    private fun trackColor(dataTypeId: String): Color {
+        return when (dataTypeId.toLowerCase()) {
             "H3K27ac".toLowerCase() -> Color(255, 0, 0)
             "H3K27me3".toLowerCase() -> Color(153, 0, 255)
             "H3K4me1".toLowerCase() -> Color(255, 153, 0)
@@ -374,6 +366,5 @@ abstract class Experiment(private val outputFolder: String) {
             DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
             else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
         }
-        return if (cell?.name == "OD") color.darker() else color
     }
 }

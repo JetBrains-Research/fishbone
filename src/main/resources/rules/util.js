@@ -130,6 +130,13 @@ function initialize() {
         window.myForm.append('database', this.files[0]);
         $.notify("Uploaded database", {className: "success", position: 'bottom right'});
     });
+    $('#targets-file').change(function () {
+        window.myForm.delete('targets');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('targets', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " targets", {className: "success", position: 'bottom right'});
+    });
 
     // Load by hash if possible, this is useful for pipeline
     const {hash} = window.location;
@@ -206,7 +213,7 @@ function showDecisionTree(tree) {
 
     var viz = new Viz();
 
-    viz.renderSVGElement(tree, { 'engine': 'dot' })
+    viz.renderSVGElement(tree, {'engine': 'dot'})
         .then(function (element) {
             panel.append($(element));
         })
@@ -245,7 +252,7 @@ function renderFishboneResults(response) {
     })
 }
 
-function getMinwers() {
+function getMiners() {
     var miners = "fishbone";
     if (document.getElementById("fpGrowthAlgCheckbox").checked == true) {
         miners += ", fp-growth";
@@ -262,7 +269,8 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
-    var miners = getMinwers();
+    window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
+    var miners = getMiners();
     if (miners == "") {
         $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
         return
@@ -279,9 +287,10 @@ function runAnalysisOnLoadedData() {
 
             window.myForm.delete('experiment');
             window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+            window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
             window.myForm.delete('criterion');
             window.myForm.append("criterion", document.getElementById("info-criterion").value);
-            var miners = getMinwers();
+            var miners = getMiners();
             if (miners == "") {
                 $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
                 return
@@ -295,9 +304,15 @@ function runAnalysisOnLoadedData() {
                 processData: false,
                 contentType: false,
                 success: function (res) {
-                    renderFishboneResults(res);
-                    renderFpGrowthAlgorithmResults(res);
-                    renderDecisionTreeAlgorithmsResults(res);
+                    if (res["FISHBONE"] != null) {
+                        renderFishboneResults(res);
+                    }
+                    if (res["FP_GROWTH"] != null) {
+                        renderFpGrowthAlgorithmResults(res);
+                    }
+                    if (res["DECISION_TREE"] != null) {
+                        renderDecisionTreeAlgorithmsResults(res);
+                    }
                 },
                 error: function (error) {
                     console.log(error);
@@ -325,7 +340,7 @@ function showFPGrowthResults() {
     }
 
     var checkBox = document.getElementById("fpGrowthCheckbox");
-    if (checkBox.checked == true){
+    if (checkBox.checked == true) {
         dialog.dialog('open');
     } else {
         dialog.dialog('close');
@@ -339,7 +354,7 @@ function showDecisionTreeResults() {
     }
 
     var checkBox = document.getElementById("decisionTreeCheckbox");
-    if (checkBox.checked == true){
+    if (checkBox.checked == true) {
         dialog.dialog('open');
     } else {
         dialog.dialog('close');
@@ -378,7 +393,10 @@ function load(content) {
     $('#complexity-filter').removeAttr('disabled');
     $('#show-top-filter').removeAttr('disabled');
     ({records: records, palette: palette, criterion: criterion} = JSON.parse(content.replace("NaN", "0")));
-    $.notify("Loaded " + records.length + " records. Fishbone used " + criterion + " criterion", {className: "success", position: 'bottom right'});
+    $.notify("Loaded " + records.length + " records. Fishbone used " + criterion + " criterion", {
+        className: "success",
+        position: 'bottom right'
+    });
     groupRecordsByConditionTarget();
     filterAndRender();
 }
@@ -609,8 +627,8 @@ function showInfoNode(node) {
         return
     }
     if (complexity !== 1) {
-       $.notify('Primary effectors information is available for max complexity = 1',
-           {className: "error", position: 'bottom right'});
+        $.notify('Primary effectors information is available for max complexity = 1',
+            {className: "error", position: 'bottom right'});
         return
     }
 
@@ -627,7 +645,7 @@ function showInfoNode(node) {
     }
     let somethingAdded = false;
     for (let e of targetAux[0].aux.target) {
-        let allNamesShown =  e.names.filter(
+        let allNamesShown = e.names.filter(
             n => filteredRecords.filter(el => el.target === target && el.condition === n).length > 0
         ).length === e.names.filter(n => n !== target).length;
         if (allNamesShown) {
@@ -653,15 +671,20 @@ function showRepresentationInfo(representation, infoId) {
     let names = Object.entries(representation.names);
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
-    let probabilities = Object.entries(representation.probabilities);
+    let combinations = Object.entries(representation.combinations);
     let tableHtml = `
 <table class="table table-condensed table-tiny table-bordered">
     <thead class="thead-default">
-        <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>p</td></tr>
+        <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>#</td></tr>
     </thead>
     <tbody>
         </tr>`;
-    for (let v = 0; v < probabilities.length; v++) {
+    let total = 0;
+    for (let v = 1; v < combinations.length; v++) {
+        total += combinations[v][1];
+    }
+    // Ignore everything false
+    for (let v = 1; v < combinations.length; v++) {
         tableHtml += `<tr>`;
         for (let i = 0; i < names.length; i++) {
             tableHtml += `<td>`;
@@ -672,7 +695,8 @@ function showRepresentationInfo(representation, infoId) {
             }
             tableHtml += `</td>`;
         }
-        tableHtml += `<td style="background-color: rgba(0,0,255, ${probabilities[v][1]}">${probabilities[v][1]}</td>`;
+        let size = combinations[v][1];
+        tableHtml += `<td style="background-color: rgba(0,0,255, ${size / total}">${size}</td>`;
         tableHtml += `</tr>`;
     }
     tableHtml += `
@@ -689,9 +713,9 @@ function showRepresentationInfo(representation, infoId) {
                     sets.push(names[i][1]);
                 }
             }
-            for (let x = 0; x < probabilities.length; x++) {
+            for (let x = 0; x < combinations.length; x++) {
                 if ((v & x) === v) {
-                    size += probabilities[x][1];
+                    size += combinations[x][1];
                 }
             }
             if (size > 0) {
@@ -704,7 +728,7 @@ function showRepresentationInfo(representation, infoId) {
         div.datum(vennData).call(venn.VennDiagram());
 
         // add a tooltip
-        let tooltip = $(`<div></div>`);
+        let tooltip = $(`<div style="font-size: large"></div>`);
         infoIdDiv.append(tooltip);
 
         // add listeners to all the groups to display tooltip on mouseover
@@ -732,9 +756,7 @@ function showRepresentationInfo(representation, infoId) {
                     .style("fill-opacity", d.sets.length == 1 ? .25 : .0)
                     .style("stroke-opacity", 0);
             });
-    }
-
-    else {
+    } else {
         infoIdDiv.append($(tableHtml));
     }
 }

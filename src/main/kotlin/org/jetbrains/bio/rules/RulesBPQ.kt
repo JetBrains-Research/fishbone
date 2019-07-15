@@ -6,7 +6,7 @@ import org.jetbrains.bio.rules.RulesMiner.mine
 import java.util.*
 
 /**
- * Bounded Priority Queue.
+ * Thread safe Bounded Priority Queue.
  * Stores top [limit] items, prioritized by [comparator]
  */
 class RulesBPQ<T>(private val limit: Int,
@@ -29,38 +29,42 @@ class RulesBPQ<T>(private val limit: Int,
         if (parent != null && !checkHierarchy(node, parent, function)) {
             return false
         }
-
-        if (condition.complexity() > 1) {
-            // Compare nodes with same condition, but different parents, compare parents in this case
-            val sameConditionNode = queue.singleOrNull { it.rule.conditionPredicate == condition }
-            if (sameConditionNode != null) {
-                if (comparator.compare(parent, sameConditionNode.parent) < 0) {
-                    LOG.debug("REMOVING from queue same condition\n" +
-                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent!!.rule.name}")
-                    remove(sameConditionNode)
-                } else {
-                    LOG.debug("FAILED other parent check for same condition " +
-                            "${sameConditionNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
-                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+        synchronized(this) {
+            // NOTE[shpynov] main difference with [PriorityQueue]!!!
+            if (size >= limit) {
+                val head = peek()
+                // NOTE[shpynov] queue is built upon reversed comparator
+                if (comparator.compare(node, head) > -1) {
+                    LOG.debug("FAILED function check against smallest in queue  ${function(rule)} < ${function(head.rule)}\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
                     return false
                 }
             }
-        }
-
-        // NOTE[shpynov] main difference with [PriorityQueue]!!!
-        if (size >= limit) {
-            val head = peek()
-            // NOTE[shpynov] queue is built upon reversed comparator
-            if (comparator.compare(node, head) > -1) {
-                LOG.debug("FAILED function check against smallest in queue  ${function(rule)} < ${function(head.rule)}\n" +
-                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
-                return false
+            // Compare nodes with same condition, but different parents, compare parents in this case
+            if (condition.complexity() > 1) {
+                val sameConditionNode = queue.firstOrNull { it.rule.conditionPredicate == condition }
+                if (sameConditionNode != null) {
+                    return if (comparator.compare(parent, sameConditionNode.parent) < 0) {
+                        LOG.debug("REMOVING from queue same condition\n" +
+                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent!!.rule.name}")
+                        remove(sameConditionNode)
+                        queue.offer(node)
+                    } else {
+                        LOG.debug("FAILED other parent check for same condition " +
+                                "${sameConditionNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
+                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                        false
+                    }
+                }
             }
-            LOG.debug("REDUCING queue\n" +
-                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
-            poll()
+            // NOTE[shpynov] main difference with [PriorityQueue]!!!
+            if (size >= limit) {
+                LOG.debug("REDUCING queue\n" +
+                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
+                poll()
+            }
+            return queue.offer(node)
         }
-        return queue.offer(node)
     }
 
 
@@ -106,11 +110,6 @@ class RulesBPQ<T>(private val limit: Int,
                         "$klRule >= $klParent - $klDelta * $klIndependent\n" +
                         "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
                 return false
-            }
-            if (node.aux == null) {
-                node.aux = RulesMiner.Aux(rule = EmpiricalDistribution(database,
-                        listOf(node.element, node.parent!!.rule.conditionPredicate, node.rule.targetPredicate))
-                        .pp())
             }
         }
         LOG.debug("PASS rule\n" +

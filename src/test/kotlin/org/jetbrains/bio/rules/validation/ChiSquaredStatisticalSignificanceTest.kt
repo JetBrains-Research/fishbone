@@ -15,10 +15,10 @@ class ChiSquaredStatisticalSignificanceTest : TestCase() {
         val target = OverlapSamplePredicate("T", listOf(1, 2, 3, 5))
 
         val trueRule = Rule(a, target, database)
-        assertTrue(ChiSquaredStatisticalSignificance.test(trueRule, database))
+        assertTrue(ChiSquaredStatisticalSignificance.test(trueRule, database) < 0.05)
 
         val falseRule = Rule(b, target, database)
-        assertFalse(ChiSquaredStatisticalSignificance.test(falseRule, database))
+        assertFalse(ChiSquaredStatisticalSignificance.test(falseRule, database) < 0.05)
     }
 
 }

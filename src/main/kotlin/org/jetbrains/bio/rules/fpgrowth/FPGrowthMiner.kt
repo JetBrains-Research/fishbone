@@ -26,7 +26,7 @@ class FPGrowthMiner {
             minSupport: Int = 1,
             minConfidence: Double = 0.1,
             top: Int = 10,
-            target: Int? = null
+            targets: List<Int> = emptyList()
         ): String {
             val arm = ARM(items, minSupport)
             val rules = arm.learn(minConfidence)
@@ -34,7 +34,7 @@ class FPGrowthMiner {
                 .asSequence()
                 .sortedWith(compareByDescending(associationRuleComparator) { v -> v })
                 .filter { rule -> rule.consequent.size == 1 }
-                .filter { rule -> if (target != null) rule.consequent[0] == target else true }
+                .filter { rule -> if (targets.isNotEmpty()) rule.consequent[0] in targets else true }
                 .take(top)
                 .map { NamedAssociationRule(it, predicateIdsToNames) }
                 .toList()
