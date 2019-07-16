@@ -8,6 +8,7 @@ function visualizeUpset(div, labels, data,
                         height = 600,
                         marginLeft = 100,
                         rad = 7,
+                        font = 9,
                         step = 2.2) {
     //position and dimensions
     const width = rad * step * data.length + 5;
@@ -34,10 +35,10 @@ function visualizeUpset(div, labels, data,
     for (let i = 0; i < labels.length; i++) {
         upsetCircles.append("text")
             .attr("dx", -rad - 10)
-            .attr("dy", 7 + i * (rad * step))
+            .attr("dy", font / 2 + i * (rad * step))
             .attr("text-anchor", "end")
             .attr("fill", "black")
-            .style("font-size", 13)
+            .style("font-size", font)
             .text(labels[i])
     }
 

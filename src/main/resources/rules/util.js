@@ -761,7 +761,15 @@ function showUpsetInfo(upset, infoId) {
     for (let d of Object.entries(upset.data)) {
         data.push(d[1]);
     }
-    visualizeUpset("upset" + upsetIndex, upset.names, data, 600, 200, 5, 2.2);
+    // Compute leftMargin
+    let longestLabel = 0;
+    for (let n of upset.names) {
+        longestLabel = Math.max(longestLabel, n.length)
+    }
+    visualizeUpset("upset" + upsetIndex, upset.names, data,
+        Math.max(upset.names.length * 7 * 2.2 + 300, 600),
+        longestLabel * 4 + 20,
+        5, 7, 2.2);
 }
 
 function toggleAuxInfo(e, infoId) {

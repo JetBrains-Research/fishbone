@@ -34,8 +34,8 @@ class AuxTest {
             override fun test(item: Int) = item >= 2
 
             override fun name() = "target"
-        }, combinations = 4)
-        assertEquals("Upset(names=[target, p0, p1, p2], data=[0:2, 0,3:1, 3:3, 2:2])", upset.toString())
+        }, k = 3, combinations = 4)
+        assertEquals("Upset(names=[target, p2, p1], data=[0:2, 0,1:1, 1:3, 2:2])", upset.toString())
     }
 
 }

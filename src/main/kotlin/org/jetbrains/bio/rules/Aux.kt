@@ -51,23 +51,37 @@ data class UpsetRecord(val id: List<Int>, val n: Int) {
 data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
-                   k: Int = 3,
-                   combinations: Int = 50): Upset {
-            check(k <= 5) {
+                   k: Int = 10,
+                   combinations: Int = 100): Upset {
+            check(k <= predicates.size + 1) {
                 "Too big combinations size"
             }
-            val data = arrayListOf<UpsetRecord>()
+            val cs = arrayListOf<UpsetRecord>()
             for (kI in 1..k) {
                 CombinatoricsUtils.combinationsIterator(predicates.size + 1, kI).forEach { c ->
                     val result = Predicate.and(c.map { if (it == 0) target else predicates[it - 1] }).test(database)
                     if (!result.isEmpty) {
-                        data.add(UpsetRecord(c.toList(), result.cardinality()))
+                        cs.add(UpsetRecord(c.toList(), result.cardinality()))
                     }
                 }
             }
             // Include target, take max combinations
-            data.sortByDescending { (if (0 in it.id) 1e10 else 0.0) + it.n }
-            return Upset(listOf(target.name()) + predicates.map { it.name() }, data.take(combinations))
+            cs.sortByDescending { (if (0 in it.id) 1e10 else 0.0) + it.n }
+
+            // Reorder labels
+            val reordering = LinkedHashMap<Int, Int>()
+            val topLabels = arrayListOf<String>()
+            val topCs = cs.take(combinations).map { c ->
+                UpsetRecord(c.id.map {
+                    if (it !in reordering) {
+                        reordering[it] = reordering.size
+                        topLabels.add(if (it == 0) target.name() else predicates[it - 1].name())
+                    }
+                    reordering[it]!!
+                }.sorted(), c.n)
+            }
+
+            return Upset(topLabels, topCs)
         }
     }
 }
