@@ -12,8 +12,8 @@ import org.jetbrains.bio.genome.containers.LocationsMergingList
 import org.jetbrains.bio.genome.downloadTo
 import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.FishboneMiner
+import org.jetbrains.bio.rules.RulesLogger
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -66,8 +66,8 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
 
         FishboneMiner.mine("All => All @ ${FilenameUtils.getName(databaseUrl)} ${genomeQuery.id}",
                 database.toList(),
-                        targetPredicates.map { sourcePredicates to it },
-                        { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
+                targetPredicates.map { sourcePredicates to it },
+                { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
         rulesLogger.done(rulesLogger.path.toString().replace(".csv", ".json").toPath(),
             generatePalette(), "conviction"

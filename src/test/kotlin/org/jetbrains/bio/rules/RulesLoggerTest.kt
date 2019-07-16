@@ -130,25 +130,46 @@ class RulesLoggerTest {
             15
           ]
         },
-        "target": [
-          {
-            "names": [
-              "[20;35)",
-              "[35;48)",
-              "[20;50)"
-            ],
-            "combinations": [
-              70,
-              0,
-              0,
-              0,
-              2,
-              15,
-              13,
-              0
-            ]
-          }
-        ]
+        "target": {
+          "names": [
+            "[35;48)",
+            "[20;35)"
+          ],
+          "data": [
+            {
+              "first": [
+                0
+              ],
+              "second": 30
+            },
+            {
+              "first": [
+                0,
+                2
+              ],
+              "second": 15
+            },
+            {
+              "first": [
+                0,
+                1
+              ],
+              "second": 13
+            },
+            {
+              "first": [
+                2
+              ],
+              "second": 15
+            },
+            {
+              "first": [
+                1
+              ],
+              "second": 13
+            }
+          ]
+        }
       },
       "operator": "none"
     },
@@ -259,25 +280,46 @@ class RulesLoggerTest {
             13
           ]
         },
-        "target": [
-          {
-            "names": [
-              "[20;35)",
-              "[35;48)",
-              "[20;50)"
-            ],
-            "combinations": [
-              70,
-              0,
-              0,
-              0,
-              2,
-              15,
-              13,
-              0
-            ]
-          }
-        ]
+        "target": {
+          "names": [
+            "[35;48)",
+            "[20;35)"
+          ],
+          "data": [
+            {
+              "first": [
+                0
+              ],
+              "second": 30
+            },
+            {
+              "first": [
+                0,
+                2
+              ],
+              "second": 15
+            },
+            {
+              "first": [
+                0,
+                1
+              ],
+              "second": 13
+            },
+            {
+              "first": [
+                2
+              ],
+              "second": 15
+            },
+            {
+              "first": [
+                1
+              ],
+              "second": 13
+            }
+          ]
+        }
       },
       "operator": "none"
     }

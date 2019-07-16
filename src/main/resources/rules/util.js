@@ -605,7 +605,7 @@ function showInfoNode(node) {
         return
     }
     if (complexity !== 1) {
-        $.notify('Primary effectors information is available for max complexity = 1',
+        $.notify('Target information is available for max complexity = 1',
             {className: "error", position: 'bottom right'});
         return
     }
@@ -616,42 +616,37 @@ function showInfoNode(node) {
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
-    // Hack: this should saved separately per each target
+    // Hack: this should be saved separately per each target
     let targetAux = records.filter(el => el.target === target && el.aux && "target" in el.aux);
     if (targetAux.length === 0) {
         return
     }
     let somethingAdded = false;
-    for (let e of targetAux[0].aux.target) {
-        let allNamesShown = e.names.filter(
-            n => filteredRecords.filter(el => el.target === target && el.condition === n).length > 0
-        ).length === e.names.filter(n => n !== target).length;
-        if (allNamesShown) {
-            somethingAdded = true;
-            showRepresentationInfo(e, infoId);
-        }
+    const upset = targetAux[0].aux.target;
+    if (upset !== null) {
+        showUpsetInfo(upset, infoId);
+        somethingAdded = true;
     }
     if (!somethingAdded) {
         return
     }
     let dialog = $('#dialog');
-    dialog.dialog('option', 'title', `Primary effectors combinations => ${target}`);
+    dialog.dialog('option', 'title', `? => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
         dialog.dialog("option", "width", DIALOG_WIDTH);
     }
     dialog.dialog('open');
 }
 
-
 let vennIndex = 0;
 
-function showRepresentationInfo(representation, infoId) {
-    let names = Object.entries(representation.names);
+function showCombinationInfo(combination, infoId) {
+    let names = Object.entries(combination.names);
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
-    let combinations = Object.entries(representation.combinations);
+    let combinations = Object.entries(combination.combinations);
     let tableHtml = `
-<table class="table table-condensed table-tiny table-bordered">
+<table class="table table-condensed table-bordered table-striped vertical-centered">
     <thead class="thead-default">
         <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>#</td></tr>
     </thead>
@@ -680,9 +675,10 @@ function showRepresentationInfo(representation, infoId) {
     tableHtml += `
     </tbody>
 </table>`;
+    // https://github.com/benfred/venn.js/
     if (names.length <= 5) {
         let vennData = [];
-        // Compute Venn numbers out of probabilities
+        // Compute Venn numbers out of combinations
         for (let v = 1; v < (1 << names.length); v++) {
             let sets = [];
             let size = 0;
@@ -700,38 +696,53 @@ function showRepresentationInfo(representation, infoId) {
                 vennData.push({'sets': sets, 'size': size});
             }
         }
+
         vennIndex += 1;
-        infoIdDiv.append($(`<ul><li>${tableHtml}</li><li><div id="venn${vennIndex}" class="venn"></div></li></ul>`));
+        infoIdDiv.append($(`<ul><li>${tableHtml}</li><li><div id="venn${vennIndex}"></div></li></ul>`));
         let div = d3.select(`#venn${vennIndex}`);
-        div.datum(vennData).call(venn.VennDiagram());
+        div.datum(vennData).call(venn.VennDiagram()
+            .width(500)
+            .height(300)
+            .fontSize("13px"));
 
-        // add a tooltip
-        let tooltip = $(`<div style="font-size: large"></div>`);
-        infoIdDiv.append(tooltip);
+        var tooltip = d3.select("#dialog").append("div")
+            .attr("class", "venntooltip");
 
-        // add listeners to all the groups to display tooltip on mouseover
+        const vennDiv = $(`#venn${vennIndex}`);
+        const tooltipDx = vennDiv.position().left;
+        const tooltipDy = vennDiv.position().top;
+
+        div.selectAll("path")
+            .style("stroke-opacity", 0)
+            .style("stroke", "#fff")
+            .style("stroke-width", 3);
+
         div.selectAll("g")
             .on("mouseover", function (d, i) {
                 // sort all the areas relative to the current item
                 venn.sortAreas(div, d);
 
-                // Display a tooltip
-                tooltip.text(d.sets + " : " + d.size);
+                // Display a tooltip with the current size
+                tooltip.style("opacity", .9);
+                tooltip.text(d.size);
 
                 // highlight the current path
                 var selection = d3.select(this);
                 selection.select("path")
-                    .style("stroke-width", 3)
-                    .style("fill-opacity", d.sets.length == 1 ? .4 : .1)
+                    .style("fill-opacity", d.sets.length === 1 ? .4 : .1)
                     .style("stroke-opacity", 1);
             })
+
+            .on("mousemove", function () {
+                tooltip.style("left", (d3.event.offsetX + tooltipDx) + "px")
+                    .style("top", (d3.event.offsetY + tooltipDy) + "px");
+            })
+
             .on("mouseout", function (d, i) {
-                // Display a tooltip with the current size
-                tooltip.text("");
+                tooltip.style("opacity", 0);
                 var selection = d3.select(this);
                 selection.select("path")
-                    .style("stroke-width", 0)
-                    .style("fill-opacity", d.sets.length == 1 ? .25 : .0)
+                    .style("fill-opacity", d.sets.length === 1 ? .25 : .0)
                     .style("stroke-opacity", 0);
             });
     } else {
@@ -739,10 +750,24 @@ function showRepresentationInfo(representation, infoId) {
     }
 }
 
+let upsetIndex = 0;
+
+function showUpsetInfo(upset, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
+    infoIdDiv.append($(`<br>`));
+    upsetIndex += 1;
+    infoIdDiv.append($(`<div id="upset${upsetIndex}" class="venn"></div>`));
+    let data = [];
+    for (let d of Object.entries(upset.data)) {
+        data.push(d[1]);
+    }
+    visualizeUpset("upset" + upsetIndex, upset.names, data, 600, 200, 5, 2.2);
+}
+
 function toggleAuxInfo(e, infoId) {
     if (e.value === '+') {
         let r = recordsAuxMap[infoId];
-        showRepresentationInfo(r.aux.rule, infoId);
+        showCombinationInfo(r.aux.rule, infoId);
         e.value = '-'
     } else {
         $(`#${infoId}`).empty();

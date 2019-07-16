@@ -1,12 +1,14 @@
 package org.jetbrains.bio.rules
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.commons.csv.CSVFormat
 import org.apache.log4j.Logger
+import org.jetbrains.bio.predicates.NotPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner.mine
-import org.jetbrains.bio.util.*
-import java.nio.file.Path
+import org.jetbrains.bio.util.MultitaskProgress
+import org.jetbrains.bio.util.await
+import org.jetbrains.bio.util.awaitAll
+import org.jetbrains.bio.util.parallelismLevel
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -14,7 +16,6 @@ import kotlin.math.min
 
 object FishboneMiner: Miner {
     const val TOP_PER_COMPLEXITY = 100
-    const val TOP_LEVEL_PREDICATES_INFO = 10
     const val FUNCTION_DELTA = 1E-3
     const val KL_DELTA = 1E-3
 
@@ -25,14 +26,6 @@ object FishboneMiner: Miner {
      * Result of [mine] procedure.
      */
     data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var aux: Aux? = null)
-
-    /**
-     * Auxiliary info for visualization purposes.
-     *
-     * @param rule represents joint distribution (condition, parent?, target)
-     * @param target represents all the top level predicates pairwise combinations
-     */
-    data class Aux(val rule: Upset, val target: List<Upset>? = null)
 
     override fun <V> mine(
             database: List<V>,
@@ -145,7 +138,6 @@ object FishboneMiner: Miner {
                           or: Boolean = true,
                           negate: Boolean = true,
                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                          topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA): List<Node<T>> {
@@ -155,32 +147,29 @@ object FishboneMiner: Miner {
                 maxComplexity, and, or, negate,
                 topPerComplexity, function,
                 functionDelta, klDelta)
-        // Fill aux information
-        val topLevelNodes = best[1].sortedWith(RulesBPQ.comparator(function)).take(topLevelToPredicatesInfo)
-        // Collect all the top level predicates pairwise joint distributions
-        val topLevelPairwiseCombinations = arrayListOf<Upset>()
-        for (i in 0 until topLevelNodes.size) {
-            val n1 = topLevelNodes[i]
-            (i + 1 until topLevelNodes.size).forEach { j ->
-                val n2 = topLevelNodes[j]
-                topLevelPairwiseCombinations.add(Upset.of(database,
-                        listOf(n1.rule.conditionPredicate, n2.rule.conditionPredicate, target)))
-            }
-        }
-        // NOTE[shpynov] hacks adding target information to all the nodes
-        for (i in 0 until topLevelNodes.size) {
-            val nI = topLevelNodes[i]
-            nI.aux = Aux(
-                    rule = Upset.of(database, listOf(nI.rule.conditionPredicate, target)),
-                    target = topLevelPairwiseCombinations)
-        }
 
+        // NOTE[shpynov] hacks adding target information to all the nodes
+        val singleRules = best[1]
+        // Collect all the top level predicates combinations <= 3
+        val upset = Upset.of(database,
+                singleRules.map { it.element }.filterNot { it is NotPredicate },
+                target,
+                3)
+
+        singleRules.map { sr ->
+            Callable {
+                sr.aux = Aux(
+                        rule = Combinations.of(database, listOf(sr.rule.conditionPredicate, target)),
+                        target = upset)
+            }
+        }.await(parallel = true)
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
         result.map {
             Callable {
                 if (it.parent != null) {
                     it.aux = Aux(rule =
-                    Upset.of(database, listOf(it.element, it.parent.rule.conditionPredicate, it.rule.targetPredicate)))
+                    Combinations.of(database,
+                            listOf(it.element, it.parent.rule.conditionPredicate, it.rule.targetPredicate)))
                 }
             }
         }.await(parallel = true)
@@ -220,7 +209,6 @@ object FishboneMiner: Miner {
                  or: Boolean = true,
                  negate: Boolean = true,
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                 topLevelToPredicatesInfo: Int = TOP_LEVEL_PREDICATES_INFO,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
                  klDelta: Double = KL_DELTA): List<List<Node<T>>> {
@@ -234,8 +222,8 @@ object FishboneMiner: Miner {
             Predicate.dbCache = null
             val mineResult = mine(conditions, target, database,
                     maxComplexity, and, or, negate,
-                    topPerComplexity, topLevelToPredicatesInfo,
-                    function, functionDelta, klDelta)
+                    topPerComplexity, function,
+                    functionDelta, klDelta)
             logFunction(mineResult)
             mineResult
         }
@@ -243,22 +231,4 @@ object FishboneMiner: Miner {
         return mineResults
     }
 
-    fun loadRules(path: Path): List<RuleRecord<Any>> {
-        val predicatesMap = hashMapOf<String, Predicate<Any>>()
-        return CSVFormat.DEFAULT.withCommentMarker('#').withHeader().parse(path.bufferedReader()).use { parser ->
-            parser.records.map {
-                RuleRecord.fromCSV(it) { name ->
-                    if (name in predicatesMap) {
-                        return@fromCSV predicatesMap[name]!!
-                    }
-                    val p = object : Predicate<Any>() {
-                        override fun test(item: Any) = false
-                        override fun name(): String = name
-                    }
-                    predicatesMap[name] = p
-                    return@fromCSV p
-                }
-            }
-        }
-    }
 }
