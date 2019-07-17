@@ -625,12 +625,6 @@ function showInfoNode(node) {
     if (nodes[node.id].style.shape !== "polygon") {
         return
     }
-    if (complexity !== 1) {
-        $.notify('Target information is available for max complexity = 1',
-            {className: "error", position: 'bottom right'});
-        return
-    }
-
     const target = node.label;
     let infoId = `aux_${node.id}`.replace(new RegExp('[@<>!\\.:;\\(\\)\\[\\] ]', 'g'), "_");
     let html = `<div id="${infoId}"></div>`;
