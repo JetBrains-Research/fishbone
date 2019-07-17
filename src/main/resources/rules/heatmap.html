@@ -1,0 +1,178 @@
+<!-- https://bl.ocks.org/dorothy32/ef877f9bba78dee8fcaa052d972a6016-->
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>cluster heatmap</title>
+</head>
+<body onload="draw()">
+<div id="main">
+    <div id="heatmap" width="960" height="500"></div>
+</div>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="lib/heatmap.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script>
+    function draw() {
+        const tableData = [
+            {
+                key: 'a',
+                values: [
+                    {key: 'd1', value: -0.1},
+                    {key: 'd2', value: 0.5},
+                    {key: 'd4', value: -0.9},
+                    {key: 'd3', value: 0.6}
+                ]
+            },
+            {
+                key: 'f',
+                values: [
+                    {key: 'd1', value: -0.6},
+                    {key: 'd2', value: -0.9},
+                    {key: 'd4', value: 0.6},
+                    {key: 'd3', value: 0.9}
+                ]
+            },
+            {
+                key: 'g',
+                values: [
+                    {key: 'd1', value: 0.7},
+                    {key: 'd2', value: 0.8},
+                    {key: 'd4', value: 0.9},
+                    {key: 'd3', value: -0.8}
+                ]
+            },
+            {
+                key: 'e',
+                values: [
+                    {key: 'd1', value: 0.5},
+                    {key: 'd2', value: -0.1},
+                    {key: 'd4', value: 0.4},
+                    {key: 'd3', value: -0.5}
+                ]
+            },
+            {
+                key: 'b',
+                values: [
+                    {key: 'd1', value: 0.2},
+                    {key: 'd2', value: 0.4},
+                    {key: 'd4', value: 0.1},
+                    {key: 'd3', value: -0.7}
+                ]
+            },
+            {
+                key: 'c',
+                values: [
+                    {key: 'd1', value: 0.3},
+                    {key: 'd2', value: 0.3},
+                    {key: 'd4', value: 0.2},
+                    {key: 'd3', value: 0.8}
+                ]
+            },
+            {
+                key: 'd',
+                values: [
+                    {key: 'd1', value: -0.4},
+                    {key: 'd2', value: -0.2},
+                    {key: 'd4', value: -0.3},
+                    {key: 'd3', value: -0.9}
+                ]
+            }
+        ];
+
+        const xRootData = {
+            totalLength: 0.8,
+            children: [
+                {
+                    length: 0.4,
+                    children: [
+                        {
+                            length: 0.4,
+                            key: 'd1'
+                        },
+                        {
+                            length: 0.4,
+                            key: 'd2'
+                        }
+                    ]
+                },
+                {
+                    length: 0.6,
+                    children: [
+                        {
+                            length: 0.2,
+                            key: 'd4'
+                        },
+                        {
+                            length: 0.2,
+                            key: 'd3'
+                        }
+                    ]
+                }
+            ]
+        };
+
+
+        const yRootData = {
+            totalLength: 0.76,
+            children: [
+                {
+                    length: 0.05,
+                    children: [
+                        {
+                            length: 0.71,
+                            key: 'a'
+                        },
+                        {
+                            length: 0.37,
+                            children: [
+                                {
+                                    length: 0.34,
+                                    key: 'f'
+                                },
+                                {
+                                    length: 0.34,
+                                    key: 'g'
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    length: 0.33,
+                    children: [
+                        {
+                            length: 0.43,
+                            key: 'e'
+                        },
+                        {
+                            length: 0.21,
+                            children: [
+                                {
+                                    length: 0.22,
+                                    key: 'b'
+                                },
+                                {
+                                    length: 0.10,
+                                    children: [
+                                        {
+                                            length: 0.12,
+                                            key: 'c'
+                                        },
+                                        {
+                                            length: 0.12,
+                                            key: 'd'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+        drawHeatMap("heatmap", tableData, xRootData, yRootData);
+    }
+</script>
+</body>
+</html>

@@ -638,19 +638,12 @@ function showInfoNode(node) {
     panel.empty();
     panel.append($(html));
     // Hack: this should be saved separately per each target
-    let targetAux = records.filter(el => el.target === target && el.aux && "target" in el.aux);
+    let targetAux = records.filter(el =>
+        el.target === target && el.aux && ("upset" in el.aux || "correlations" in el.aux));
     if (targetAux.length === 0) {
         return
     }
-    let somethingAdded = false;
-    const upset = targetAux[0].aux.target;
-    if (upset !== null) {
-        showUpsetInfo(upset, infoId);
-        somethingAdded = true;
-    }
-    if (!somethingAdded) {
-        return
-    }
+    showAuxInfo(targetAux[0].aux, infoId);
     let dialog = $('#dialog');
     dialog.dialog('option', 'title', `? => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
@@ -726,12 +719,11 @@ function showCombinationInfo(combination, infoId) {
             .height(300)
             .fontSize("13px"));
 
-        var tooltip = d3.select("#dialog").append("div")
-            .attr("class", "venntooltip");
-
         const vennDiv = $(`#venn${vennIndex}`);
-        const tooltipDx = vennDiv.position().left;
-        const tooltipDy = vennDiv.position().top;
+        const tooltipDx = vennDiv.position().left + 10;
+        const tooltipDy = vennDiv.position().top + 10;
+        var tooltip = vennDiv.append("div")
+            .attr("class", "tooltip");
 
         div.selectAll("path")
             .style("stroke-opacity", 0)
@@ -773,7 +765,7 @@ function showCombinationInfo(combination, infoId) {
 
 let upsetIndex = 0;
 
-function showUpsetInfo(upset, infoId) {
+function showUpset(upset, infoId) {
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
     upsetIndex += 1;
@@ -782,15 +774,28 @@ function showUpsetInfo(upset, infoId) {
     for (let d of Object.entries(upset.data)) {
         data.push(d[1]);
     }
-    // Compute leftMargin
-    let longestLabel = 0;
-    for (let n of upset.names) {
-        longestLabel = Math.max(longestLabel, n.length)
+
+    visualizeUpset("upset" + upsetIndex, upset.names, data, 7, 7, 2.2);
+}
+
+
+let heatmapIndex = 0;
+
+function showHeatmap(heatmap, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
+    infoIdDiv.append($(`<br>`));
+    heatmapIndex += 1;
+    infoIdDiv.append($(`<div id="heatmap${heatmapIndex}"></div>`));
+    drawHeatMap("heatmap" + heatmapIndex, heatmap.tableData, heatmap.rootData, heatmap.rootData);
+}
+
+function showAuxInfo(aux, infoId) {
+    if (aux.heatmap != null) {
+        showHeatmap(aux.heatmap, infoId);
     }
-    visualizeUpset("upset" + upsetIndex, upset.names, data,
-        Math.max(upset.names.length * 7 * 2.2 + 300, 600),
-        longestLabel * 4 + 20,
-        5, 7, 2.2);
+    if (aux.upset != null) {
+        showUpset(aux.upset, infoId);
+    }
 }
 
 function toggleAuxInfo(e, infoId) {

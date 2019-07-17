@@ -2,16 +2,27 @@ package org.jetbrains.bio.rules
 
 import org.apache.commons.math3.util.CombinatoricsUtils
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.util.await
+import weka.clusterers.HackHierarchicalClusterer
+import weka.core.Attribute
+import weka.core.DenseInstance
+import weka.core.EuclideanDistance
+import weka.core.Instances
+import java.util.*
+import java.util.concurrent.Callable
+import kotlin.Comparator
+import kotlin.collections.ArrayList
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.set
 import kotlin.math.log2
 import kotlin.math.roundToInt
 
+
 /**
  * Auxiliary info for visualization purposes.
- *
- * @param rule represents joint distribution (condition, parent?, target)
- * @param target represents all the top level predicates pairwise combinations
+ * TODO: optimize me!
  */
-data class Aux(val rule: Combinations, val target: Upset? = null)
+data class Aux(val rule: Combinations, val heatmap: HeatMap? = null, val upset: Upset? = null)
 
 
 /**
@@ -19,7 +30,6 @@ data class Aux(val rule: Combinations, val target: Upset? = null)
  * @param names list of binary predicates names over given database
  * @param combinations combinations in binary bit-wise encoding order
  */
-@Suppress("MemberVisibilityCanBePrivate")
 data class Combinations(val names: List<String>, val combinations: List<Int>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>): Combinations {
@@ -42,36 +52,68 @@ data class UpsetRecord(val id: List<Int>, val n: Int) {
     }
 }
 
+class UpsetBPQ(private val limit: Int,
+               private val comparator: Comparator<UpsetRecord>,
+               private val queue: Queue<UpsetRecord> = PriorityQueue(limit, comparator.reversed()))
+    : Queue<UpsetRecord> by queue {
+
+    override fun add(element: UpsetRecord): Boolean = offer(element)
+
+    override fun offer(element: UpsetRecord): Boolean {
+        // NOTE[shpynov] main difference with [PriorityQueue]!!!
+        if (size >= limit) {
+            val head = peek()
+            if (comparator.compare(element, head) > -1) {
+                return false
+            }
+        }
+        if (size >= limit) {
+            poll()
+        }
+        return queue.offer(element)
+    }
+}
+
 /**
  * Data class describing joint combinations, see UpsetR for details.
  * @param names list of binary predicates names over given database
  * @param data map : items -> intersection
  */
-@Suppress("MemberVisibilityCanBePrivate")
 data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
-                   k: Int = 10,
+                   k: Int = 5,
                    combinations: Int = 100): Upset {
             check(k <= predicates.size + 1) {
                 "Too big combinations size"
             }
-            val cs = arrayListOf<UpsetRecord>()
-            for (kI in 1..k) {
-                CombinatoricsUtils.combinationsIterator(predicates.size + 1, kI).forEach { c ->
-                    val result = Predicate.and(c.map { if (it == 0) target else predicates[it - 1] }).test(database)
-                    if (!result.isEmpty) {
-                        cs.add(UpsetRecord(c.toList(), result.cardinality()))
-                    }
+            // Elements containing 0 should be on the top!
+            val comparator = Comparator<UpsetRecord> { u1, u2 ->
+                return@Comparator when {
+                    0 in u1.id && 0 !in u2.id -> -1
+                    0 !in u1.id && 0 in u2.id -> 1
+                    else -> -u1.n.compareTo(u2.n)
                 }
             }
-            // Include target, take max combinations
-            cs.sortByDescending { (if (0 in it.id) 1e10 else 0.0) + it.n }
+            val cs = UpsetBPQ(limit = combinations, comparator = comparator)
+            (1..k).flatMap { kI ->
+                CombinatoricsUtils.combinationsIterator(predicates.size + 1, kI).asSequence().map { c ->
+                    Callable {
+                        val result = Predicate.and(c.map { if (it == 0) target else predicates[it - 1] }).test(database)
+                        if (!result.isEmpty) {
+                            val upsetRecord = UpsetRecord(c.toList(), result.cardinality())
+                            synchronized(cs) {
+                                cs.add(upsetRecord)
+                            }
+                        }
+                    }
+                }.asIterable()
+            }.await(parallel = true)
 
             // Reorder labels
             val reordering = LinkedHashMap<Int, Int>()
             val topLabels = arrayListOf<String>()
-            val topCs = cs.take(combinations).map { c ->
+            val topCs = cs.sortedWith(comparator).map { c ->
                 UpsetRecord(c.id.map {
                     if (it !in reordering) {
                         reordering[it] = reordering.size
@@ -82,6 +124,62 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
             }
 
             return Upset(topLabels, topCs)
+        }
+    }
+}
+
+/**
+ * Data class describing pairwise correlations cluster map
+ * @param names list of binary predicates names over given database
+ * @param data pairwise correlations
+ */
+data class HeatMap(val tableData: List<Map<String, Any>>?, val rootData: Map<String, *>) {
+    companion object {
+        fun <T> of(database: List<T>, predicates: List<Predicate<T>>): HeatMap {
+            // Instantiate clusterer
+            val clusterer = HackHierarchicalClusterer()
+            clusterer.options = arrayOf("-L", "COMPLETE")
+            clusterer.debug = true
+            clusterer.numClusters = 1
+            clusterer.distanceFunction = EuclideanDistance()
+            clusterer.distanceIsBranchLength = true
+
+            // Build dataset
+            val attributes = ArrayList(predicates.map {
+                Attribute(it.name())
+            })
+
+            val data = Instances("Correlations", attributes, predicates.size)
+
+            // Add data for clustering
+            predicates.forEach { pI ->
+                data.add(DenseInstance(1.0, predicates.map { pJ ->
+                    Rule(pI, pJ, database).correlation
+                }.toDoubleArray()))
+            }
+
+            // Cluster network
+            clusterer.buildClusterer(data)
+
+            // Clustering histogram
+            val rootData = clusterer.getRootData(predicates.map { it.name() })
+
+            // Now we should reorder predicates according to DFS in clustering histogram
+            val order = clusterer.order()
+
+            val tableData = order.map { i ->
+                val pI = predicates[i]
+                mapOf(
+                        "key" to pI.name(),
+                        "values" to order.map { j ->
+                            val pJ = predicates[j]
+                            mapOf(
+                                    "key" to pJ.name(),
+                                    "value" to Rule(pI, pJ, database).correlation)
+                        })
+            }
+
+            return HeatMap(tableData, rootData)
         }
     }
 }

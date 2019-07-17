@@ -37,10 +37,8 @@ object FishboneMiner: Miner {
         try {
             LOG.info("Processing fishbone")
 
-            val sourcesToTargets = if (targets.isNotEmpty()) {
-                targets.map { target -> predicates to target }
-            } else {
-                mapAllPredicatesToAll(predicates, predicates.withIndex())
+            val sourcesToTargets = (if (targets.isNotEmpty()) targets else predicates).map { target ->
+                predicates.filter { it.name() != target.name() } to target
             }
 
             return mine(
@@ -58,16 +56,6 @@ object FishboneMiner: Miner {
             LOG.error(t.message)
             return emptyList()
         }
-    }
-
-    private fun <V> mapAllPredicatesToAll(
-            predicates: List<Predicate<V>>, indexedPredicates: Iterable<IndexedValue<Predicate<V>>>
-    ): List<Pair<List<Predicate<V>>, Predicate<V>>> {
-        return (0 until predicates.size).map { i ->
-            val target = predicates[i]
-            val sources = indexedPredicates.filter { (j, _) -> j != i }.map { (_, value) -> value }
-            sources to target
-        }.toList()
     }
 
     /**
@@ -150,17 +138,23 @@ object FishboneMiner: Miner {
 
         // NOTE[shpynov] hacks adding target information to all the nodes
         val singleRules = best[1]
-        // Collect all the top level predicates combinations <= 3
+
+        // Pairwise correlations
+        val heatmap = HeatMap.of(database,
+                listOf(target) + singleRules.map { it.element }.filterNot { it is NotPredicate })
+
+        // Collect all the top level predicates combinations
         val upset = Upset.of(database,
                 singleRules.map { it.element }.filterNot { it is NotPredicate },
                 target,
-                3)
+                listOf(3, maxComplexity, predicates.size + 1).min()!!)
 
         singleRules.map { sr ->
             Callable {
                 sr.aux = Aux(
                         rule = Combinations.of(database, listOf(sr.rule.conditionPredicate, target)),
-                        target = upset)
+                        heatmap = heatmap,
+                        upset = upset)
             }
         }.await(parallel = true)
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))

@@ -60,7 +60,7 @@ ul {
     max-height: 1000px;
 }
 
-.venntooltip {
+.tooltip {
     position: absolute;
     text-align: center;
     width: 128px;

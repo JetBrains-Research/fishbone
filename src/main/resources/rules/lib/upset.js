@@ -5,14 +5,19 @@
 
 
 function visualizeUpset(div, labels, data,
-                        height = 600,
-                        marginLeft = 100,
                         rad = 7,
                         font = 9,
                         step = 2.2) {
     //position and dimensions
     const width = rad * step * data.length + 5;
-    const barsHeight = height - labels.length * rad * (step + 1);
+    const barsHeight = labels.length * rad * (step + 1);
+    const height = barsHeight + 300;
+    // Compute leftMargin
+    let longestLabel = 0;
+    for (let n of labels) {
+        longestLabel = Math.max(longestLabel, n.length)
+    }
+    const marginLeft = longestLabel * (font / 2) + 20;
 
     // make the canvas
     const svg = d3.select("#" + div)
