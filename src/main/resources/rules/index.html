@@ -187,6 +187,9 @@
                 <!--<input type="checkbox" id="fishboneAlgCheckbox">
                 <label for="fishboneAlgCheckbox">Fishbone</label>-->
 
+                <input type="checkbox" id="ripperAlgCheckbox">
+                <label for="ripperAlgCheckbox">Ripper</label>
+
                 <input type="checkbox" id="fpGrowthAlgCheckbox">
                 <label for="fpGrowthAlgCheckbox">FPGrowth</label>
 
@@ -238,6 +241,8 @@
     <form class="navbar-form navbar-right">
         <label for="alternative-results">Show other results</label>
         <div id="alternative-results" class="checkbox navbar-btn">
+            <input type="button" id="fishboneSwitch" onclick="switchFishboneResults()" value="Switch to Ripper">
+
             <input type="checkbox" id="fpGrowthCheckbox" onclick="showFPGrowthResults()">
             <label for="fpGrowthCheckbox">FPGrowth</label>
 

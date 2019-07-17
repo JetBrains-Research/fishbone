@@ -10,6 +10,7 @@ const CLASS_GROUP = "group";
 const CLASS_HIGHLIGHTED = "highlighted";
 const DIALOG_WIDTH = 1200;
 
+let fishboneResponse = null, ripperResponse = null;
 let records, filteredRecords = [];
 
 // Filters
@@ -238,11 +239,11 @@ function renderDecisionTreeAlgorithmsResults(res) {
     })
 }
 
-function renderFishboneResults(response) {
+function renderFishboneResults(jsonPath) {
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "GET",
-        data: {filename: response["FISHBONE"]},
+        data: {filename: jsonPath},
         success: function (res) {
             load(JSON.stringify(res));
         },
@@ -254,10 +255,13 @@ function renderFishboneResults(response) {
 
 function getMiners() {
     var miners = "fishbone";
-    if (document.getElementById("fpGrowthAlgCheckbox").checked == true) {
+    if (document.getElementById("ripperAlgCheckbox").checked) {
+        miners += ", ripper";
+    }
+    if (document.getElementById("fpGrowthAlgCheckbox").checked) {
         miners += ", fp-growth";
     }
-    if (document.getElementById("decisionTreeAlgCheckbox").checked == true) {
+    if (document.getElementById("decisionTreeAlgCheckbox").checked) {
         miners += ", tree";
     }
     return miners;
@@ -287,13 +291,19 @@ function runAnalysisOnLoadedData() {
         contentType: false,
         success: function (response) {
             if (response["FISHBONE"] != null) {
-                renderFishboneResults(response);
+                $('#fishboneSwitch').val("Switch to Ripper");
+
+                fishboneResponse = response["FISHBONE"];
+                renderFishboneResults(fishboneResponse);
             }
             if (response["FP_GROWTH"] != null) {
                 renderFpGrowthAlgorithmResults(response);
             }
             if (response["DECISION_TREE"] != null) {
                 renderDecisionTreeAlgorithmsResults(response);
+            }
+            if (response["RIPPER"] != null) {
+                ripperResponse = response["RIPPER"];
             }
             spinner.stop();
         },
@@ -336,6 +346,17 @@ function showDecisionTreeResults() {
         dialog.dialog('open');
     } else {
         dialog.dialog('close');
+    }
+}
+
+function switchFishboneResults() {
+    let switchButton = $('#fishboneSwitch');
+    if(ripperResponse != null && switchButton.val() === "Switch to Ripper") {
+        switchButton.val("Switch to Fishbone");
+        renderFishboneResults(ripperResponse);
+    } else if (fishboneResponse != null && switchButton.val() === "Switch to Fishbone") {
+        switchButton.val("Switch to Ripper");
+        renderFishboneResults(fishboneResponse);
     }
 }
 
