@@ -3,8 +3,7 @@
 // Adapted from https://bl.ocks.org/dorothy32/ef877f9bba78dee8fcaa052d972a6016
 function drawHeatMap(divId, tableData, xRootData, yRootData,
                      cell = 10,
-                     font = 9) {
-
+                     font = 11) {
     // Compute margins
     let longestLabelCol = 0;
     let longestLabelRow = 0;
@@ -14,8 +13,8 @@ function drawHeatMap(divId, tableData, xRootData, yRootData,
             longestLabelRow = Math.max(longestLabelRow, v.key.length);
         }
     }
-    const marginCols = longestLabelCol * (font / 2) + 20;
-    const marginRows = longestLabelRow * font / 2 + 20;
+    const marginCols = longestLabelCol * font / 2;
+    const marginRows = longestLabelRow * font / 2;
 
     const nCols = tableData[0].values.length;
     const nRows = tableData.length;
@@ -37,8 +36,7 @@ function drawHeatMap(divId, tableData, xRootData, yRootData,
         .attr('height', height);
 
 
-    const heatmap = svg.append('g').attr('class', 'heatmap')
-        .attr('transform', 'translate(' + linkHeight + ',' + linkHeight + ')');
+    const heatmap = svg.append('g').attr('class', 'heatmap');
 
 
     const bandX = d3.scaleBand()

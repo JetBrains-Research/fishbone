@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.log4j.Logger
 import org.jetbrains.bio.predicates.NotPredicate
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.predicates.TruePredicate
 import org.jetbrains.bio.rules.FishboneMiner.mine
 import org.jetbrains.bio.util.MultitaskProgress
 import org.jetbrains.bio.util.await
@@ -14,7 +15,7 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 
 
-object FishboneMiner: Miner {
+object FishboneMiner : Miner {
     const val TOP_PER_COMPLEXITY = 100
     const val FUNCTION_DELTA = 1E-3
     const val KL_DELTA = 1E-3
@@ -142,33 +143,23 @@ object FishboneMiner: Miner {
         // Pairwise correlations
         val heatmap = HeatMap.of(database,
                 listOf(target) + singleRules.map { it.element }.filterNot { it is NotPredicate })
-
         // Collect all the top level predicates combinations
         val upset = Upset.of(database,
                 singleRules.map { it.element }.filterNot { it is NotPredicate },
-                target,
-                listOf(3, maxComplexity, predicates.size + 1).min()!!)
+                target)
 
-        singleRules.map { sr ->
-            Callable {
-                sr.aux = Aux(
-                        rule = Combinations.of(database, listOf(sr.rule.conditionPredicate, target)),
-                        heatmap = heatmap,
-                        upset = upset)
-            }
-        }.await(parallel = true)
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
         result.map {
             Callable {
-                if (it.parent != null) {
-                    it.aux = Aux(rule =
-                    Combinations.of(database,
-                            listOf(it.element, it.parent.rule.conditionPredicate, it.rule.targetPredicate)))
-                }
+                it.aux = RuleAux(rule =
+                Combinations.of(database,
+                        listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)))
             }
         }.await(parallel = true)
         MultitaskProgress.finishTask(target.name())
-        return result
+        return result +
+                // Technical rule TRUE => target
+                listOf(Node(Rule(TruePredicate(), target, database), TruePredicate(), null, TargetAux(heatmap, upset)))
     }
 
 

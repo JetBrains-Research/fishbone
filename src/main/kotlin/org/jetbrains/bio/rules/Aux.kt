@@ -22,7 +22,11 @@ import kotlin.math.roundToInt
  * Auxiliary info for visualization purposes.
  * TODO: optimize me!
  */
-data class Aux(val rule: Combinations, val heatmap: HeatMap? = null, val upset: Upset? = null)
+
+interface Aux
+
+data class RuleAux(val rule: Combinations) : Aux
+data class TargetAux(val heatmap: HeatMap, val upset: Upset) : Aux
 
 
 /**
@@ -82,8 +86,8 @@ class UpsetBPQ(private val limit: Int,
 data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
-                   maxCombinations: Int = 10000,
-                   combinations: Int = 100): Upset {
+                   combinations: Int = 100,
+                   maxCombinations: Int = 10000): Upset {
             // Elements containing 0 should be on the top!
             val comparator = Comparator<UpsetRecord> { u1, u2 ->
                 return@Comparator when {

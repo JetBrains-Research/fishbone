@@ -637,13 +637,13 @@ function showInfoNode(node) {
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
-    // Hack: this should be saved separately per each target
+    // Hack[shpynov]: we save single technical record TRUE => target with this information
     let targetAux = records.filter(el =>
         el.target === target && el.aux && ("upset" in el.aux || "correlations" in el.aux));
     if (targetAux.length === 0) {
         return
     }
-    showAuxInfo(targetAux[0].aux, infoId);
+    showTargetInfo(targetAux[0].aux, infoId);
     let dialog = $('#dialog');
     dialog.dialog('option', 'title', `? => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
@@ -654,7 +654,7 @@ function showInfoNode(node) {
 
 let vennIndex = 0;
 
-function showCombinationInfo(combination, infoId) {
+function showRuleInfo(combination, infoId) {
     let names = Object.entries(combination.names);
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
@@ -775,7 +775,7 @@ function showUpset(upset, infoId) {
         data.push(d[1]);
     }
 
-    visualizeUpset("upset" + upsetIndex, upset.names, data, 7, 7, 2.2);
+    visualizeUpset("upset" + upsetIndex, upset.names, data, 6);
 }
 
 
@@ -786,10 +786,11 @@ function showHeatmap(heatmap, infoId) {
     infoIdDiv.append($(`<br>`));
     heatmapIndex += 1;
     infoIdDiv.append($(`<div id="heatmap${heatmapIndex}"></div>`));
-    drawHeatMap("heatmap" + heatmapIndex, heatmap.tableData, heatmap.rootData, heatmap.rootData);
+    drawHeatMap("heatmap" + heatmapIndex, heatmap.tableData, heatmap.rootData, heatmap.rootData,
+        Math.max(10, 200 / heatmap.tableData.length));
 }
 
-function showAuxInfo(aux, infoId) {
+function showTargetInfo(aux, infoId) {
     if (aux.heatmap != null) {
         showHeatmap(aux.heatmap, infoId);
     }
@@ -801,7 +802,7 @@ function showAuxInfo(aux, infoId) {
 function toggleAuxInfo(e, infoId) {
     if (e.value === '+') {
         let r = recordsAuxMap[infoId];
-        showCombinationInfo(r.aux.rule, infoId);
+        showRuleInfo(r.aux.rule, infoId);
         e.value = '-'
     } else {
         $(`#${infoId}`).empty();

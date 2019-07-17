@@ -6,12 +6,13 @@
 
 function visualizeUpset(div, labels, data,
                         rad = 7,
-                        font = 9,
+                        font = 11,
                         step = 2.2) {
     //position and dimensions
     const width = rad * step * data.length + 5;
-    const barsHeight = labels.length * rad * (step + 1);
-    const height = barsHeight + 300;
+    const circlesHeight = labels.length * rad * (step + 1);
+    const barsHeight = 400;
+    const height = circlesHeight + barsHeight;
     // Compute leftMargin
     let longestLabel = 0;
     for (let n of labels) {
