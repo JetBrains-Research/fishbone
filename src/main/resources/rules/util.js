@@ -716,7 +716,7 @@ function showRuleInfo(combination, infoId) {
         const vennDiv = $(`#venn${vennIndex}`);
         const tooltipDx = vennDiv.position().left + 10;
         const tooltipDy = vennDiv.position().top + 10;
-        var tooltip = vennDiv.append("div")
+        var tooltip = d3.select(`#venn${vennIndex}`).append("div")
             .attr("class", "tooltip");
 
         div.selectAll("path")
