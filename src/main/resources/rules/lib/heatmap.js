@@ -79,10 +79,12 @@ function drawHeatMap(divId, tableData, xRootData, yRootData,
         .attr('height', bandY.bandwidth())
         .on('mousemove', function (d) {
             selectedCell = {row: d.parent, col: d.key, value: d.value};
+            const message = selectedCell.value.toFixed(2) + ": " + selectedCell.row + ", " + selectedCell.col;
             tooltip
                 .style("left", (d3.event.offsetX + tooltipDx) + "px")
-                .style("top", (d3.event.offsetY + tooltipDy) + "px");
-            tooltip.text(selectedCell != null ? selectedCell.value.toFixed(2) : "");
+                .style("top", (d3.event.offsetY + tooltipDy) + "px")
+                .style("width", Math.max(150, message.length * font / 1.5 + 10) + "px");
+            tooltip.text(message);
         })
         .on('mouseover', function (d) {
             tooltip.style('opacity', 1);
