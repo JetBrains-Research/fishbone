@@ -82,11 +82,8 @@ class UpsetBPQ(private val limit: Int,
 data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
-                   k: Int = 5,
+                   maxCombinations: Int = 10000,
                    combinations: Int = 100): Upset {
-            check(k <= predicates.size + 1) {
-                "Too big combinations size"
-            }
             // Elements containing 0 should be on the top!
             val comparator = Comparator<UpsetRecord> { u1, u2 ->
                 return@Comparator when {
@@ -95,9 +92,15 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
                     else -> -u1.n.compareTo(u2.n)
                 }
             }
+            val n = predicates.size + 1
             val cs = UpsetBPQ(limit = combinations, comparator = comparator)
-            (1..k).flatMap { kI ->
-                CombinatoricsUtils.combinationsIterator(predicates.size + 1, kI).asSequence().map { c ->
+            var sumK = 0L
+            (1..n).flatMap { k ->
+                if (sumK > maxCombinations) {
+                    return@flatMap emptyList<Callable<Unit>>()
+                }
+                CombinatoricsUtils.combinationsIterator(n, k).asSequence().map { c ->
+                    sumK += 1
                     Callable {
                         val result = Predicate.and(c.map { if (it == 0) target else predicates[it - 1] }).test(database)
                         if (!result.isEmpty) {
