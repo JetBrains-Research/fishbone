@@ -785,11 +785,30 @@ function showHeatmap(heatmap, infoId) {
 }
 
 function showTargetInfo(aux, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
     if (aux.heatmap != null) {
-        showHeatmap(aux.heatmap, infoId);
+        const heatmapId = infoId + "_heatmap";
+        infoIdDiv.append($(`
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">Correlation</h2>
+  </div>
+  <div id=${heatmapId} class="panel-body">
+  </div>
+</div>`));
+        showHeatmap(aux.heatmap, heatmapId);
     }
     if (aux.upset != null) {
-        showUpset(aux.upset, infoId);
+        const upsetId = infoId + "_upset";
+        infoIdDiv.append($(`
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">Combinations overlap</h2>
+  </div>
+  <div id=${upsetId} class="panel-body" style="overflow-x: scroll;">
+  </div>
+</div>`));
+        showUpset(aux.upset, upsetId);
     }
 }
 

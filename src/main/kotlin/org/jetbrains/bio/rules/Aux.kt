@@ -20,9 +20,7 @@ import kotlin.math.roundToInt
 
 /**
  * Auxiliary info for visualization purposes.
- * TODO: optimize me!
  */
-
 interface Aux
 
 data class RuleAux(val rule: Combinations) : Aux
@@ -87,7 +85,7 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
         fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
                    combinations: Int = 100,
-                   maxCombinations: Int = 10000): Upset {
+                   maxCombinations: Int = 100_000): Upset {
             // Elements containing 0 should be on the top!
             val comparator = Comparator<UpsetRecord> { u1, u2 ->
                 return@Comparator when {
@@ -120,7 +118,8 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
             // Reorder labels
             val reordering = LinkedHashMap<Int, Int>()
             val topLabels = arrayListOf<String>()
-            val topCs = cs.sortedWith(comparator).map { c ->
+            // Will be reordered anyway by n
+            val topCs = cs.sortedByDescending { it.n }.map { c ->
                 UpsetRecord(c.id.map {
                     if (it !in reordering) {
                         reordering[it] = reordering.size
@@ -137,8 +136,8 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
 
 /**
  * Data class describing pairwise correlations cluster map
- * @param names list of binary predicates names over given database
- * @param data pairwise correlations
+ * @param tableData data required for D3JS visualization
+ * @param rootData dendrogram for clustering
  */
 data class HeatMap(val tableData: List<Map<String, Any>>?, val rootData: Map<String, *>) {
     companion object {
@@ -185,7 +184,6 @@ data class HeatMap(val tableData: List<Map<String, Any>>?, val rootData: Map<Str
                                     "value" to Rule(pI, pJ, database).correlation)
                         })
             }
-
             return HeatMap(tableData, rootData)
         }
     }
