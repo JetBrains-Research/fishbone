@@ -30,10 +30,6 @@ let criterion = "conviction";
 // Records grouped by Condition -> Target
 let groupedRecordsMap = {};
 
-// Graph
-let nodes = {};
-let edges = [];
-
 let spinner;
 
 
@@ -44,9 +40,8 @@ function initialize() {
         zIndex: 2000000000,
         left: '50%',
         top: '50%'
-    }).spin();
+    });
     $('#main-panel').append(spinner.el);
-    spinner.stop();
 
     // Bind render on change
     $('#target-filter').change(filterAndRender);
@@ -276,13 +271,13 @@ function runAnalysisOnLoadedData() {
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
     var miners = getMiners();
-    if (miners == "") {
+    if (miners === "") {
         $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
         return
     }
     window.myForm.append("miners", miners);
 
-    showProgress();
+    spinner.spin();
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "POST",
@@ -313,14 +308,6 @@ function runAnalysisOnLoadedData() {
     });
 }
 
-function showAlternativeAlgorithmResults() {
-    let dialog = $('#fpgrowth-alg-dialog');
-    if (dialog.dialog('isOpen') !== true) {
-        dialog.dialog("option", "width", DIALOG_WIDTH);
-    }
-    dialog.dialog('open');
-}
-
 function showFPGrowthResults() {
     let dialog = $('#fpgrowth-alg-dialog');
     if (dialog.dialog('isOpen') !== true) {
@@ -328,7 +315,7 @@ function showFPGrowthResults() {
     }
 
     var checkBox = document.getElementById("fpGrowthCheckbox");
-    if (checkBox.checked == true) {
+    if (checkBox.checked === true) {
         dialog.dialog('open');
     } else {
         dialog.dialog('close');
@@ -342,7 +329,7 @@ function showDecisionTreeResults() {
     }
 
     var checkBox = document.getElementById("decisionTreeCheckbox");
-    if (checkBox.checked == true) {
+    if (checkBox.checked === true) {
         dialog.dialog('open');
     } else {
         dialog.dialog('close');
@@ -358,11 +345,6 @@ function switchFishboneResults() {
         switchButton.val("Switch to Ripper");
         renderFishboneResults(fishboneResponse);
     }
-}
-
-function showProgress() {
-    spinner.spin();
-    $('#main-panel').append(spinner.el);
 }
 
 /**
@@ -381,7 +363,7 @@ function groupRecordsByConditionTarget() {
 
 
 function load(content) {
-    showProgress();
+    spinner.spin();
     $('#visualize-method').removeAttr('disabled');
     $('#target-filter').removeAttr('disabled');
     $('#correlation-filter-min').removeAttr('disabled');
@@ -414,7 +396,7 @@ function filter_record(r) {
  * Apply filters to loaded rules records
  */
 function filterAndRender() {
-    showProgress();
+    spinner.spin();
 
     const target = $('#target-filter').val().trim();
     if (target.length > 0) {
@@ -486,124 +468,6 @@ function edgeId(start, end) {
     return start + ":" + end;
 }
 
-function RULE_GRAPH_STYLE(line_type) {
-    return [
-        {
-            selector: "node",
-            style: {
-                "label": "data(label)",
-                "padding-top": ".25em", "padding-bottom": ".25em",
-                "padding-left": ".5em", "padding-right": ".5em",
-                "font-size": 10,
-                "width": "label",
-                "height": "label",
-                "text-valign": "center",
-                "text-halign": "center",
-                "shape": "roundrectangle",
-                "border-width": 1,
-            }
-        },
-        {
-            selector: "node.group",
-            style: {
-                "text-opacity": 0,
-                "background-opacity": 0,
-                "border-opacity": 0.2,
-            }
-        },
-        {
-            selector: "node.colored",
-            style: {
-                "color": "data(text_color)",
-                "background-color": "data(background_color)",
-                "border-color": "black",
-                "shape": "ellipse"
-            }
-        },
-        {
-            selector: "node.colored_not",
-            style: {
-                "color": "data(text_color)",
-                "background-color": "data(background_color)",
-                "border-color": "red",
-            }
-        },
-        {
-            selector: "node.highlighted",
-            style: {
-                "border-width": "5px",
-                "border-color": "red",
-            }
-        },
-        {
-            selector: "edge",
-            style: {
-                "width": 1,
-                "curve-style": line_type,
-            }
-        },
-        {
-            selector: "edge.highlighted",
-            style: {
-                'line-style': "dashed"
-            }
-        },
-        {
-            selector: "edge.not",
-            style: {
-                "line-color": "black",
-                "width": 2
-            }
-        },
-        {
-            selector: "edge.condition-target",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "green",
-                "target-arrow-color": "green",
-                "width": "data(width)"
-            }
-        },
-        {
-            selector: "edge.and",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "red",
-                "target-arrow-color": "red",
-                "width": "data(width)"
-            }
-        },
-        {
-            selector: "edge.missing-rule",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "gray",
-                "target-arrow-color": "gray",
-                "width": "data(width)",
-                "opacity": 0.3
-            }
-        },
-        {
-            selector: "edge.parent-child",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "blue",
-                "target-arrow-color": "blue",
-                "width": "data(width)"
-            }
-        },
-        {
-            selector: "edge.or",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "blue",
-                "target-arrow-color": "blue",
-                "width": "data(width)"
-            }
-        }
-    ];
-}
-
 /**
  * See https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
  */
@@ -622,7 +486,7 @@ function textColor(background) {
 function showInfoNode(node) {
     console.info("Information node: " + node.id);
     // Hack check for fish head
-    if (nodes[node.id].style.shape !== "polygon") {
+    if (!node.hasOwnProperty(CLASS_FISHBONE_HEAD)) {
         return
     }
     const target = node.label;
@@ -637,7 +501,7 @@ function showInfoNode(node) {
     if (targetAux.length === 0) {
         return
     }
-    showTargetInfo(targetAux[0].aux, infoId);
+    showInfoTarget(targetAux[0].aux, infoId);
     let dialog = $('#dialog');
     dialog.dialog('option', 'title', `? => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
@@ -648,7 +512,7 @@ function showInfoNode(node) {
 
 let vennIndex = 0;
 
-function showRuleInfo(combination, infoId) {
+function showInfoRule(combination, infoId) {
     let names = Object.entries(combination.names);
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
@@ -721,7 +585,7 @@ function showRuleInfo(combination, infoId) {
 
         div.selectAll("path")
             .style("stroke-opacity", 0)
-            .style("stroke", "#fff")
+            .style("stroke", "#000000")
             .style("stroke-width", 3);
 
         div.selectAll("g")
@@ -784,7 +648,7 @@ function showHeatmap(heatmap, infoId) {
         Math.max(10, 200 / heatmap.tableData.length));
 }
 
-function showTargetInfo(aux, infoId) {
+function showInfoTarget(aux, infoId) {
     let infoIdDiv = $(`#${infoId}`);
     if (aux.heatmap != null) {
         const heatmapId = infoId + "_heatmap";
@@ -812,10 +676,10 @@ function showTargetInfo(aux, infoId) {
     }
 }
 
-function toggleAuxInfo(e, infoId) {
+function toggleAux(e, infoId) {
     if (e.value === '+') {
         let r = recordsAuxMap[infoId];
-        showRuleInfo(r.aux.rule, infoId);
+        showInfoRule(r.aux.rule, infoId);
         e.value = '-'
     } else {
         $(`#${infoId}`).empty();
@@ -878,7 +742,7 @@ function showInfoEdge(edge) {
     <td>${r.confidence.toFixed(2)}</td>
     <td>${r[criterion].toFixed(2)}</td>
     <td>
-        <input type="button" onclick="toggleAuxInfo(this, '${infoId}');" value="+"/>
+        <input type="button" onclick="toggleAux(this, '${infoId}');" value="+"/>
     </td>
 </tr>
 <tr>
