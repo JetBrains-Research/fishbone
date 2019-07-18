@@ -3,17 +3,17 @@ package org.jetbrains.bio.util.chianti.model
 import org.apache.commons.csv.CSVRecord
 
 class ReferenceVariable(
-    name: String,
-    val min: Double,
-    val max: Double
+        name: String,
+        val min: Double,
+        val max: Double
 ) :
-    Variable(name, "") {
+        Variable(name, "") {
 
     fun getPredicates(): Map<String, (String) -> Boolean> {
         return mapOf(
-            "below_ref_$name" to isLowValue(),
-            "inside_ref_$name" to isNormalValue(),
-            "above_ref_$name" to isHighValue()
+                "below_ref_$name" to isLowValue(),
+                "inside_ref_$name" to isNormalValue(),
+                "above_ref_$name" to isHighValue()
         )
     }
 
@@ -22,7 +22,9 @@ class ReferenceVariable(
     private fun isNormalValue() = { it: String -> it.toDouble() in min..max }
 
     companion object {
-        fun fromCSVRecord(data: CSVRecord): ReferenceVariable =
-                ReferenceVariable(data[0], data[1].toDouble(), data[3].toDouble())
+        fun fromCSVRecord(data: CSVRecord): ReferenceVariable {
+            println(data)
+            return ReferenceVariable(data[0], data[1].toDouble(), data[3].toDouble())
+        }
     }
 }
