@@ -1,45 +1,45 @@
 "use strict";
 
 function renderGraph() {
+    spinner.spin();
     // Build graph
-    buildGraph();
+    const ne = buildGraph();
+
+    const nodes = ne[0];
+    const edges = ne[1];
 
     const container = $('#cy');
     container.empty();
-    container.hide();
 
     // Render
+    const elements = [].concat(Object.values(nodes), Object.values(edges));
+    if (window.hasOwnProperty("cy")) {
+        window.cy.removeData();
+    }
     const cy = window.cy = cytoscape({
         container: container,
-        elements: [].concat(Object.values(nodes), Object.values(edges)),
-        style: RULE_GRAPH_STYLE("unbundled-bezier").slice()
+        elements: elements,
+        layout: {
+            name: 'cose-bilkent',
+            animate: false,
+            randomize: true
+        },
+        style: GRAPH_STYLE,
+        minZoom: 0.1,
+        maxZoom: 10,
     });
     cy.on('tap', 'edge', function (evt) {
-        showInfoEdge(evt.cyTarget.data());
+        showInfoEdge(evt.target._private.data);
     });
     cy.on('tap', 'node', function (evt) {
-        showInfoNode(evt.cyTarget.data());
+        showInfoNode(evt.target._private.data);
     });
-    cy.startBatch();
-    cy.layout({
-        name: 'cose-bilkent',
-        animate: false,
-        start: () => {
-        },
-        stop: () => {
-            container.show();
-            spinner.stop();
-        },
-        // Nesting factor (multiplier) to compute ideal edge length for inter-graph edges
-        nestingFactor: 3,
-        fit: true
-    });
-    cy.endBatch();
+    spinner.stop();
 }
 
 function buildGraph() {
-    nodes = {};
-    edges = [];
+    const nodes = {};
+    const edges = {};
 
     function addNode(n) {
         console.info("NODE: " + n);
@@ -47,8 +47,10 @@ function buildGraph() {
         // Group nodes
         let n_group_id = not_n + "_group";
         nodes[n_group_id] = {
+            group: 'nodes',
             data: {
-                id: n_group_id
+                id: n_group_id,
+                label: ''
             },
             classes: CLASS_GROUP
         };
@@ -66,6 +68,7 @@ function buildGraph() {
                         background_color: palette[not_n],
                         parent: n_group_id
                     },
+                    group: 'nodes',
                     classes: classes
                 };
             } else {
@@ -76,8 +79,10 @@ function buildGraph() {
             addNode(not_n);
             let not_edge_id = edgeId(n, not_n);
             edges[not_edge_id] = {
+                group: 'nodes',
                 data: {
                     id: not_edge_id,
+                    label: "",
                     source: not_n,
                     target: n,
                     records: []
@@ -103,6 +108,7 @@ function buildGraph() {
             // Update width
             width = Math.max(width, edges[id].data.width);
             edges[id] = {
+                group: 'edges',
                 data: {
                     id: id,
                     source: start,
@@ -111,12 +117,10 @@ function buildGraph() {
                     width: width,
                 },
                 classes: classes,
-                style: {
-                    opacity: 0.3 + 0.5 * width / 5.0
-                }
             };
         } else {
             edges[id] = {
+                group: 'edges',
                 data: {
                     id: id,
                     source: start,
@@ -125,14 +129,12 @@ function buildGraph() {
                     width: width,
                 },
                 classes: classes,
-                style: {
-                    opacity: 0.3 + 0.5 * width / 5.0
-                }
             };
         }
     }
 
     function process(r, target, processed) {
+        // Ignore already processed
         if (processed.has(r.condition)) {
             return
         }
@@ -170,4 +172,102 @@ function buildGraph() {
             process(r, target, processed);
         }
     }
+    return [nodes, edges];
 }
+
+const GRAPH_STYLE = [
+    {
+        selector: "node",
+        style: {
+            "label": "data(label)",
+            "padding-top": ".25em", "padding-bottom": ".25em",
+            "padding-left": ".5em", "padding-right": ".5em",
+            "font-size": 11,
+            "width": "label",
+            "height": "label",
+            "text-valign": "center",
+            "text-halign": "center",
+            "border-width": 1,
+        }
+    },
+    {
+        selector: "node.group",
+        style: {
+            "text-opacity": 0,
+            "background-opacity": 0.1,
+            "border-opacity": 0.2,
+        }
+    },
+    {
+        selector: "node.colored",
+        style: {
+            "color": "data(text_color)",
+            "background-color": "data(background_color)",
+            "border-color": "black",
+            "shape": "ellipse"
+        }
+    },
+    {
+        selector: "node.colored_not",
+        style: {
+            "color": "data(text_color)",
+            "background-color": "data(background_color)",
+            "border-color": "red",
+        }
+    },
+    {
+        selector: "node.highlighted",
+        style: {
+            "border-width": "2px",
+            "border-color": "red",
+        }
+    },
+    {
+        selector: "edge",
+        style: {
+            "width": 1,
+            "curve-style": "unbundled-bezier",
+        }
+    },
+    {
+        selector: "edge.highlighted",
+        style: {
+            'line-style': "dashed"
+        }
+    },
+    {
+        selector: "edge.not",
+        style: {
+            "line-color": "black",
+            "width": 2
+        }
+    },
+    {
+        selector: "edge.condition-target",
+        style: {
+            "target-arrow-shape": "triangle-backcurve",
+            "line-color": "green",
+            "target-arrow-color": "green",
+            "width": "data(width)"
+        }
+    },
+    {
+        selector: "edge.missing-rule",
+        style: {
+            "target-arrow-shape": "triangle-backcurve",
+            "line-color": "gray",
+            "target-arrow-color": "gray",
+            "width": "data(width)",
+            "opacity": 0.3
+        }
+    },
+    {
+        selector: "edge.parent-child",
+        style: {
+            "target-arrow-shape": "triangle-backcurve",
+            "line-color": "blue",
+            "target-arrow-color": "blue",
+            "width": "data(width)"
+        }
+    },
+];
