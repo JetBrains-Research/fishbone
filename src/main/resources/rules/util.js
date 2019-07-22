@@ -268,11 +268,12 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
     var miners = getMiners();
     if (miners === "") {
-        $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
+        $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
         return
     }
     window.myForm.append("miners", miners);

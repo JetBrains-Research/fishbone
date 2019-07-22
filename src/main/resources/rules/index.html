@@ -108,6 +108,7 @@
             </select>
             <label id="significance-level-label" for="significance-level">Significance level:</label>
             <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1">
+            <input id="run-name" placeholder="run name"/>&nbsp;
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="runAnalysisOnLoadedData()"/>
 
@@ -144,6 +145,7 @@
                         document.getElementById("algorithms").style.display = "inline";
                         document.getElementById("algorithms-label").style.display = "inline";
                         document.getElementById("info-criterion").style.display = "inline";
+                        document.getElementById("run-name").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
                         document.getElementById("file-button").style.display = "none";
@@ -170,6 +172,7 @@
                         document.getElementById("algorithms").style.display = "none";
                         document.getElementById("algorithms-label").style.display = "none";
                         document.getElementById("info-criterion").style.display = "none";
+                        document.getElementById("run-name").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
                         document.getElementById("file-button").style.display = "inline";
