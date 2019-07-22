@@ -73,7 +73,7 @@ abstract class Experiment(private val outputFolder: String) {
                     miningAlgorithm to minerResults
                 }
                 .map { (miner, r) ->
-                    val filteredRules = statisticalSignificant(r, mineRulesRequest.significanceLevel, database)
+                    val filteredRules = statisticalSignificant(miner, r, mineRulesRequest.significanceLevel, database)
                     miner to filteredRules
                 }
                 .map { (miner, r) ->
@@ -108,14 +108,19 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> statisticalSignificant(
+            miner: MiningAlgorithm,
             mineResults: List<List<FishboneMiner.Node<V>>>,
             significanceLevel: Double?,
             database: List<V>
     ): List<List<FishboneMiner.Node<V>>> {
         return if (significanceLevel != null) {
             val filteredMineResult = mineResults.map { rules ->
-                rules.filter {
-                    ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
+                if (miner == MiningAlgorithm.FISHBONE) {
+                    // Filter out technical rule TRUE => target
+                    val technicalRule = rules.last()
+                    significantRules(rules.dropLast(1), significanceLevel, database) + technicalRule
+                } else {
+                    significantRules(rules, significanceLevel, database)
                 }
             }
             logger.info("Significant rules P < $significanceLevel: " +
@@ -123,6 +128,14 @@ abstract class Experiment(private val outputFolder: String) {
             filteredMineResult
         } else {
             mineResults
+        }
+    }
+
+    private fun <V> significantRules(
+            rules:  List<FishboneMiner.Node<V>>, significanceLevel: Double, database: List<V>
+    ): List<FishboneMiner.Node<V>> {
+        return rules.filter {
+            ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
         }
     }
 
