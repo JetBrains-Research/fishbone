@@ -54,6 +54,17 @@ function initialize() {
     $('#show-top-filter').change(filterAndRender);
     $('#visualize-method').change(filterAndRender);
 
+    $('#experiment-type').change(function() {
+        if ($(this).val() === 'GENOME') {
+            $("#genome-label").show()
+            $("#genome").show()
+        }
+        if ($(this).val() === 'CHIANTI') {
+            $("#genome-label").hide()
+            $("#genome").hide()
+        }
+    });
+
     // File chooser listener
     $('#file').change(function () {
         $('#decisiontree-alg-dialog-pane').empty();
@@ -186,8 +197,9 @@ function showFPGrowthTable(table) {
 }
 
 function renderFpGrowthAlgorithmResults(res) {
+    document.getElementById('filename-to-download').value = res["FP_GROWTH"];
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: res["FP_GROWTH"]},
         success: function (res2) {
@@ -221,8 +233,9 @@ function showDecisionTree(tree) {
 }
 
 function renderDecisionTreeAlgorithmsResults(res) {
+    document.getElementById('filename-to-download').value = res["DECISION_TREE"];
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: res["DECISION_TREE"]},
         success: function (res3) {
@@ -236,11 +249,12 @@ function renderDecisionTreeAlgorithmsResults(res) {
 
 function renderFishboneResults(jsonPath) {
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: jsonPath},
         success: function (res) {
             load(JSON.stringify(res));
+
         },
         error: function (error) {
             console.log(error);
@@ -268,18 +282,26 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("genome", document.getElementById('genome').value.toLowerCase());
+    window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
+    window.myForm.append("topRules", document.getElementById("topRules").value);
+    window.myForm.append("exploratoryFraction", document.getElementById("exploratoryFraction").value);
+    window.myForm.append("nSampling", document.getElementById("nSampling").value);
+    window.myForm.append("samplingStrategy", document.getElementById("samplingStrategy").value);
+    window.myForm.append("alphaHoldout", document.getElementById("alphaHoldout").value);
+    window.myForm.append("alphaFull", document.getElementById("alphaFull").value);
     var miners = getMiners();
     if (miners === "") {
-        $.notify('Np one algorithm was selected', {className: "error", position: 'bottom right'});
+        $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
         return
     }
     window.myForm.append("miners", miners);
 
     spinner.spin();
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "POST",
         data: window.myForm,
         processData: false,
@@ -289,6 +311,7 @@ function runAnalysisOnLoadedData() {
                 $('#fishboneSwitch').val("Switch to Ripper");
 
                 fishboneResponse = response["FISHBONE"];
+                document.getElementById('filename-to-download').value = fishboneResponse;
                 renderFishboneResults(fishboneResponse);
             }
             if (response["FP_GROWTH"] != null) {
@@ -306,6 +329,33 @@ function runAnalysisOnLoadedData() {
             console.log(errResponse);
         }
     });
+}
+
+function downloadFile() {
+    let jsonPath = document.getElementById('filename-to-download').value;
+    let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "GET",
+        data: {filename: jsonPath, experiment: experiment},
+        success: function(res) {
+            let nameParts = jsonPath.split(".");
+            let type = nameParts.pop();
+            let name = nameParts.pop();
+            downloadTextFile(JSON.stringify(res), name + "." + type);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+// TODO: check
+function downloadTextFile(text, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL( new Blob([text]) );
+    a.download = name;
+    a.click();
 }
 
 function showFPGrowthResults() {

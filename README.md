@@ -12,59 +12,47 @@ Fishone is a client-server application with HTTP API and web UI.
 
 # Requirements
  - Java 1.8
- - Gradle >= 4.10
- - IntelliJ IDEA >= 2018
-
-# Run
+ - Gradle >= 5.51
+ 
+# Build
 Clone repository files:
 
     git clone https://github.com/JetBrains-Research/fishbone.git
     
+To build project use the following gradle command:
+
+    gradle shadowJar 
    
-Import project as Gradle project in IntelliJ IDEA. (For details see: https://www.jetbrains.com/help/idea/gradle.html) 
+This command will create executable jar file with name 
+    
+    fishbone-{version}.build.jar
 
-To run service create run configuration in IntelliJ IDEA:
-![alt text](src/main/resources/readme/run_configuration.png "Run configuration") <br/>
-The following parameters must be specified:
-- main class: org.jetbrains.bio.FishboneApp
-- VM options: -Dgenomes.path={path_to_empty_folder_to_store_genomes}
-- Program arguments: --port {port to run server; default: 8080} --output {path to output folder}
+# Run
+To run service use the following command:
+    
+    java -Dgenomes.path={path_to_empty_folder_to_store_genomes} -jar fishbone-{version}.build.jar
 
-Use run configuration in Debug mode. 
+Optional program options are:
+- --port {port to run server; default: 8080}
+- --output {path to output folder}
 
-# Server API
-## POST /rules
-The endpoint is used to extract patterns from data files using different algorithms.
-Request body (form-data):
 
-    experiment : (text); name of experiment to run on files (CIOFANI - experiment with files from Ciofani's article, CHIANTI - experiment with InChianti data files)
-    predicates : (file); files with predicates
-    database : (file); file with database
-    miners : (array of text); names of algorithms to use (supported: fishbone, fp-growth, tree)
-    target : (file, optional); file with target predicate
-
-Returns (json):
-
-    fishbone : (text); path to result file for fishbone algorithm
-    fp-growth : (text); path to result file for fp-growth algorithm
-    tree : (text); path to result file for decision tree algorithm
-
-## GET /rules?filename={file}
-The endpoint to load result files.
-Parameters:
-
-    filename : full path to file
-
-Returns:
-file from specified path
-
-# Web UI
+# Usage
 Web UI consists of two main parts: running analysis and visualize results from local files.
 
 To run analysis use the following part:
-![alt text](src/main/resources/readme/service_ui_1.png "Run analysis UI")
-Predicates files, database file and experiment type must be specified to run Fishbone algorithm. Checkboxes on the right side could be also used to run alternative algorithms.
+![alt text](src/main/resources/readme/fishbone_ui_1.png "Run analysis UI")
+Predicates files, database file, experiment type and objective function must be specified to run Fishbone algorithm. Checkboxes on the right side could be also used to run alternative algorithms.
 
 To load results use the following part:
- ![alt text](src/main/resources/readme/service_ui_2.png "Load results UI")
+ ![alt text](src/main/resources/readme/fishbone_ui_2.png "Load results UI")
 Local result files for different algorithms could be selected to visualize.
+
+# Service algorithms
+
+This service implements a novel approach to mine association rules within specified data. <br/>
+It also implements filtering of unproductive rules according to 'improvement' metric (see: https://link.springer.com/article/10.1023/A:1009895914772)
+with corresponding significance check. Significance check is done using holdout approach (see: https://link.springer.com/article/10.1007/s10994-007-5006-x). <br/>
+The following scheme represents rule mining workflow: 
+ 
+ ![alt text](src/main/resources/readme/stat.png "Workflow")

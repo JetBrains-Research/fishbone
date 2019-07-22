@@ -59,7 +59,7 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
-<body onload="initialize()">
+<body onload="initialize(); runAnalysis({checked: true})">
 
 <div id="dialog" title="Information">
     <div id="dialog-pane"></div>
@@ -84,99 +84,102 @@
                 Load result files
             </label>
 
-            <br>
-            <label id="predicates-file-label" for="predicates-file-button">Predicates</label>
-            <input id="predicates-file" type="file" style="display: none" multiple="multiple"/>
-            <input id="predicates-file-button" type="button" class="btn btn-primary" value="Load"
-                   onclick="$('#predicates-file').click();"/>
-            <label id="bed-database-file-label" for="bed-database-file-button">Database</label>
-            <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
-            <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load"
-                   onclick="$('#bed-database-file').click();"/>
-            <label id="targets-file-label" for="targets-file-button">Targets</label>
-            <input id="targets-file" type="file" style="display: none" multiple="multiple"/>
-            <input id="targets-file-button" type="button" class="btn btn-primary" value="Load"
-                   onclick="$('#targets-file').click();"/>
-            <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
-            <select id="experiment-type" name="name" required>
-                <option value="CIOFANI" selected="selected">CIOFANI</option>
-                <option value="CHIANTI">CHIANTI</option>
-            </select>
-            <select id="info-criterion">
-                <option value="conviction">conviction</option>
-                <option value="loe">loe</option>
-            </select>
-            <label id="significance-level-label" for="significance-level">Significance level:</label>
-            <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1">
-            <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
-                   onclick="runAnalysisOnLoadedData()"/>
+            <div id="run-analysis">
+                <div>
+                    <label id="predicates-file-label" for="predicates-file-button">Predicates</label>
+                    <input id="predicates-file" type="file" style="display: none" multiple="multiple"/>
+                    <input id="predicates-file-button" type="button" class="btn btn-primary" value="Load"
+                           onclick="$('#predicates-file').click();"/>
+                    <label id="bed-database-file-label" for="bed-database-file-button">Database</label>
+                    <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
+                    <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load"
+                           onclick="$('#bed-database-file').click();"/>
+                    <label id="targets-file-label" for="targets-file-button">Targets</label>
+                    <input id="targets-file" type="file" style="display: none" multiple="multiple"/>
+                    <input id="targets-file-button" type="button" class="btn btn-primary" value="Load"
+                           onclick="$('#targets-file').click();"/>
+                    <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
+                    <select id="experiment-type" name="name" required>
+                        <option value="GENOME" selected="selected">GENOME</option>
+                        <option value="CHIANTI">CHIANTI</option>
+                    </select>
+                    <label id="genome-label" for="genome">Genome:</label>
+                    <select id="genome" name="name">
+                        <option value="mm10" selected="selected">mm10</option>
+                        <option value="mm9">mm9</option>
+                        <option value="hg38">hg38</option>
+                        <option value="hg19">hg19</option>
+                    </select>
+                    <select id="info-criterion">
+                        <option value="conviction">conviction</option>
+                        <option value="loe">loe</option>
+                    </select>
+                    <input id="run-name" placeholder="run name"/>&nbsp;
+                    <label id="port-label" for="port">Port:</label>
+                    <input type="number" id="port" name="port" value="8080">
+                    <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
+                           onclick="runAnalysisOnLoadedData()"/>
+                </div>
 
+                <div style="padding-top: 5px">
+                    <label id="topRules-label" for="topRules"># top rules:</label>
+                    <input type="number" step="0.001" id="topRules" name="name" min="5" max="25" value="10">
+                    <label id="exploratoryFraction-label" for="exploratoryFraction">Exploratory fraction:</label>
+                    <input type="number" step="0.1" id="exploratoryFraction" name="name" min="0.1" max="1.0" value="0.5">
+                    <label id="nSampling-label" for="nSampling"># sampling:</label>
+                    <input type="number" step="10" id="nSampling" name="name" min="0" max="1000" value="150">
+                    <label id="samplingType-label" for="samplingStrategy">Sampling type:</label>
+                    <select id="samplingStrategy" name="name" required>
+                        <option value="NONE" selected="selected">NONE</option>
+                        <option value="UPSAMPLING">UPSAMPLING</option>
+                        <option value="DOWNSAMPLING">DOWNSAMPLING</option>
+                    </select>
+                    <label id="significance-level-label" for="significance-level">Alpha (exploratory):</label>
+                    <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1" value="0.05">
+                    <label id="alphaHoldout-label" for="alphaHoldout">Alpha (holdout):</label>
+                    <input type="number" step="0.001" id="alphaHoldout" name="name" min="0.001" max="1" value="0.2">
+                    <label id="alphaFull-label" for="alphaFull">Alpha (full):</label>
+                    <input type="number" step="0.001" id="alphaFull" name="name" min="0.001" max="1" value="0.2">
+                </div>
+            </div>
 
-            <label id="filename" style="display: none">Fishbone</label>
-            <input id="file" type="file" accept=".json" style="display: none"/>
-            <input id="file-button" type="button" class="btn btn-primary" value="Load *.json" style="display: none"
-                   onclick="$('#file').click();"/>
+            <div id="load-files" style="display: none">
+                <label id="filename" style="display: inline">Fishbone</label>
+                <input id="file" type="file" accept=".json" style="display: none"/>
+                <input id="file-button" type="button" class="btn btn-primary" value="Load *.json" style="display: inline"
+                       onclick="$('#file').click();"/>
 
-            <label id="tree-filename" style="display: none">Tree</label>
-            <input id="tree-file" type="file" accept=".dot" style="display: none"/>
-            <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot" style="display: none"
-                   onclick="$('#tree-file').click();"/>
+                <label id="tree-filename" style="display: inline">Tree</label>
+                <input id="tree-file" type="file" accept=".dot" style="display: none"/>
+                <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot" style="display: inline"
+                       onclick="$('#tree-file').click();"/>
 
-            <label id="fpgrowth-filename" style="display: none">FP-growth</label>
-            <input id="fpgrowth-file" type="file" accept=".txt" style="display: none"/>
-            <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt" style="display: none"
-                   onclick="$('#fpgrowth-file').click();"/>
+                <label id="fpgrowth-filename" style="display: inline">FP-growth</label>
+                <input id="fpgrowth-file" type="file" accept=".txt" style="display: none"/>
+                <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt" style="display: inline"
+                       onclick="$('#fpgrowth-file').click();"/>
 
+                <input id="filename-to-download" class="form-control" placeholder="filename to dowload"/>
+                <label id="experiment-type-label-download" for="experiment-type">Experiment type:</label>
+                <select id="experiment-type-download" name="name" required>
+                    <option value="GENOME" selected="selected">GENOME</option>
+                    <option value="CHIANTI">CHIANTI</option>
+                </select>
+                <input id="download-file-button" type="button" class="btn btn-primary" value="Download" style="display: inline"
+                       onclick="downloadFile();"/>
+            </div>
             <script>
                 function runAnalysis(x) {
                     if (x.checked) {
-                        document.getElementById("predicates-file-button").style.display = "inline";
-                        document.getElementById("predicates-file-label").style.display = "inline";
-                        document.getElementById("bed-database-file-button").style.display = "inline";
-                        document.getElementById("bed-database-file-label").style.display = "inline";
-                        document.getElementById("targets-file-button").style.display = "inline";
-                        document.getElementById("targets-file-label").style.display = "inline";
-                        document.getElementById("run-analysis-button").style.display = "inline";
-                        document.getElementById("experiment-type-label").style.display = "inline";
-                        document.getElementById("experiment-type").style.display = "inline";
-                        document.getElementById("significance-level-label").style.display = "inline";
-                        document.getElementById("significance-level").style.display = "inline";
-                        document.getElementById("algorithms").style.display = "inline";
-                        document.getElementById("algorithms-label").style.display = "inline";
-                        document.getElementById("info-criterion").style.display = "inline";
-
-                        document.getElementById("filename").style.display = "none";
-                        document.getElementById("file-button").style.display = "none";
-                        document.getElementById("tree-filename").style.display = "none";
-                        document.getElementById("tree-file-button").style.display = "none";
-                        document.getElementById("fpgrowth-filename").style.display = "none";
-                        document.getElementById("fpgrowth-file-button").style.display = "none";
+                        $("#run-analysis").show()
+                        $("#load-files").hide()
                     }
                 }
 
                 function loadResultFile(x) {
                     if (x.checked) {
-                        document.getElementById("predicates-file-button").style.display = "none";
-                        document.getElementById("predicates-file-label").style.display = "none";
-                        document.getElementById("bed-database-file-button").style.display = "none";
-                        document.getElementById("bed-database-file-label").style.display = "none";
-                        document.getElementById("targets-file-button").style.display = "none";
-                        document.getElementById("targets-file-label").style.display = "none";
-                        document.getElementById("run-analysis-button").style.display = "none";
-                        document.getElementById("experiment-type-label").style.display = "none";
-                        document.getElementById("experiment-type").style.display = "none";
-                        document.getElementById("significance-level-label").style.display = "none";
-                        document.getElementById("significance-level").style.display = "none";
-                        document.getElementById("algorithms").style.display = "none";
-                        document.getElementById("algorithms-label").style.display = "none";
-                        document.getElementById("info-criterion").style.display = "none";
-
-                        document.getElementById("filename").style.display = "inline";
-                        document.getElementById("file-button").style.display = "inline";
-                        document.getElementById("tree-filename").style.display = "inline";
-                        document.getElementById("tree-file-button").style.display = "inline";
-                        document.getElementById("fpgrowth-filename").style.display = "inline";
-                        document.getElementById("fpgrowth-file-button").style.display = "inline";
+                        $("#run-analysis").hide()
+                        $("#load-files").show()
                     }
                 }
             </script>
