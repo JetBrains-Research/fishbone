@@ -25,8 +25,6 @@ class DecisionTreeMiner : WekaMiner() {
                 return emptyList()
             }
 
-            logger.info("Processing decision tree")
-
             val instancesByTarget = createInstances(database, predicates, targets, predicateCheck)
             val predicatesByName = (predicates + targets).associateBy { it.name() }
 

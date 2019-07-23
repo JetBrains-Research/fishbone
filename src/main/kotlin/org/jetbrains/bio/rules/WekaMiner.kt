@@ -29,7 +29,7 @@ abstract class WekaMiner: Miner {
             name: String = ExperimentHelper.timestamp()
     ): Instances {
         val classAttribute = Attribute(target.name(), listOf("1.0", "0.0"))
-        val attributes = predicates.map { predicate -> Attribute(predicate.name()) } + classAttribute
+        val attributes = predicates.map { predicate -> Attribute(predicate.name(), listOf("1.0", "0.0")) } + classAttribute
         val instances = Instances(name, ArrayList(attributes), capacity)
         instances.setClassIndex(instances.numAttributes() - 1)
         return instances

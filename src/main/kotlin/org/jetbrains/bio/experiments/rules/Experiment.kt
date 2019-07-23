@@ -6,9 +6,9 @@ import org.jetbrains.bio.api.MiningAlgorithm
 import org.jetbrains.bio.dataset.DataConfig
 import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.Rule
 import org.jetbrains.bio.rules.RulesLogger
-import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.decisiontree.DecisionTreeMiner
 import org.jetbrains.bio.rules.fpgrowth.FPGrowthMiner
 import org.jetbrains.bio.rules.ripper.RipperMiner
@@ -98,7 +98,7 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> getObjectiveFunction(name: String): (Rule<V>) -> Double {
-        logger.info("Fishbone algorithm will use $name")
+        logger.info("Criterion to use: $name")
         return when (name) {
             "conviction" -> Rule<V>::conviction
             "loe" -> Rule<V>::loe
@@ -132,7 +132,7 @@ abstract class Experiment(private val outputFolder: String) {
     }
 
     private fun <V> significantRules(
-            rules:  List<FishboneMiner.Node<V>>, significanceLevel: Double, database: List<V>
+            rules: List<FishboneMiner.Node<V>>, significanceLevel: Double, database: List<V>
     ): List<FishboneMiner.Node<V>> {
         return rules.filter {
             ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
