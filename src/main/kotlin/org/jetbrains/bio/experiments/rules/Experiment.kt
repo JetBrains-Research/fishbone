@@ -12,21 +12,18 @@ import org.jetbrains.bio.rules.RulesLogger
 import org.jetbrains.bio.rules.decisiontree.DecisionTreeMiner
 import org.jetbrains.bio.rules.fpgrowth.FPGrowthMiner
 import org.jetbrains.bio.rules.ripper.RipperMiner
-import org.jetbrains.bio.rules.validation.ChiSquaredStatisticalSignificance
+import org.jetbrains.bio.rules.validation.RuleSignificanceCheck
 import org.jetbrains.bio.util.ExperimentHelper
 import org.jetbrains.bio.util.div
 import org.jetbrains.bio.util.toPath
 import java.awt.Color
 import java.nio.file.Path
-import java.util.*
 
 /**
  * Experiment class provides methods for data analysis.
  * Abstract parts are related to specific preprocessing steps of data for different experiment types.
  */
 abstract class Experiment(private val outputFolder: String) {
-
-    class PredicateInfo(val id: Int, val name: String, val satisfactionOnIds: BitSet)
 
     /**
      * Main method to run analysis on specified data files. Should be implemented in the following manner:
@@ -127,6 +124,7 @@ abstract class Experiment(private val outputFolder: String) {
                     "${filteredMineResult.flatten().size} / ${mineResults.flatten().size}")
             filteredMineResult
         } else {
+            logger.debug("Ignored significance testing")
             mineResults
         }
     }
@@ -134,9 +132,7 @@ abstract class Experiment(private val outputFolder: String) {
     private fun <V> significantRules(
             rules: List<FishboneMiner.Node<V>>, significanceLevel: Double, database: List<V>
     ): List<FishboneMiner.Node<V>> {
-        return rules.filter {
-            ChiSquaredStatisticalSignificance.test(it.rule, database) < significanceLevel
-        }
+        return rules.filter { RuleSignificanceCheck.test(it.rule, database) < significanceLevel }
     }
 
     private fun getOutputFilePath(miner: MiningAlgorithm, runName: String = ""): Path {

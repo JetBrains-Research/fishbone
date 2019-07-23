@@ -2,7 +2,6 @@ package org.jetbrains.bio.rules
 
 import org.jetbrains.bio.predicates.Predicate
 
-// TODO: add Fishbone miner to successors
 interface Miner {
     fun <V> mine(
             database: List<V>,
