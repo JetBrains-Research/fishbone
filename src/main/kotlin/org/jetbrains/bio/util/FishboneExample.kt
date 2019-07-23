@@ -3,8 +3,6 @@ package org.jetbrains.bio.util
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.Logger
-import org.jetbrains.bio.dataset.DataConfig
-import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.genome.Genome
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
@@ -14,7 +12,6 @@ import org.jetbrains.bio.predicates.OverlapPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.RulesLogger
-import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CopyOnWriteArrayList
@@ -31,7 +28,7 @@ Arguments example:
 /rule_mining
  */
 class FishboneExample(private val databaseUrl: String, private val sourceFilesUrls: List<String>,
-                      private val targetFilesUrls: List<String>, private val outputFolder: String)  {
+                      private val targetFilesUrls: List<String>, private val outputFolder: String) {
 
     private fun createPredicates(genomeQuery: GenomeQuery, filesUrls: List<String>):
             CopyOnWriteArrayList<Predicate<Location>> {
@@ -69,9 +66,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                 targetPredicates.map { sourcePredicates to it },
                 { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
 
-        rulesLogger.done(rulesLogger.path.toString().replace(".csv", ".json").toPath(),
-            generatePalette(), "conviction"
-        )
+        rulesLogger.done("conviction")
         LOG.info("Rules saved to $rulesResults")
     }
 
@@ -90,39 +85,12 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
                 accepts("outputFolder", "Output folder").withRequiredArg()
             }.parse(args) { options ->
                 FishboneExample(
-                    options.valueOf("databaseUrl").toString(),
-                    options.valueOf("sourceFilesUrls").toString().split(" "),
-                    options.valueOf("targetFilesUrls").toString().split(" "),
-                    options.valueOf("outputFolder").toString()
+                        options.valueOf("databaseUrl").toString(),
+                        options.valueOf("sourceFilesUrls").toString().split(" "),
+                        options.valueOf("targetFilesUrls").toString().split(" "),
+                        options.valueOf("outputFolder").toString()
                 ).doCalculations()
             }
-        }
-
-        fun generatePalette(): (String) -> Color = { name ->
-            val modification = modification(name)
-            if (modification != null) {
-                when (modification.toLowerCase()) {
-                    "h3k27ac" -> Color(255, 0, 0)
-                    "h3k27me3" -> Color(153, 0, 255)
-                    "h3k4me1" -> Color(255, 153, 0)
-                    "h3k4me3" -> Color(51, 204, 51)
-                    "h3k36me3" -> Color(0, 0, 204)
-                    "h3k9me3" -> Color(255, 0, 255)
-                    DataType.METHYLATION.name.toLowerCase() -> Color.green
-                    DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
-                    else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
-                }
-            } else {
-                Color.WHITE
-            }
-        }
-
-        private fun modification(predicate: String, configuration: DataConfig? = null): String? {
-            val m = "H3K\\d{1,2}(?:ac|me\\d)".toRegex(RegexOption.IGNORE_CASE).find(predicate) ?: return null
-            if (configuration != null && m.value !in configuration.dataTypes()) {
-                return null
-            }
-            return m.value
         }
     }
 }

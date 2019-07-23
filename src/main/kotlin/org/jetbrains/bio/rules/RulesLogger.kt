@@ -5,12 +5,15 @@ import com.google.gson.GsonBuilder
 import org.apache.commons.csv.CSVFormat.DEFAULT
 import org.apache.commons.csv.CSVRecord
 import org.apache.log4j.Logger
+import org.jetbrains.bio.dataset.DataConfig
+import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.OrPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.predicates.PredicateParser
 import org.jetbrains.bio.util.bufferedWriter
 import org.jetbrains.bio.util.deleteIfExists
+import org.jetbrains.bio.util.toPath
 import org.jetbrains.bio.util.write
 import java.awt.Color
 import java.io.IOException
@@ -90,13 +93,46 @@ class RulesLogger(val path: Path?, vararg params: String) {
         }
     }
 
-    fun done(jsonPath: Path?, palette: (String) -> Color, criterion: String) {
+    fun done(criterion: String, palette: (String) -> Color = generatePalette()) {
         if (path != null) {
             csvPrinter.close()
         }
-        if (jsonPath != null) {
-            jsonPath.deleteIfExists()
-            jsonPath.write(getJson(palette, criterion))
+        val jsonPath = path.toString().replace(".csv", ".json").toPath()
+        jsonPath.deleteIfExists()
+        jsonPath.write(getJson(palette, criterion))
+    }
+
+    private fun generatePalette(): (String) -> Color = { name ->
+        val modification = modification(name)
+        if (modification != null) {
+            trackColor(modification)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun modification(predicate: String, configuration: DataConfig? = null): String? {
+        val m = "H3K\\d{1,2}(?:ac|me\\d)".toRegex(RegexOption.IGNORE_CASE).find(predicate) ?: return null
+        if (configuration != null && m.value !in configuration.dataTypes()) {
+            return null
+        }
+        return m.value
+    }
+
+    /**
+     * Default colors by dataTypes
+     */
+    private fun trackColor(dataTypeId: String): Color {
+        return when (dataTypeId.toLowerCase()) {
+            "H3K27ac".toLowerCase() -> Color(255, 0, 0)
+            "H3K27me3".toLowerCase() -> Color(153, 0, 255)
+            "H3K4me1".toLowerCase() -> Color(255, 153, 0)
+            "H3K4me3".toLowerCase() -> Color(51, 204, 51)
+            "H3K36me3".toLowerCase() -> Color(0, 0, 204)
+            "H3K9me3".toLowerCase() -> Color(255, 0, 255)
+            DataType.METHYLATION.name.toLowerCase() -> Color.green
+            DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
+            else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
         }
     }
 

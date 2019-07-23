@@ -3,20 +3,13 @@ package org.jetbrains.bio.experiments.rules
 import org.apache.log4j.Logger
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.MiningAlgorithm
-import org.jetbrains.bio.dataset.DataConfig
-import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner
-import org.jetbrains.bio.rules.Rule
+import org.jetbrains.bio.rules.Miner
 import org.jetbrains.bio.rules.RulesLogger
-import org.jetbrains.bio.rules.decisiontree.DecisionTreeMiner
-import org.jetbrains.bio.rules.fpgrowth.FPGrowthMiner
-import org.jetbrains.bio.rules.ripper.RipperMiner
 import org.jetbrains.bio.rules.validation.RuleSignificanceCheck
 import org.jetbrains.bio.util.ExperimentHelper
 import org.jetbrains.bio.util.div
-import org.jetbrains.bio.util.toPath
-import java.awt.Color
 import java.nio.file.Path
 
 /**
@@ -50,23 +43,18 @@ abstract class Experiment(private val outputFolder: String) {
             targets: List<Predicate<V>> = emptyList()
     ): MutableMap<MiningAlgorithm, String> {
         val runName = mineRulesRequest.runName.orEmpty()
+        logger.info("Started run: $runName")
+
+        val criterion = mineRulesRequest.criterion
+        logger.info("Objective function to use: $criterion")
 
         return mineRulesRequest.miners
                 .map { miningAlgorithm ->
                     logger.info("Processing $miningAlgorithm")
-                    val miner = when (miningAlgorithm) {
-                        MiningAlgorithm.FISHBONE -> FishboneMiner
-                        MiningAlgorithm.RIPPER -> RipperMiner()
-                        MiningAlgorithm.FP_GROWTH -> FPGrowthMiner()
-                        MiningAlgorithm.DECISION_TREE -> DecisionTreeMiner()
-                    }
-                    val minerResults = miner.mine(
-                            database,
-                            predicates,
-                            targets,
-                            ::predicateCheck,
-                            mapOf("objectiveFunction" to getObjectiveFunction<V>(mineRulesRequest.criterion))
-                    )
+
+                    val miner = Miner.getMiner(miningAlgorithm)
+                    val params = mapOf("objectiveFunction" to Miner.getObjectiveFunction<V>(criterion))
+                    val minerResults = miner.mine(database, predicates, targets, ::predicateCheck, params)
                     miningAlgorithm to minerResults
                 }
                 .map { (miner, r) ->
@@ -75,33 +63,18 @@ abstract class Experiment(private val outputFolder: String) {
                 }
                 .map { (miner, r) ->
                     val outputPath = getOutputFilePath(miner, runName)
-                    saveRulesToFile(r, mineRulesRequest.criterion, miner, mineRulesRequest.criterion, outputPath)
+                    saveRulesToFile(r, criterion, criterion, outputPath)
+                    logger.info("$miner rules saved to $outputPath")
                     miner to outputPath.toString().replace(".csv", ".json")
                 }
                 .toMap()
                 .toMutableMap()
     }
 
-    private fun <V> saveRulesToFile(
-            result: List<List<FishboneMiner.Node<V>>>, criterion: String, miner: MiningAlgorithm, runName: String, outputPath: Path
-    ) {
-        val rulesLogger = RulesLogger(outputPath)
-
-        result.forEach { rulesLogger.log(runName, it) }
-
-        val rulesPath = rulesLogger.path.toString().replace(".csv", ".json").toPath()
-        rulesLogger.done(rulesPath, generatePalette(), criterion)
-        logger.info("$miner rules saved to $outputPath")
-    }
-
-    private fun <V> getObjectiveFunction(name: String): (Rule<V>) -> Double {
-        logger.info("Criterion to use: $name")
-        return when (name) {
-            "conviction" -> Rule<V>::conviction
-            "loe" -> Rule<V>::loe
-            "correlation" -> Rule<V>::correlation
-            else -> Rule<V>::conviction
-        }
+    private fun <V> saveRulesToFile(rules: List<List<FishboneMiner.Node<V>>>, criterion: String, id: String, path: Path) {
+        val rulesLogger = RulesLogger(path)
+        rules.forEach { rulesLogger.log(id, it) }
+        rulesLogger.done(criterion)
     }
 
     private fun <V> statisticalSignificant(
@@ -137,39 +110,5 @@ abstract class Experiment(private val outputFolder: String) {
 
     private fun getOutputFilePath(miner: MiningAlgorithm, runName: String = ""): Path {
         return outputFolder / ("${runName}_${miner.label}_rules_${ExperimentHelper.timestamp()}.csv")
-    }
-
-    private fun generatePalette(): (String) -> Color = { name ->
-        val modification = modification(name)
-        if (modification != null) {
-            trackColor(modification)
-        } else {
-            Color.WHITE
-        }
-    }
-
-    private fun modification(predicate: String, configuration: DataConfig? = null): String? {
-        val m = "H3K\\d{1,2}(?:ac|me\\d)".toRegex(RegexOption.IGNORE_CASE).find(predicate) ?: return null
-        if (configuration != null && m.value !in configuration.dataTypes()) {
-            return null
-        }
-        return m.value
-    }
-
-    /**
-     * Default colors by dataTypes
-     */
-    private fun trackColor(dataTypeId: String): Color {
-        return when (dataTypeId.toLowerCase()) {
-            "H3K27ac".toLowerCase() -> Color(255, 0, 0)
-            "H3K27me3".toLowerCase() -> Color(153, 0, 255)
-            "H3K4me1".toLowerCase() -> Color(255, 153, 0)
-            "H3K4me3".toLowerCase() -> Color(51, 204, 51)
-            "H3K36me3".toLowerCase() -> Color(0, 0, 204)
-            "H3K9me3".toLowerCase() -> Color(255, 0, 255)
-            DataType.METHYLATION.name.toLowerCase() -> Color.green
-            DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
-            else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
-        }
     }
 }
