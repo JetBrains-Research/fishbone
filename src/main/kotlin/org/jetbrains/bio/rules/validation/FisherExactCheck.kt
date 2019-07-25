@@ -4,6 +4,10 @@ import com.google.common.math.BigIntegerMath
 import org.jetbrains.bio.rules.Rule
 import kotlin.math.min
 
+/**
+ * This class implements Fisher's exact statistical significance test
+ * (see: http://users.monash.edu/~webb/Files/dsp.pdf)
+ */
 internal class FisherExactCheck : RuleSignificanceCheck() {
 
     override fun <T> testRule(rule: Rule<T>, database: List<T>): Double {

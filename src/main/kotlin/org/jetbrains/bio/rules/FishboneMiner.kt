@@ -36,8 +36,6 @@ object FishboneMiner : Miner {
             params: Map<String, Any>
     ): List<List<Node<V>>> {
         try {
-            LOG.info("Processing fishbone")
-
             val sourcesToTargets = (if (targets.isNotEmpty()) targets else predicates).map { target ->
                 predicates.filter { it.name() != target.name() } to target
             }

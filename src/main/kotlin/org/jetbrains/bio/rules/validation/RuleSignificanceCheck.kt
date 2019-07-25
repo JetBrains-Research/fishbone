@@ -52,7 +52,7 @@ abstract class RuleSignificanceCheck {
             } else {
                 ChiSquaredCheck().testRule(rule, database)
                 // Fisher exact test is too strict for now. Uncomment later
-                //FisherExactCheck().testRule(rule, database)
+                // FisherExactCheck().testRule(rule, database)
             }
         }
 
