@@ -23,10 +23,10 @@ abstract class Experiment(private val outputFolder: String) {
     companion object {
         private const val TOP_RULES = 10
         private const val EXPLORATORY_FRACTION = 0.5
-        private const val N_SAMPLING = 25
+        private const val N_SAMPLING = 50
         private val SAMPLING_STRATEGY = SamplingStrategy.NONE
         private const val ALPHA_HOLDOUT = 0.2
-        private const val ALPHA_FULL = 0.5
+        private const val ALPHA_FULL = 0.2
     }
 
     /**

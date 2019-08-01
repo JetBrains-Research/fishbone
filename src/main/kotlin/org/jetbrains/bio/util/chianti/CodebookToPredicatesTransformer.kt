@@ -15,9 +15,7 @@ class CodebookToPredicatesTransformer(private val codebook: Codebook) {
                 when (variable) {
                     is NumericVariable -> variable.getPredicates()
                     is DateVariable -> variable.getPredicates()
-                    is EncodedVariable -> {
-                        variable.getPredicates()
-                    }
+                    is EncodedVariable -> variable.getPredicates()
                     else -> throw IllegalArgumentException("Unsupported variable type: $variable")
                 } as Map<String, (Any) -> Boolean>
             } else {

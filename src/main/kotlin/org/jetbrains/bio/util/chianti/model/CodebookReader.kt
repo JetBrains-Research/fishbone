@@ -15,7 +15,8 @@ class CodebookReader(private val codebookFilename: String) {
 
         val sheetData = getSheetData(rowIterator, emptyList()).map { data -> dropExperimentPrefix(data) }
         val variables = sheetData
-                .filter { variableInfo -> isIrrelevantFeature(variableInfo) }
+                .filter { variableInfo -> isNotIrrelevantFeature(variableInfo) }
+                .filter { variableInfo -> isNotRedundantFeature(variableInfo) }
                 .map { variableInfo ->
                     when {
                         variableInfo.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(variableInfo)
@@ -37,8 +38,11 @@ class CodebookReader(private val codebookFilename: String) {
         }.toMap()
     }
 
-    private fun isIrrelevantFeature(data: Map<Int, List<String>>) =
+    private fun isNotIrrelevantFeature(data: Map<Int, List<String>>) =
             !IrrelevantFeature.labels().contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
+
+    private fun isNotRedundantFeature(data: Map<Int, List<String>>) =
+            !RedundantFeature.labels().contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
 
     private fun getSheetData(
             rowIterator: Iterator<Row>, data: List<Map<Int, List<String>>>

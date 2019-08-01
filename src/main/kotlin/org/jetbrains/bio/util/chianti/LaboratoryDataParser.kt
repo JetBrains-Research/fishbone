@@ -31,7 +31,7 @@ class LaboratoryDataParser(
 
     fun readReferences(): List<CSVRecord> {
         val refReader = Files.newBufferedReader(referenceFilename.toPath())
-        val references = CSVParser(refReader, CSVFormat.DEFAULT.withDelimiter(',')).map { csvRecord -> csvRecord }
+        val references = CSVParser(refReader!!, CSVFormat.DEFAULT.withDelimiter(',')).map { csvRecord -> csvRecord }
         val sexRefReader = Files.newBufferedReader(sexReferenceFilename.toPath())
         val sexReferences = CSVParser(sexRefReader, CSVFormat.DEFAULT.withDelimiter(',')).map { csvRecord -> csvRecord }
         return references + sexReferences
@@ -127,7 +127,7 @@ class LaboratoryDataParser(
                             ) &&
                             !(column == "AGEL" && !(cell.toString().toDouble() in 65.0..75.0 ||
                                     cell.toString().toDouble() < 40)) &&
-    //                                        !(column == "SEX" && cell.toString().toInt() == 2) &&
+                                            !(column == "SEX" && cell.toString().toInt() == 1) &&
                             predicate(cellValue)
                 }
                 .keys
@@ -156,7 +156,7 @@ class LaboratoryDataParser(
 
     companion object {
         private const val defaultDataOutputFolder =
-                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp5_female"
+                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp10_female"
 
         @JvmStatic
         fun main(args: Array<String>) {
