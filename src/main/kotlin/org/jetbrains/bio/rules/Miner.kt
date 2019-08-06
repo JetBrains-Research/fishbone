@@ -1,6 +1,7 @@
 package org.jetbrains.bio.rules
 
 import org.jetbrains.bio.api.MiningAlgorithm
+import org.jetbrains.bio.predicates.NotPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.decisiontree.DecisionTreeMiner
 import org.jetbrains.bio.rules.fpgrowth.FPGrowthMiner
@@ -32,6 +33,14 @@ interface Miner {
                 MiningAlgorithm.FP_GROWTH -> FPGrowthMiner()
                 MiningAlgorithm.DECISION_TREE -> DecisionTreeMiner()
             }
+        }
+
+        fun <V> heatmap(database: List<V>, target: Predicate<V>, rules: Collection<FishboneMiner.Node<V>>): HeatMap {
+            return HeatMap.of(database, listOf(target) + rules.map { it.element }.filterNot { it is NotPredicate })
+        }
+
+        fun <V> upset(database: List<V>, target: Predicate<V>, rules: Collection<FishboneMiner.Node<V>>): Upset {
+            return Upset.of(database, rules.map { it.element }.filterNot { it is NotPredicate }, target)
         }
     }
 }

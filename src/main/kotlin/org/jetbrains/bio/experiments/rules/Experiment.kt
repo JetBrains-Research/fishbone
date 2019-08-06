@@ -4,6 +4,7 @@ import org.apache.log4j.Logger
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.MiningAlgorithm
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.predicates.TruePredicate
 import org.jetbrains.bio.rules.*
 import org.jetbrains.bio.rules.sampling.SamplingStrategy
 import org.jetbrains.bio.rules.validation.adjustment.BenjaminiHochbergAdjustment
@@ -100,7 +101,8 @@ abstract class Experiment(private val outputFolder: String) {
                             .map { (miner, rules) -> miner to rules.sortedWith(RulesBPQ.comparator(Rule<V>::loe)) }
                             .toList()
 
-                    testRules(bestExploredRules, alphaFullDb, database)
+                    val significantRules = testRules(bestExploredRules, alphaFullDb, database)
+                    updateRulesStatistics(significantRules, target, database)
                 }
                 .flatten()
                 .toList()
@@ -210,6 +212,43 @@ abstract class Experiment(private val outputFolder: String) {
             rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>, alpha: Double?, db: List<V>
     ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
         return rules.map { (miner, rules) -> miner to checkSignificance(miner, rules, alpha, db, true) }
+    }
+
+    private fun <V> updateRulesStatistics(
+            significantRules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>,
+            target: Predicate<V>,
+            database: List<V>
+    ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
+        val singleRules = mutableListOf<FishboneMiner.Node<V>>()
+        val updatedRules = significantRules
+                .map { (miner, rules) ->
+                    miner to rules.map { node ->
+                        val conditionPredicate = node.rule.conditionPredicate
+                        if (conditionPredicate !is TruePredicate && conditionPredicate.collectAtomics().size == 1) {
+                            singleRules.add(node)
+                        }
+                        newNode(node, database)
+                    }
+                }
+        val targetAux = if (singleRules.isNotEmpty()) {
+            TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
+        } else null
+        return updatedRules.map { (miner, rules) ->
+            miner to rules.map { node ->
+                val conditionPredicate = node.rule.conditionPredicate
+                if (conditionPredicate is TruePredicate) {
+                    FishboneMiner.Node(node.rule, node.element, node.parent, targetAux)
+                } else {
+                    node
+                }
+            }
+        }
+    }
+
+    private fun <V> newNode(node: FishboneMiner.Node<V>, database: List<V>): FishboneMiner.Node<V> {
+        val newRule = Rule(node.rule.conditionPredicate, node.rule.targetPredicate, database)
+        val parentNode = if (node.parent != null) newNode(node.parent, database) else null
+        return FishboneMiner.Node(newRule, node.element, parentNode)
     }
 
     private fun <V> saveRulesToFile(rules: List<FishboneMiner.Node<V>>, criterion: String, id: String, path: Path) {

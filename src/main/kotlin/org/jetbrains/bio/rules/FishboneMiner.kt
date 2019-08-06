@@ -48,7 +48,8 @@ object FishboneMiner : Miner {
                     maxComplexity = params.getOrDefault("maxComplexity", 6) as Int,
                     function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
                     or = true,
-                    negate = true
+                    negate = true,
+                    buildClusters = false
             )
         } catch (t: Throwable) {
             t.printStackTrace()
@@ -127,7 +128,8 @@ object FishboneMiner : Miner {
                           topPerComplexity: Int = TOP_PER_COMPLEXITY,
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
-                          klDelta: Double = KL_DELTA): List<Node<T>> {
+                          klDelta: Double = KL_DELTA,
+                          buildClusters: Boolean = true): List<Node<T>> {
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
         val best = mineByComplexity(predicates, target, database,
@@ -138,13 +140,11 @@ object FishboneMiner : Miner {
         // NOTE[shpynov] hacks adding target information to all the nodes
         val singleRules = best[1]
 
-        // Pairwise correlations
-        val heatmap = HeatMap.of(database,
-                listOf(target) + singleRules.map { it.element }.filterNot { it is NotPredicate })
-        // Collect all the top level predicates combinations
-        val upset = Upset.of(database,
-                singleRules.map { it.element }.filterNot { it is NotPredicate },
-                target)
+        // We don't need calculate additional statistics in case of sampling
+        val targetAux = if (buildClusters && singleRules.isNotEmpty()) {
+            // Collect pairwise correlations and all the top level predicates combinations
+            TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
+        } else null
 
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
         result.map {
@@ -157,7 +157,7 @@ object FishboneMiner : Miner {
         MultitaskProgress.finishTask(target.name())
         return result +
                 // Technical rule TRUE => target
-                listOf(Node(Rule(TruePredicate(), target, database), TruePredicate(), null, TargetAux(heatmap, upset)))
+                listOf(Node(Rule(TruePredicate(), target, database), TruePredicate(), null, targetAux))
     }
 
 
@@ -194,7 +194,8 @@ object FishboneMiner : Miner {
                  topPerComplexity: Int = TOP_PER_COMPLEXITY,
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA): List<List<Node<T>>> {
+                 klDelta: Double = KL_DELTA,
+                 buildClusters: Boolean): List<List<Node<T>>> {
         LOG.info("Rules mining: $title")
         toMine.forEach { (conditions, target) ->
             // For each complexity level and for aux info computation
@@ -206,7 +207,7 @@ object FishboneMiner : Miner {
             val mineResult = mine(conditions, target, database,
                     maxComplexity, and, or, negate,
                     topPerComplexity, function,
-                    functionDelta, klDelta)
+                    functionDelta, klDelta, buildClusters)
             logFunction(mineResult)
             mineResult
         }

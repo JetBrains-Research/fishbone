@@ -64,7 +64,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
         FishboneMiner.mine("All => All @ ${FilenameUtils.getName(databaseUrl)} ${genomeQuery.id}",
                 database.toList(),
                 targetPredicates.map { sourcePredicates to it },
-                { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3)
+                { rulesLogger.log("${genomeQuery.id}_${FilenameUtils.getName(databaseUrl)}", it) }, 3, buildClusters = true)
 
         rulesLogger.done("conviction")
         LOG.info("Rules saved to $rulesResults")
