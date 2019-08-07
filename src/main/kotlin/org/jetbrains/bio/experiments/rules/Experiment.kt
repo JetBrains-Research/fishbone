@@ -98,7 +98,7 @@ abstract class Experiment(private val outputFolder: String) {
                                     { m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules) }
                             )
                             .map { (miner, rules) -> miner to rules.distinctBy { it.rule } }
-                            .map { (miner, rules) -> miner to rules.sortedWith(RulesBPQ.comparator(Rule<V>::loe)) }
+                            .map { (miner, rules) -> miner to rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion))) }
                             .toList()
 
                     val significantRules = testRules(bestExploredRules, alphaFullDb, database)
