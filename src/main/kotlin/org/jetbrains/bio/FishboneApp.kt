@@ -34,7 +34,7 @@ import org.jetbrains.bio.util.parse
 import java.io.File
 
 
-class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
+class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, private val outputFolder: String) {
     private val jacksonObjectMapper = jacksonObjectMapper()
 
     /**
@@ -60,7 +60,15 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
                 route("/rules") {
                     get {
                         val filename = call.request.queryParameters["filename"]!!
-                        call.respondFile(File(filename))
+                        val file = if (filename.contains(outputFolder)) {
+                            File(filename)
+                        } else {
+                            val experimentType = ExperimentType.valueOf(call.request.queryParameters["experiment"]!!)
+                            val experiment = experiments[experimentType]
+                                    ?: throw IllegalArgumentException("Unexpected experiment name")
+                            File("${experiment.outputFolder}/$filename")
+                        }
+                        call.respondFile(file)
                     }
                     post {
                         call.respond(mineRules(call.receiveMultipart()))
@@ -90,7 +98,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
                 is PartData.FormItem -> {
                     if (part.name == "miners") {
                         requestMap[name] =
-                            part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet() //TODO: process array correctly
+                                part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet() //TODO: process array correctly
                     } else {
                         requestMap[name] = part.value
                     }
@@ -119,21 +127,21 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>) {
 
             OptionParser().apply {
                 accepts("port", "Server port (default 8080)").withOptionalArg().ofType(Int::class.java)
-                    .defaultsTo(defaultServerPort)
+                        .defaultsTo(defaultServerPort)
                 accepts(
-                    "output",
-                    "Output folder to store experiment's results (default - current directory)"
+                        "output",
+                        "Output folder to store experiment's results (default - current directory)"
                 ).withOptionalArg().ofType(String::class.java)
-                    .defaultsTo(defaultOutputFolder)
+                        .defaultsTo(defaultOutputFolder)
                 formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
                 val outputFolder = options.valueOf("output").toString()
                 val experiments = mapOf(
-                    ExperimentType.CIOFANI to CiofaniDataExperiment(outputFolder),
-                    ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
+                        ExperimentType.CIOFANI to CiofaniDataExperiment(outputFolder),
+                        ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
                 )
                 val port = options.valueOf("port").toString().toInt()
-                FishboneApp(experiments).run(port)
+                FishboneApp(experiments, outputFolder).run(port)
             }
         }
     }

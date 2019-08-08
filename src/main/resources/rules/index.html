@@ -59,7 +59,7 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
-<body onload="initialize()">
+<body onload="initialize(); runAnalysis({checked: true})">
 
 <div id="dialog" title="Information">
     <div id="dialog-pane"></div>
@@ -128,6 +128,15 @@
             <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt" style="display: none"
                    onclick="$('#fpgrowth-file').click();"/>
 
+            <input id="filename-to-download" class="form-control" placeholder="filename to dowload"/>
+            <label id="experiment-type-label-download" for="experiment-type">Experiment type:</label>
+            <select id="experiment-type-download" name="name" required>
+                <option value="CIOFANI" selected="selected">CIOFANI</option>
+                <option value="CHIANTI">CHIANTI</option>
+            </select>
+            <input id="download-file-button" type="button" class="btn btn-primary" value="Download" style="display: none"
+                   onclick="downloadFile();"/>
+
             <script>
                 function runAnalysis(x) {
                     if (x.checked) {
@@ -153,6 +162,10 @@
                         document.getElementById("tree-file-button").style.display = "none";
                         document.getElementById("fpgrowth-filename").style.display = "none";
                         document.getElementById("fpgrowth-file-button").style.display = "none";
+                        document.getElementById("filename-to-download").style.display = "none";
+                        document.getElementById("experiment-type-label-download").style.display = "none";
+                        document.getElementById("experiment-type-download").style.display = "none";
+                        document.getElementById("download-file-button").style.display = "none";
                     }
                 }
 
@@ -180,6 +193,10 @@
                         document.getElementById("tree-file-button").style.display = "inline";
                         document.getElementById("fpgrowth-filename").style.display = "inline";
                         document.getElementById("fpgrowth-file-button").style.display = "inline";
+                        document.getElementById("filename-to-download").style.display = "inline";
+                        document.getElementById("experiment-type-label-download").style.display = "inline";
+                        document.getElementById("experiment-type-download").style.display = "inline";
+                        document.getElementById("download-file-button").style.display = "inline";
                     }
                 }
             </script>

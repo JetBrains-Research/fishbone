@@ -19,7 +19,7 @@ import java.nio.file.Path
  * Experiment class provides methods for data analysis.
  * Abstract parts are related to specific preprocessing steps of data for different experiment types.
  */
-abstract class Experiment(private val outputFolder: String) {
+abstract class Experiment(val outputFolder: String) {
 
     companion object {
         private const val TOP_RULES = 10

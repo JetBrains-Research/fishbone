@@ -186,6 +186,7 @@ function showFPGrowthTable(table) {
 }
 
 function renderFpGrowthAlgorithmResults(res) {
+    document.getElementById('filename-to-download').value = res["FP_GROWTH"];
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "GET",
@@ -221,6 +222,7 @@ function showDecisionTree(tree) {
 }
 
 function renderDecisionTreeAlgorithmsResults(res) {
+    document.getElementById('filename-to-download').value = res["DECISION_TREE"];
     $.ajax({
         url: 'http://localhost:8080/rules',
         type: "GET",
@@ -241,6 +243,7 @@ function renderFishboneResults(jsonPath) {
         data: {filename: jsonPath},
         success: function (res) {
             load(JSON.stringify(res));
+
         },
         error: function (error) {
             console.log(error);
@@ -290,6 +293,7 @@ function runAnalysisOnLoadedData() {
                 $('#fishboneSwitch').val("Switch to Ripper");
 
                 fishboneResponse = response["FISHBONE"];
+                document.getElementById('filename-to-download').value = fishboneResponse;
                 renderFishboneResults(fishboneResponse);
             }
             if (response["FP_GROWTH"] != null) {
@@ -307,6 +311,33 @@ function runAnalysisOnLoadedData() {
             console.log(errResponse);
         }
     });
+}
+
+function downloadFile() {
+    let jsonPath = document.getElementById('filename-to-download').value;
+    let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
+    $.ajax({
+        url: 'http://localhost:8080/rules',
+        type: "GET",
+        data: {filename: jsonPath, experiment: experiment},
+        success: function(res) {
+            let nameParts = jsonPath.split(".");
+            let type = nameParts.pop();
+            let name = nameParts.pop();
+            downloadTextFile(JSON.stringify(res), name + "." + type);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+// TODO: check
+function downloadTextFile(text, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL( new Blob([text]) );
+    a.download = name;
+    a.click();
 }
 
 function showFPGrowthResults() {
