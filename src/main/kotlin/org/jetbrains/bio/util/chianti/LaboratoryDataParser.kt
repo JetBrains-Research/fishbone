@@ -6,17 +6,15 @@ import joptsimple.OptionParser
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
-import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.jetbrains.bio.predicates.OverlapSamplePredicate
-import org.jetbrains.bio.util.chianti.model.*
+import org.jetbrains.bio.util.chianti.model.Codebook
+import org.jetbrains.bio.util.chianti.model.CodebookReader
+import org.jetbrains.bio.util.chianti.model.SexDependentFeature
 import org.jetbrains.bio.util.parse
 import org.jetbrains.bio.util.toPath
 import org.nield.kotlinstatistics.percentile
 import java.io.File
 import java.io.FileInputStream
-import java.io.Serializable
 import java.nio.file.Files
 import java.time.ZoneId
 import java.util.*
@@ -56,8 +54,11 @@ class LaboratoryDataParser(
 
         val dataPredicates = mutableMapOf<String, List<Int>>()
         val sexDependentFeaturesValues = mutableMapOf<String, MutableMap<Long, List<Double>>>()
+        val vitE = mutableMapOf<Int, Double>()
+        val dataByCode = data.map { it[0].toString().toLong() to it }.toMap()
         val database = data.withIndex().map { (sampleIndex, sample) ->
             println(sampleIndex)
+            val code = sample[0].toString().toInt()
             for ((columnIndex, column) in columnsByIndex) {
                 val cell = sample[columnIndex]
                 val sex = sample[sexColumn] as Long
@@ -66,18 +67,31 @@ class LaboratoryDataParser(
                         cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
                     else cell.toString()
 
+                    if (column.toLowerCase() == "alftoc" || column.toLowerCase() == "gamtoc") {
+                        vitE[code] = vitE.getOrDefault(code, 0.0) + cellValue.toString().toDouble()
+                        continue
+                    }
+
                     if (column in SexDependentFeature.labels()) {
                         storeSexDependentFeaure(sexDependentFeaturesValues, column, sex, cellValue)
                     } else {
-                        val satisfiedPredicates = checkPredicatesOnFeature(predicateCodebooks, column, cell, cellValue)
+                        val satisfiedPredicates = checkPredicatesOnFeature(predicateCodebooks, column, cellValue)
                         satisfiedPredicates.forEach {
                             dataPredicates[it] = (dataPredicates.getOrDefault(it, emptyList()) + sampleIndex)
                         }
                     }
                 }
             }
-            sampleIndex
-        }.filter { idx -> data[idx][5].toString().toDouble() in 65.0..75.0 || data[idx][5].toString().toDouble() < 40 }
+            code
+        }.filter { code ->
+            dataByCode.getValue(code.toLong())[5].toString().toDouble() in 65.0..75.0
+                    || dataByCode.getValue(code.toLong())[5].toString().toDouble() < 40
+        }
+        vitE.forEach { (code, value) ->
+            checkPredicatesOnFeature(predicateCodebooks, "VIT_E", value.toString()).forEach { predicate ->
+                dataPredicates[predicate] = (dataPredicates.getOrDefault(predicate, emptyList()) + code)
+            }
+        }
 
         sexDependentFeaturesValues.forEach { (name, sexValues) ->
             processSexDependentFeature(sexValues, name, references, predicateCodebooks, dataPredicates)
@@ -117,7 +131,7 @@ class LaboratoryDataParser(
     }
 
     private fun checkPredicatesOnFeature(
-            predicateCodebooks: Map<String, (Any) -> Boolean>, column: String, cell: Any, cellValue: Any
+            predicateCodebooks: Map<String, (Any) -> Boolean>, column: String, cellValue: Any
     ): Set<String> {
         return predicateCodebooks
                 .filter { (name, predicate) ->
@@ -125,9 +139,9 @@ class LaboratoryDataParser(
                             (!"(low|high|normal|above_ref|below_ref|inside_ref).*".toRegex().matches(name)
                                     && name.contains(column))
                             ) &&
-                            !(column == "AGEL" && !(cell.toString().toDouble() in 65.0..75.0 ||
-                                    cell.toString().toDouble() < 40)) &&
-                                            !(column == "SEX" && cell.toString().toInt() == 1) &&
+                            !(column == "AGEL" && !(cellValue.toString().toDouble() in 65.0..75.0 ||
+                                    cellValue.toString().toDouble() < 40)) &&
+                            !(column == "SEX" && cellValue.toString().toInt() == 2) &&
                             predicate(cellValue)
                 }
                 .keys
@@ -156,7 +170,7 @@ class LaboratoryDataParser(
 
     companion object {
         private const val defaultDataOutputFolder =
-                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp10_female"
+                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp11_male"
 
         @JvmStatic
         fun main(args: Array<String>) {
