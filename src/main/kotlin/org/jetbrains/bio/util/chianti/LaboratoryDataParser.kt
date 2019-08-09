@@ -53,7 +53,7 @@ class LaboratoryDataParser(
                 .toMap()
 
         val dataPredicates = mutableMapOf<String, List<Int>>()
-        val sexDependentFeaturesValues = mutableMapOf<String, MutableMap<Long, List<Double>>>()
+        val sexDependentFeaturesValues = mutableMapOf<String, MutableMap<Long, MutableMap<Int, Double>>>()
         val vitE = mutableMapOf<Int, Double>()
         val dataByCode = data.map { it[0].toString().toLong() to it }.toMap()
         val database = data.withIndex().map { (sampleIndex, sample) ->
@@ -73,11 +73,11 @@ class LaboratoryDataParser(
                     }
 
                     if (column in SexDependentFeature.labels()) {
-                        storeSexDependentFeaure(sexDependentFeaturesValues, column, sex, cellValue)
+                        storeSexDependentFeaure(sexDependentFeaturesValues, column, sex, cellValue, code)
                     } else {
                         val satisfiedPredicates = checkPredicatesOnFeature(predicateCodebooks, column, cellValue)
                         satisfiedPredicates.forEach {
-                            dataPredicates[it] = (dataPredicates.getOrDefault(it, emptyList()) + sampleIndex)
+                            dataPredicates[it] = (dataPredicates.getOrDefault(it, emptyList()) + code)
                         }
                     }
                 }
@@ -100,30 +100,44 @@ class LaboratoryDataParser(
         return Pair(database, dataPredicates.map { OverlapSamplePredicate(it.key, it.value) })
     }
 
+    private fun storeSexDependentFeaure(
+            sexDependentFeaturesValues: MutableMap<String, MutableMap<Long, MutableMap<Int, Double>>>,
+            column: String,
+            sex: Long,
+            cellValue: Any,
+            code: Int
+    ) {
+        val sexValues = sexDependentFeaturesValues.getOrDefault(column, mutableMapOf(sex to mutableMapOf()))
+        val valuesMap = sexValues.getOrDefault(sex, mutableMapOf())
+        valuesMap[code] = cellValue.toString().toDouble()
+        sexValues[sex] = valuesMap
+        sexDependentFeaturesValues[column] = sexValues
+    }
+
     private fun processSexDependentFeature(
-            sexValues: MutableMap<Long, List<Double>>,
+            sexValues: MutableMap<Long, MutableMap<Int, Double>>,
             name: String, references: List<CSVRecord>,
             predicateCodebooks: Map<String, (Any) -> Boolean>,
             dataPredicates: MutableMap<String, List<Int>>
     ): List<Any> {
-        return sexValues.map { (sexId, values) ->
+        return sexValues.map { (sexId, valuesMap) ->
             val sex = if (sexId == 1L) "male" else "female"
             val isReferenceBasedFeature = "${name}_$sex" in references.map { it[0] }
             if (isReferenceBasedFeature) {
-                listOf("below_ref_$name", "inside_ref_$name", "above_ref_$name").map {
-                    val predicate = predicateCodebooks.getValue("${it}_$sex")
-                    values.withIndex().filter { (_, value) -> predicate(value.toString()) }.forEach { (sampleIndex, _) ->
-                        dataPredicates[it] = (dataPredicates.getOrDefault(it, emptyList()) + sampleIndex)
+                listOf("below_ref_$name", "inside_ref_$name", "above_ref_$name").map { predicateName ->
+                    val predicate = predicateCodebooks.getValue("${predicateName}_$sex")
+                    valuesMap.filter { (_, value) -> predicate(value.toString()) }.forEach { (code, _) ->
+                        dataPredicates[predicateName] = (dataPredicates.getOrDefault(predicateName, emptyList()) + code)
                     }
                 }
             } else {
-                val q1 = values.percentile(25.0)
-                val q3 = values.percentile(75.0)
-                values.withIndex().forEach { (sampleIndex, value) ->
+                val q1 = valuesMap.values.percentile(25.0)
+                val q3 = valuesMap.values.percentile(75.0)
+                valuesMap.forEach { (code, value) ->
                     when {
-                        value < q1 -> dataPredicates["low_$name"] = (dataPredicates.getOrDefault("low_$name", emptyList()) + sampleIndex)
-                        value > q3 -> dataPredicates["high_$name"] = (dataPredicates.getOrDefault("high_$name", emptyList()) + sampleIndex)
-                        else -> dataPredicates["normal_$name"] = (dataPredicates.getOrDefault("normal_$name", emptyList()) + sampleIndex)
+                        value < q1 -> dataPredicates["low_$name"] = (dataPredicates.getOrDefault("low_$name", emptyList()) + code)
+                        value > q3 -> dataPredicates["high_$name"] = (dataPredicates.getOrDefault("high_$name", emptyList()) + code)
+                        else -> dataPredicates["normal_$name"] = (dataPredicates.getOrDefault("normal_$name", emptyList()) + code)
                     }
                 }
             }
@@ -141,24 +155,10 @@ class LaboratoryDataParser(
                             ) &&
                             !(column == "AGEL" && !(cellValue.toString().toDouble() in 65.0..75.0 ||
                                     cellValue.toString().toDouble() < 40)) &&
-                            !(column == "SEX" && cellValue.toString().toInt() == 2) &&
+                            !(column == "SEX" && cellValue.toString().toInt() == 1) &&
                             predicate(cellValue)
                 }
                 .keys
-    }
-
-    private fun storeSexDependentFeaure(
-            sexDependentFeaturesValues: MutableMap<String, MutableMap<Long, List<Double>>>,
-            column: String,
-            sex: Long,
-            cellValue: Any
-    ) {
-        val sexValues = sexDependentFeaturesValues.getOrDefault(
-                column, mutableMapOf(sex to emptyList())
-        )
-        val values = sexValues.getOrDefault(sex, emptyList())
-        sexValues[sex] = values + cellValue.toString().toDouble()
-        sexDependentFeaturesValues[column] = sexValues
     }
 
     private fun isEnoughPresentedFeature(data: Array<Array<Any>>, ageColumnIndex: Int, idx: Int): Boolean {
@@ -170,7 +170,7 @@ class LaboratoryDataParser(
 
     companion object {
         private const val defaultDataOutputFolder =
-                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp11_male"
+                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp11_female"
 
         @JvmStatic
         fun main(args: Array<String>) {
