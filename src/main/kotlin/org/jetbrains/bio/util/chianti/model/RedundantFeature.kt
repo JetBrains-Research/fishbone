@@ -31,7 +31,33 @@ enum class RedundantFeature(val label: String) {
     C221b("C22_1B"),
     C226b("C22_6B"),
     C240b("C24_0B"),
-    C241b("C24_1B");
+    C241b("C24_1B"),
+
+    Canyr("CANYR"),
+    Ipr1yr("IPR1YR"),
+    Ipr2yr("IPR2YR"),
+    Epacyr("EPACYR"),
+    Gastyr("GASTYR"),
+    Angyr("ANGYR"),
+    Miyr("MIYR"),
+    Chfyr("CHFYR"),
+    Strkyr("STRKYR"),
+    Parkyr("PARKYR"),
+    Padiyr("PADIYR"),
+    Dib1yr("DIB1YR"),
+    Dib2yr("DIB2YR"),
+    Db1ayr("DB1AYR"),
+    Db2ayr("DB2AYR"),
+    Bpcoyr("BPCOYR"),
+    Asthyr("ASTHYR"),
+    Ffemyr("FFEMYR"),
+    Erndyr("ERNDYR"),
+    Gonayr("GONAYR"),
+    Ancayr("ANCAYR"),
+    Posmyr("POSMYR"),
+    Posfyr("POSFYR"),
+    Renlyr("RENLYR"),
+    Rl24yr("RL24YR");
 
     companion object {
         fun labels(): Set<String> = values().map { it.label }.toSet()

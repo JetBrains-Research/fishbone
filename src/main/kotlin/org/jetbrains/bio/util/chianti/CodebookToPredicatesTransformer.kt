@@ -11,7 +11,7 @@ class CodebookToPredicatesTransformer(private val codebook: Codebook) {
 
     private fun createPredicates(): Map<String, (Any) -> Boolean> {
         val predicateList = codebook.variables.map { (_, variable) ->
-            if (variable.name != "AGEL") {
+            if (variable.name !in listOf("AGE", "AGEL")) {
                 when (variable) {
                     is NumericVariable -> variable.getPredicates()
                     is DateVariable -> variable.getPredicates()

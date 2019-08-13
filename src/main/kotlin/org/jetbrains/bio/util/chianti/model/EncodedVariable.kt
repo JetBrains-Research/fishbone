@@ -18,7 +18,7 @@ class EncodedVariable(name: String, meaning: String, val values: Set<String>) : 
                 val code = """([0-9])\.""".toRegex().find(value)
                 val idx = if (code != null) code.value.substringBefore(".") else ""
                 val isEqualToIdx: (String) -> Boolean = { sample_value -> sample_value == idx }
-                "$name _is_$idx" to isEqualToIdx
+                "${name}_is_$idx" to isEqualToIdx
             }.toMap()
             EncodedVariableType.RANGE -> values.map { value ->
                 val predicateValue = """(\d+\-\d+)+""".toRegex().find(value)!!.value
@@ -26,7 +26,7 @@ class EncodedVariable(name: String, meaning: String, val values: Set<String>) : 
                 val min = range[0].toDouble()
                 val max = range[1].toDouble()
                 val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() in min..max }
-                "$name _is_in_$predicateValue" to isInRange
+                "${name}_is_in_$predicateValue" to isInRange
             }.toMap()
             else -> emptyMap()
         })
