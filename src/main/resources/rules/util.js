@@ -274,6 +274,12 @@ function runAnalysisOnLoadedData() {
     window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
+    window.myForm.append("topRules", document.getElementById("topRules").value);
+    window.myForm.append("exploratoryFraction", document.getElementById("exploratoryFraction").value);
+    window.myForm.append("nSampling", document.getElementById("nSampling").value);
+    window.myForm.append("samplingStrategy", document.getElementById("samplingStrategy").value);
+    window.myForm.append("alphaHoldout", document.getElementById("alphaHoldout").value);
+    window.myForm.append("alphaFull", document.getElementById("alphaFull").value);
     var miners = getMiners();
     if (miners === "") {
         $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});

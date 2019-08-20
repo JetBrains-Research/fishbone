@@ -4,7 +4,7 @@ import com.google.common.primitives.Doubles
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.commons.math3.util.Precision
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.*
 import kotlin.math.ln
 import kotlin.math.log2
@@ -114,7 +114,7 @@ open class Distribution<T>(val database: List<T>,
     private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * ln(x)
 
     companion object {
-        private val LOG = Logger.getLogger(Distribution::class.java)
+        private val LOG = LoggerFactory.getLogger(Distribution::class.java)
 
         private fun createProbabilitiesArray(n: Int): DoubleArray {
             check(n < log2(Int.MAX_VALUE.toDouble())) {

@@ -1,6 +1,6 @@
 package org.jetbrains.bio.rules.ripper
 
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.WekaMiner
@@ -14,7 +14,7 @@ import weka.core.Instances
  * This class uses JRipper class from Weka library (see: http://weka.sourceforge.net/doc.dev/weka/classifiers/rules/JRip.html)
  */
 class RipperMiner : WekaMiner() {
-    private val logger = Logger.getLogger(RipperMiner::class.java)
+    private val logger = LoggerFactory.getLogger(RipperMiner::class.java)
 
     override fun <V> mine(
             database: List<V>,

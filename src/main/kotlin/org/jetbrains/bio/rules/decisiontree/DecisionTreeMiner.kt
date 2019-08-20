@@ -1,6 +1,6 @@
 package org.jetbrains.bio.rules.decisiontree
 
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.WekaMiner
@@ -11,7 +11,7 @@ import weka.classifiers.rules.PART
  * Miner run decision tree algorithm on specified data
  */
 class DecisionTreeMiner : WekaMiner() {
-    private val logger = Logger.getLogger(DecisionTreeMiner::class.java)
+    private val logger = LoggerFactory.getLogger(DecisionTreeMiner::class.java)
 
     override fun <V> mine(
             database: List<V>,

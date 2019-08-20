@@ -13,5 +13,6 @@ class MineRulesRequest(
         val sampling: SamplingStrategy? = null,
         val significanceLevel: Double? = null,
         val topRules: Int? = null,
-        val runName: String? = null
+        val runName: String? = null,
+        val settings: ExperimentSettings = ExperimentSettings()
 )

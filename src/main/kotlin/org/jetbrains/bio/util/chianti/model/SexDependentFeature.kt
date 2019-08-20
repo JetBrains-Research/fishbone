@@ -17,7 +17,6 @@ enum class SexDependentFeature(val label: String) {
     Piinp("PIIINP"),
     Shbg("SHBG"),
     Tenmol("TENMOL"),
-    TestQ("TESTO"),
     Tf("TF"),
     Tsshbg("TSSHBG"),
     Uca("UCA"),
@@ -31,13 +30,12 @@ enum class SexDependentFeature(val label: String) {
     Crea("CREA"),
     Cnme("CNCME"),
     Colhdl("COLHDL"),
-    Estidio("ESTDIO"),
     Ferro("FERRO"),
     Fiin("FTIN"),
     Hb("HB"),
     Ucreat("UCREAT"),
-    Folicg("FOLICG"),
-    Folicm("FOLICM");
+    Folicm("FOLICM"),
+    Ratio_C18_9_C18_6("Ratio_C18_9_C18_6");
 
     companion object {
         fun labels(): Set<String> = values().map { it.label }.toSet()

@@ -24,6 +24,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
+import org.jetbrains.bio.api.ExperimentSettings
 import org.jetbrains.bio.api.ExperimentType
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.MiningAlgorithm
@@ -32,6 +33,7 @@ import org.jetbrains.bio.experiments.rules.CiofaniDataExperiment
 import org.jetbrains.bio.experiments.rules.Experiment
 import org.jetbrains.bio.util.parse
 import java.io.File
+import kotlin.reflect.full.declaredMemberProperties
 
 
 class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, private val outputFolder: String) {
@@ -92,6 +94,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
     // TODO: looks ugly, rewrite
     private suspend fun multipartToMineRulesRequest(multipart: MultiPartData, tempDir: File): MineRulesRequest {
         val requestMap = mutableMapOf<String, Any>()
+        val settingsMap = mutableMapOf<String, Any>()
         multipart.forEachPart { part ->
             val name = part.name!!
             when (part) {
@@ -100,7 +103,11 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
                         requestMap[name] =
                                 part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet() //TODO: process array correctly
                     } else {
-                        requestMap[name] = part.value
+                        if (part.name in ExperimentSettings::class.java.declaredFields.map { it.name }) {
+                            settingsMap[name] = part.value
+                        } else {
+                            requestMap[name] = part.value
+                        }
                     }
                 }
                 is PartData.FileItem -> {
@@ -114,7 +121,10 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
                 }
             }
         }
-        return jacksonObjectMapper.convertValue<MineRulesRequest>(requestMap, MineRulesRequest::class.java)
+        if (settingsMap.isNotEmpty()) {
+            requestMap["settings"] = settingsMap
+        }
+        return jacksonObjectMapper.convertValue(requestMap, MineRulesRequest::class.java)
     }
 
     companion object {
@@ -124,7 +134,6 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-
             OptionParser().apply {
                 accepts("port", "Server port (default 8080)").withOptionalArg().ofType(Int::class.java)
                         .defaultsTo(defaultServerPort)

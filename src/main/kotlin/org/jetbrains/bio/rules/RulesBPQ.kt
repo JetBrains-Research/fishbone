@@ -1,7 +1,7 @@
 package org.jetbrains.bio.rules
 
 import com.google.common.collect.ComparisonChain
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.rules.FishboneMiner.mine
 import java.util.*
 
@@ -118,7 +118,7 @@ class RulesBPQ<T>(private val limit: Int,
     }
 
     companion object {
-        private val LOG = Logger.getLogger(RulesBPQ::class.java)
+        private val LOG = LoggerFactory.getLogger(RulesBPQ::class.java)
 
         /**
          * @return Comparator by max function and min complexity

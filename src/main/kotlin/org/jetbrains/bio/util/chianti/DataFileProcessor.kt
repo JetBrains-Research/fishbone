@@ -17,9 +17,9 @@ import java.util.*
 class DataFileProcessor {
 
     val dataFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Nutrients_Intake/epic_raw.sas7bdat"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/4.data/sas_datasets/Nutrients_Intake/epic_raw.sas7bdat"
     val codebookFilename =
-        "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/epic_raw.xlsx"
+            "/home/nlukashina/education/bioinf/spring/fishbone_materials/Articles/censored_data/english/3.Codebooks/epic_raw.xlsx"
 
     fun readCodebook(): Codebook {
         val workbook = WorkbookFactory.create(File(codebookFilename))
@@ -40,8 +40,8 @@ class DataFileProcessor {
     }
 
     private fun getSheetData(
-        rowIterator: Iterator<Row>,
-        data: List<Map<Int, List<String>>>
+            rowIterator: Iterator<Row>,
+            data: List<Map<Int, List<String>>>
     ): List<Map<Int, List<String>>> {
         if (!rowIterator.hasNext()) {
             return data
@@ -55,8 +55,8 @@ class DataFileProcessor {
     }
 
     private fun addVariablesToLastRow(
-        data: List<Map<Int, List<String>>>,
-        rowData: Map<Int, List<String>>
+            data: List<Map<Int, List<String>>>,
+            rowData: Map<Int, List<String>>
     ): MutableMap<Int, List<String>> {
         val lastRow = data.last()
         // TODO: rewrite with streams
@@ -93,9 +93,9 @@ class DataFileProcessor {
                     cell = cell.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
                 }
                 val satisfiedPredicates =
-                    predicateCodebooks
-                        .filter { (name, predicate) -> name.contains(column) && predicate(cell) }
-                        .keys
+                        predicateCodebooks
+                                .filter { (name, predicate) -> name.contains(column) && predicate(cell) }
+                                .keys
                 for (name in satisfiedPredicates) {
                     dataPredicates[name] = (dataPredicates.getOrDefault(name, emptyList()) + sampleIndex)
                 }
@@ -104,15 +104,16 @@ class DataFileProcessor {
         }
         return Pair(database, dataPredicates.map {
             OverlapSamplePredicate(
-                it.key,
-                it.value
+                    it.key,
+                    it.value,
+                    emptyList()
             )
         })
     }
 
     companion object {
         private val defaultDataoutputFolder =
-            "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments"
+                "/home/nlukashina/education/bioinf/spring/fishbone_materials/chianti_experiments"
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -120,7 +121,7 @@ class DataFileProcessor {
             val processor = DataFileProcessor()
             val codebook = processor.readCodebook()
             val (database, predicates) = processor.createPredicatesFromData(
-                CodebookToPredicatesTransformer(codebook).predicates
+                    CodebookToPredicatesTransformer(codebook).predicates
             )
             val databaseOutput = File("$defaultDataoutputFolder/database.txt")
             databaseOutput.createNewFile()
@@ -128,7 +129,7 @@ class DataFileProcessor {
                 database.forEach { out.println(it) }
             }
             val predicateFilenames = predicates.map { predicate ->
-                val output = File("$defaultDataoutputFolder/${predicate.name}")
+                val output = File("$defaultDataoutputFolder/${predicate.name()}")
                 output.printWriter().use { out ->
                     predicate.samples.forEach { out.println(it) }
                 }

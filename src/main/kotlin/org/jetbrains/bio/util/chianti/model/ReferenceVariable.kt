@@ -22,9 +22,7 @@ class ReferenceVariable(
     private fun isNormalValue() = { it: String -> it.toDouble() in min..max }
 
     companion object {
-        fun fromCSVRecord(data: CSVRecord): ReferenceVariable {
-            println(data)
-            return ReferenceVariable(data[0], data[1].toDouble(), data[3].toDouble())
-        }
+        fun fromCSVRecord(data: CSVRecord): ReferenceVariable =
+                ReferenceVariable(data[0], data[1].toDouble(), data[3].toDouble())
     }
 }

@@ -1,10 +1,13 @@
 package org.jetbrains.bio.rules.validation
 
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.AndPredicate
 import org.jetbrains.bio.predicates.OrPredicate
 import org.jetbrains.bio.predicates.Predicate
+import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.Rule
+import org.jetbrains.bio.rules.validation.adjustment.BenjaminiHochbergAdjustment
+import org.jetbrains.bio.rules.validation.adjustment.NoAdjustment
 
 abstract class RuleSignificanceCheck {
 
@@ -43,7 +46,23 @@ abstract class RuleSignificanceCheck {
     companion object {
 
         private const val SMALL_DATABASE_SIZE_THRESHOLD = 10000
-        private val logger = Logger.getLogger(RuleSignificanceCheck::class.java)
+        private val logger = LoggerFactory.getLogger(RuleSignificanceCheck::class.java)
+
+        fun <T> significantRules(
+                rules: List<FishboneMiner.Node<T>>, alpha: Double, db: List<T>, adjust: Boolean
+        ): List<FishboneMiner.Node<T>> {
+            val pVals = rules.map { node -> test(node.rule, db) }.sorted()
+            val multipleComparisonResults = if (adjust) {
+                BenjaminiHochbergAdjustment.test(pVals, alpha, rules.size)
+            } else {
+                NoAdjustment.test(pVals, alpha, rules.size)
+            }
+            val filteredRules = rules.withIndex()
+                    .filter { multipleComparisonResults[it.index] }
+                    .map { it.value }
+            logger.info("Significant rules P < $alpha: ${filteredRules.size} / ${rules.size}")
+            return filteredRules
+        }
 
         fun <T> test(rule: Rule<T>, database: List<T>): Double {
             logger.debug("Testing rule's significance: $rule")

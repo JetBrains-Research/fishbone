@@ -1,6 +1,6 @@
 package org.jetbrains.bio.rules.fpgrowth
 
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.rules.FishboneMiner
 import org.jetbrains.bio.rules.WekaMiner
@@ -12,7 +12,7 @@ import weka.core.SelectedTag
  * Miner run FP-growth algorithm on specified data
  */
 class FPGrowthMiner : WekaMiner() {
-    private val logger = Logger.getLogger(FPGrowthMiner::class.java)
+    private val logger = LoggerFactory.getLogger(FPGrowthMiner::class.java)
 
     // TODO: add possibility to specify user-defined options, like min support
     override fun <V> mine(

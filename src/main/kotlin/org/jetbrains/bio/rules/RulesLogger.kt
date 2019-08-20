@@ -4,7 +4,6 @@ import com.google.common.collect.ObjectArrays
 import com.google.gson.GsonBuilder
 import org.apache.commons.csv.CSVFormat.DEFAULT
 import org.apache.commons.csv.CSVRecord
-import org.apache.log4j.Logger
 import org.jetbrains.bio.dataset.DataConfig
 import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.predicates.AndPredicate
@@ -15,6 +14,7 @@ import org.jetbrains.bio.util.bufferedWriter
 import org.jetbrains.bio.util.deleteIfExists
 import org.jetbrains.bio.util.toPath
 import org.jetbrains.bio.util.write
+import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.io.IOException
 import java.nio.file.Path
@@ -26,7 +26,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
     private val extraParams: Array<out String> = params
 
     companion object {
-        private val LOG = Logger.getLogger(RulesLogger::class.java)
+        private val LOG = LoggerFactory.getLogger(RulesLogger::class.java)
     }
 
     private val graphRecords = LinkedHashSet<Map<String, Any?>>()
@@ -46,11 +46,17 @@ class RulesLogger(val path: Path?, vararg params: String) {
             while (node != null) {
                 val rule = node.rule
                 val r = RuleRecord.fromRule(rule, id)
-                if (r.conditionPredicate.name() in visited) {
+                val conditionPredicate = r.conditionPredicate
+                if (conditionPredicate.name() in visited) {
                     break
                 }
-                visited.add(r.conditionPredicate.name())
-                atomics.addAll(r.conditionPredicate.collectAtomics().map { it.name() })
+                visited.add(conditionPredicate.name())
+                atomics.addAll(
+                        conditionPredicate.collectAtomics().map {
+                            // Hack OverlapSamplePredicate
+                            it.name().replace("${PredicateParser.NOT.token} ", "")
+                        }
+                )
                 atomics.addAll(r.targetPredicate.collectAtomics().map { it.name() })
                 // Log to csv
                 log(r)
@@ -60,7 +66,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
                         "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
                         "aux" to node.aux,
-                        "operator" to getOperatorName(r.conditionPredicate))
+                        "operator" to getOperatorName(conditionPredicate))
                 )
                 node = node.parent
             }

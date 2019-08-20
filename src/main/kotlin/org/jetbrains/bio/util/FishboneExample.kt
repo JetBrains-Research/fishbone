@@ -2,7 +2,7 @@ package org.jetbrains.bio.util
 
 import joptsimple.OptionParser
 import org.apache.commons.io.FilenameUtils
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.genome.Genome
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
@@ -71,7 +71,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFilesUr
     }
 
     companion object {
-        private val LOG = Logger.getLogger(FishboneExample::class.java)
+        private val LOG = LoggerFactory.getLogger(FishboneExample::class.java)
 
         val genomeQuery = GenomeQuery(Genome["hg19"])
 

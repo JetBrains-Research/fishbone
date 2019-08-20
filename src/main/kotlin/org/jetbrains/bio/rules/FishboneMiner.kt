@@ -1,7 +1,7 @@
 package org.jetbrains.bio.rules
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.predicates.NotPredicate
 import org.jetbrains.bio.predicates.Predicate
 import org.jetbrains.bio.predicates.TruePredicate
@@ -21,7 +21,7 @@ object FishboneMiner : Miner {
     const val KL_DELTA = 1E-3
 
 
-    private val LOG = Logger.getLogger(FishboneMiner::class.java)
+    private val LOG = LoggerFactory.getLogger(FishboneMiner::class.java)
 
     /**
      * Result of [mine] procedure.
@@ -45,7 +45,7 @@ object FishboneMiner : Miner {
                     database,
                     sourcesToTargets,
                     { },
-                    maxComplexity = params.getOrDefault("maxComplexity", 6) as Int,
+                    maxComplexity = 3,//params.getOrDefault("maxComplexity", 6) as Int,
                     function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
                     or = true,
                     negate = true,

@@ -2,7 +2,7 @@ package org.jetbrains.bio.util.ciofani
 
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.jetbrains.bio.util.ciofani.query.AllTfsToIrf4Query
 import org.jetbrains.bio.util.ciofani.query.AllTfsToIrf4QueryWithTr
 import org.jetbrains.bio.util.ciofani.query.AllTfsToRorcQuery
@@ -26,7 +26,7 @@ class CiofaniBedFilesCreator {
     }
 
     companion object {
-        private val LOG = Logger.getLogger(CiofaniBedFilesCreator::class.java)
+        private val LOG = LoggerFactory.getLogger(CiofaniBedFilesCreator::class.java)
         private val queries = mapOf(
             "allTfsToRorcQuery" to AllTfsToRorcQuery(),
             "allTfsToIrf4Query" to AllTfsToIrf4Query(),

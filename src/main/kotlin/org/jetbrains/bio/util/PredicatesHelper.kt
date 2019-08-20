@@ -3,8 +3,8 @@ package org.jetbrains.bio.util
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
-import org.jetbrains.bio.predicates.OverlapSamplePredicate
 import org.jetbrains.bio.predicates.OverlapPredicate
+import org.jetbrains.bio.predicates.OverlapSamplePredicate
 import org.jetbrains.bio.predicates.Predicate
 import java.io.File
 import java.nio.file.Paths
@@ -32,9 +32,19 @@ class PredicatesHelper {
          */
         fun createOverlapSamplePredicates(filesUrls: List<String>): List<OverlapSamplePredicate> {
             return filesUrls.map { filename ->
-                val samples = File(filename).useLines { it.map { it.toInt() }.toList() }
+                val samples = mutableListOf<Int>()
+                val notSamples = mutableListOf<Int>()
+                File(filename).useLines {
+                    it.forEach { line ->
+                        if (line.startsWith("not: ")) {
+                            notSamples.add(line.replace("not: ", "").toInt())
+                        } else {
+                            samples.add(line.toInt())
+                        }
+                    }
+                }
                 val name = filename.split("/").last().split(".")[0]
-                OverlapSamplePredicate(name, samples)
+                OverlapSamplePredicate(name, samples, notSamples)
             }
         }
     }
