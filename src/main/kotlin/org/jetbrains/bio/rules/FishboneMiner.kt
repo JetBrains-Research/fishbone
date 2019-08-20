@@ -59,6 +59,105 @@ object FishboneMiner : Miner {
     }
 
     /**
+     * Result of optimization is a graph, [Node] represents a single node of a graph.
+     *
+     * For each edge Parent -> Child, the following **invariant** is hold.
+     * 1.   f(Child) >= f(Parent) + [functionDelta]
+     * 2.   klDelta < 0 OR kullbackLeibler(dEmpirical, dChild) <= kullbackLeibler(dEmpirical, dParent) - [klDelta]
+     *
+     * How information is used?
+     * 1.   Consider all the atomics in Parent and Child, [EmpiricalDistribution] dEmpirical
+     *      is experimental joint distribution on all the atomics.
+     * 2.   Starting with independent [Distribution] we can estimate how many information we get by rules:
+     *      learn(dIndependent, Parent rule) = dParent
+     *      learn(dIndependent, Child rule) = dChild
+     *      kullbackLeibler(dEmpirical, dParent) - "distance" to empirical distribution
+     *      kullbackLeibler(dEmpirical, dChild) - "distance" to empirical distribution
+     *      If "distance" difference becomes too small, stop optimization.
+     *
+     * Important:
+     *      kullbackLeibler(dEmpirical, dIndependent) - kullbackLeibler(dEmpirical) is a constant value,
+     *      independent on adding extra atomics.
+     *      This allows us to talk about learning "enough" information about the system.
+     */
+    fun <T> mine(title: String,
+                 database: List<T>,
+                 toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
+                 logFunction: (List<Node<T>>) -> Unit,
+                 maxComplexity: Int,
+                 and: Boolean = true,
+                 or: Boolean = true,
+                 negate: Boolean = true,
+                 topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                 function: (Rule<T>) -> Double = Rule<T>::conviction,
+                 functionDelta: Double = FUNCTION_DELTA,
+                 klDelta: Double = KL_DELTA,
+                 buildClusters: Boolean): List<List<Node<T>>> {
+        LOG.info("Rules mining: $title")
+        toMine.forEach { (conditions, target) ->
+            // For each complexity level and for aux info computation
+            MultitaskProgress.addTask(target.name(), min(conditions.size, maxComplexity) + 1L)
+        }
+        val mineResults = toMine.map { (conditions, target) ->
+            // Cleanup predicates cache
+            Predicate.dbCache = null
+            val mineResult = mine(conditions, target, database,
+                    maxComplexity, and, or, negate,
+                    topPerComplexity, function,
+                    functionDelta, klDelta, buildClusters)
+            logFunction(mineResult)
+            mineResult
+        }
+        LOG.info("DONE rules mining: $title")
+        return mineResults
+    }
+
+
+    @VisibleForTesting
+    internal fun <T> mine(predicates: List<Predicate<T>>,
+                          target: Predicate<T>,
+                          database: List<T>,
+                          maxComplexity: Int,
+                          and: Boolean = true,
+                          or: Boolean = true,
+                          negate: Boolean = true,
+                          topPerComplexity: Int = TOP_PER_COMPLEXITY,
+                          function: (Rule<T>) -> Double,
+                          functionDelta: Double = FUNCTION_DELTA,
+                          klDelta: Double = KL_DELTA,
+                          buildClusters: Boolean = true): List<Node<T>> {
+        // Since we use FishBone visualization as an analysis method,
+        // we want all the results available for each complexity level available for inspection
+        val best = mineByComplexity(predicates, target, database,
+                maxComplexity, and, or, negate,
+                topPerComplexity, function,
+                functionDelta, klDelta)
+
+        // NOTE[shpynov] hacks adding target information to all the nodes
+        val singleRules = best[1]
+
+        // We don't need calculate additional statistics in case of sampling
+        val targetAux = if (buildClusters && singleRules.isNotEmpty()) {
+            // Collect pairwise correlations and all the top level predicates combinations
+            TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
+        } else null
+
+        val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
+        result.map {
+            Callable {
+                it.aux = RuleAux(rule =
+                Combinations.of(database,
+                        listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)))
+            }
+        }.await(parallel = true)
+        MultitaskProgress.finishTask(target.name())
+        return result +
+                // Technical rule TRUE => target
+                listOf(Node(Rule(TruePredicate(), target, database), TruePredicate(), null, targetAux))
+    }
+
+
+    /**
      * Dynamic programming algorithm storing optimization results by complexity.
      */
     private fun <T> mineByComplexity(predicates: List<Predicate<T>>,
@@ -114,105 +213,6 @@ object FishboneMiner : Miner {
         }
         executor.shutdown()
         return bestByComplexity
-    }
-
-
-    @VisibleForTesting
-    internal fun <T> mine(predicates: List<Predicate<T>>,
-                          target: Predicate<T>,
-                          database: List<T>,
-                          maxComplexity: Int,
-                          and: Boolean = true,
-                          or: Boolean = true,
-                          negate: Boolean = true,
-                          topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                          function: (Rule<T>) -> Double,
-                          functionDelta: Double = FUNCTION_DELTA,
-                          klDelta: Double = KL_DELTA,
-                          buildClusters: Boolean = true): List<Node<T>> {
-        // Since we use FishBone visualization as an analysis method,
-        // we want all the results available for each complexity level available for inspection
-        val best = mineByComplexity(predicates, target, database,
-                maxComplexity, and, or, negate,
-                topPerComplexity, function,
-                functionDelta, klDelta)
-
-        // NOTE[shpynov] hacks adding target information to all the nodes
-        val singleRules = best[1]
-
-        // We don't need calculate additional statistics in case of sampling
-        val targetAux = if (buildClusters && singleRules.isNotEmpty()) {
-            // Collect pairwise correlations and all the top level predicates combinations
-            TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
-        } else null
-
-        val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
-        result.map {
-            Callable {
-                it.aux = RuleAux(rule =
-                Combinations.of(database,
-                        listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)))
-            }
-        }.await(parallel = true)
-        MultitaskProgress.finishTask(target.name())
-        return result +
-                // Technical rule TRUE => target
-                listOf(Node(Rule(TruePredicate(), target, database), TruePredicate(), null, targetAux))
-    }
-
-
-    /**
-     * Result of optimization is a graph, [Node] represents a single node of a graph.
-     *
-     * For each edge Parent -> Child, the following **invariant** is hold.
-     * 1.   f(Child) >= f(Parent) + [functionDelta]
-     * 2.   klDelta < 0 OR kullbackLeibler(dEmpirical, dChild) <= kullbackLeibler(dEmpirical, dParent) - [klDelta]
-     *
-     * How information is used?
-     * 1.   Consider all the atomics in Parent and Child, [EmpiricalDistribution] dEmpirical
-     *      is experimental joint distribution on all the atomics.
-     * 2.   Starting with independent [Distribution] we can estimate how many information we get by rules:
-     *      learn(dIndependent, Parent rule) = dParent
-     *      learn(dIndependent, Child rule) = dChild
-     *      kullbackLeibler(dEmpirical, dParent) - "distance" to empirical distribution
-     *      kullbackLeibler(dEmpirical, dChild) - "distance" to empirical distribution
-     *      If "distance" difference becomes too small, stop optimization.
-     *
-     * Important:
-     *      kullbackLeibler(dEmpirical, dIndependent) - kullbackLeibler(dEmpirical) is a constant value,
-     *      independent on adding extra atomics.
-     *      This allows us to talk about learning "enough" information about the system.
-     */
-    fun <T> mine(title: String,
-                 database: List<T>,
-                 toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
-                 logFunction: (List<Node<T>>) -> Unit,
-                 maxComplexity: Int,
-                 and: Boolean = true,
-                 or: Boolean = true,
-                 negate: Boolean = true,
-                 topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                 function: (Rule<T>) -> Double = Rule<T>::conviction,
-                 functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA,
-                 buildClusters: Boolean): List<List<Node<T>>> {
-        LOG.info("Rules mining: $title")
-        toMine.forEach { (conditions, target) ->
-            // For each complexity level and for aux info computation
-            MultitaskProgress.addTask(target.name(), min(conditions.size, maxComplexity) + 1L)
-        }
-        val mineResults = toMine.map { (conditions, target) ->
-            // Cleanup predicates cache
-            Predicate.dbCache = null
-            val mineResult = mine(conditions, target, database,
-                    maxComplexity, and, or, negate,
-                    topPerComplexity, function,
-                    functionDelta, klDelta, buildClusters)
-            logFunction(mineResult)
-            mineResult
-        }
-        LOG.info("DONE rules mining: $title")
-        return mineResults
     }
 
 }

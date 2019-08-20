@@ -53,7 +53,10 @@ class DiseaseDataParser(
             code
         }
 
-        return Pair(database, dataPredicates.map { OverlapSamplePredicate(it.key, it.value) })
+        return Pair(database, dataPredicates.map {
+            val notSamples = database.subtract(it.value).toList() // TODO: add NA support
+            OverlapSamplePredicate(it.key, it.value, notSamples)
+        })
     }
 
     private fun checkPredicatesOnFeature(
@@ -110,7 +113,7 @@ class DiseaseDataParser(
                     database.forEach { out.println(it) }
                 }
                 val predicateFilenames = predicates.map { predicate ->
-                    val output = File("$defaultDataOutputFolder/${predicate.name}")
+                    val output = File("$defaultDataOutputFolder/${predicate.name()}")
                     output.printWriter().use { out ->
                         predicate.samples.forEach { out.println(it) }
                     }
