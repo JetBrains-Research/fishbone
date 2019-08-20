@@ -31,7 +31,7 @@ class CodebookReader(private val codebookFilename: String) {
     private fun dropExperimentPrefix(data: Map<Int, List<String>>): Map<Int, List<String>> {
         return data.map { (key, value) ->
             if (key == EpicCodebookColumn.Variable.index) {
-                Pair(key, value.map { Regex("""^[XYZQC]_""").replaceFirst(it, "") })
+                Pair(key, value.map {Regex("""^(([AI][XYZQC])|[XYZQC]_)""").replaceFirst(it, "") })
             } else {
                 Pair(key, value)
             }
