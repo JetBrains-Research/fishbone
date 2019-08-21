@@ -19,7 +19,7 @@ class CodebookToPredicatesTransformer(private val codebook: Codebook) {
                     else -> throw IllegalArgumentException("Unsupported variable type: $variable")
                 } as Map<String, (Any) -> Boolean>
             } else {
-                val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() in 65.0..75.0 }
+                val isInRange: (String) -> Boolean = { sample_value -> sample_value.toDouble() in LaboratoryDataParser.oldAgeRange }
                 mapOf("AGEL_is_old" to isInRange) as Map<String, (Any) -> Boolean>
             }
         }

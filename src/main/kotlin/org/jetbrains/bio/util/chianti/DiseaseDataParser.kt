@@ -66,7 +66,7 @@ class DiseaseDataParser(
                 .filter { (name, predicate) ->
                     ("(low|high|normal)_$column".toRegex().matches(name) ||
                             (!"(low|high|normal).*".toRegex().matches(name) && name.contains(column))) &&
-                            !(column == "AGE" && !(cellValue.toString().toDouble() in 65.0..75.0 ||
+                            !(column == "AGE" && !(cellValue.toString().toDouble() in LaboratoryDataParser.oldAgeRange ||
                                     cellValue.toString().toDouble() < 40)) &&
                             !(column == "SEX" && cellValue.toString().toInt() == 2) &&
                             predicate(cellValue)
