@@ -81,7 +81,19 @@ interface Miner {
                     singleRules.add(node)
                 }
             }
-            return FishboneMiner.Node(newRule, node.element, parentNode)
+            val newNode = FishboneMiner.Node(newRule, node.element, parentNode)
+            val ruleAux = RuleAux(
+                    rule = Combinations.of(
+                            database,
+                            listOfNotNull(
+                                    newNode.element,
+                                    newNode.parent?.rule?.conditionPredicate,
+                                    newNode.rule.targetPredicate
+                            )
+                    )
+            )
+            newNode.aux = ruleAux
+            return newNode
         }
     }
 }
