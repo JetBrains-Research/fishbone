@@ -1,8 +1,7 @@
 package org.jetbrains.bio.rules.validation
 
-import com.google.common.math.BigIntegerMath
 import org.jetbrains.bio.rules.Rule
-import kotlin.math.min
+import org.jetbrains.bio.statistics.hypothesis.FisherExactTest
 
 /**
  * This class implements Fisher's exact statistical significance test
@@ -22,14 +21,7 @@ internal class FisherExactCheck : RuleSignificanceCheck() {
             val c = cFreq(reducedSources, x, target, database)
             val d = dFreq(reducedSources, x, target, database)
 
-            (0..min(b, c)).map { i ->
-                val t1 = BigIntegerMath.factorial(a + b) * BigIntegerMath.factorial(c + d) *
-                        BigIntegerMath.factorial(a + c) * BigIntegerMath.factorial(b + d)
-                val t2 = BigIntegerMath.factorial(a + b + c + d) * BigIntegerMath.factorial(a + i) *
-                        BigIntegerMath.factorial(b - i) * BigIntegerMath.factorial(c - i) *
-                        BigIntegerMath.factorial(d + i)
-                t1.toDouble() / t2.toDouble()
-            }.sum()
+            FisherExactTest.forTable(a, b, c, d).invoke()
         }.max()!!
     }
 }
