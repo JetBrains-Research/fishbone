@@ -1,4 +1,4 @@
-package org.jetbrains.bio.util.chianti.model
+package org.jetbrains.bio.util.chianti.codebook
 
 enum class EpicCodebookColumn(val index: Int) {
     NumberOfValiarble(0),

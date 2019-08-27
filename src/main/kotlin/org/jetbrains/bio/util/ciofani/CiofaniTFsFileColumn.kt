@@ -9,5 +9,4 @@ enum class CiofaniTFsFileColumn(val columnName: String, val isValuePredicate: Bo
     S("s", false),
     PVAL("pval", true),
     PVAL_MEAN("pval.mean", false)
-    // TODO: add other columns when necessary
 }

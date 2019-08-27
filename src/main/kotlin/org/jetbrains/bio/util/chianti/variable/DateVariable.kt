@@ -1,5 +1,6 @@
-package org.jetbrains.bio.util.chianti.model
+package org.jetbrains.bio.util.chianti.variable
 
+import org.jetbrains.bio.util.chianti.codebook.EpicCodebookColumn
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -27,10 +28,10 @@ class DateVariable(name: String, meaning: String, val start: LocalDate, val end:
             val start = LocalDate.parse(dateRange[0], DateTimeFormatter.ofPattern("ddMMMyyyy"))
             val end = LocalDate.parse(dateRange[1], DateTimeFormatter.ofPattern("ddMMMyyyy"))
             return DateVariable(
-                data.getValue(EpicCodebookColumn.Variable.index)[0],
-                data.getValue(EpicCodebookColumn.Meaning.index)[0],
-                start,
-                end
+                    data.getValue(EpicCodebookColumn.Variable.index)[0],
+                    data.getValue(EpicCodebookColumn.Meaning.index)[0],
+                    start,
+                    end
             )
         }
     }

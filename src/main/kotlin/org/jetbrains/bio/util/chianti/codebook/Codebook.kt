@@ -1,37 +1,50 @@
-package org.jetbrains.bio.util.chianti.model
+package org.jetbrains.bio.util.chianti.codebook
 
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.jetbrains.bio.util.chianti.variable.DateVariable
+import org.jetbrains.bio.util.chianti.variable.NominativeVariable
+import org.jetbrains.bio.util.chianti.variable.NumericVariable
+import org.jetbrains.bio.util.chianti.variable.Variable
 import java.io.File
 
-class CodebookReader(private val codebookFilename: String) {
+class Codebook(
+        private val codebookFilename: String,
+        private val irrelevantFeatures: Set<String>,
+        private val redundantFeatures: Set<String>
+) {
 
-    fun readCodebook(): Codebook {
+    val variables: Map<String, Variable>
+
+    init {
         val workbook = WorkbookFactory.create(File(codebookFilename))
         val rowIterator = workbook.getSheetAt(0).rowIterator()
         // Skip header
         rowIterator.next()
 
         val sheetData = getSheetData(rowIterator, emptyList()).map { data -> dropExperimentPrefix(data) }
-        val variables = sheetData
+        variables = sheetData
+                .asSequence()
                 .filter { variableInfo -> isNotIrrelevantFeature(variableInfo) }
                 .filter { variableInfo -> isNotRedundantFeature(variableInfo) }
                 .map { variableInfo ->
                     when {
-                        variableInfo.getValue(EpicCodebookColumn.Codes.index).size > 1 -> EncodedVariable.fromDataMap(variableInfo)
+                        // If there is more then 1 like, than next lines contain codes for nominative variable
+                        variableInfo.getValue(EpicCodebookColumn.Codes.index).size > 1 -> NominativeVariable.fromDataMap(variableInfo)
                         variableInfo.getValue(EpicCodebookColumn.Meaning.index)[0].toLowerCase().contains("date") ->
                             DateVariable.fromDataMap(variableInfo)
                         else -> NumericVariable.fromDataMap(variableInfo)
                     }
-                }.toList()
-        return Codebook(variables.map { it.name to it }.toMap())
+                }
+                .map { it.name to it }
+                .toMap()
     }
 
     private fun dropExperimentPrefix(data: Map<Int, List<String>>): Map<Int, List<String>> {
         return data.map { (key, value) ->
             if (key == EpicCodebookColumn.Variable.index) {
-                Pair(key, value.map {Regex("""^(([AI][XYZQC])|[XYZQC]_)""").replaceFirst(it, "") })
+                Pair(key, value.map { Regex("""^(([AI][XYZQC])|[XYZQC]_)""").replaceFirst(it, "") })
             } else {
                 Pair(key, value)
             }
@@ -39,10 +52,10 @@ class CodebookReader(private val codebookFilename: String) {
     }
 
     private fun isNotIrrelevantFeature(data: Map<Int, List<String>>) =
-            !IrrelevantFeature.labels().contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
+            !irrelevantFeatures.contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
 
     private fun isNotRedundantFeature(data: Map<Int, List<String>>) =
-            !RedundantFeature.labels().contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
+            !redundantFeatures.contains(data.getValue(EpicCodebookColumn.Variable.index)[0])
 
     private fun getSheetData(
             rowIterator: Iterator<Row>, data: List<Map<Int, List<String>>>
@@ -66,7 +79,6 @@ class CodebookReader(private val codebookFilename: String) {
         return getRowData(cellIterator, data + (cell.columnIndex to listOf(cell.toString())))
     }
 
-    // TODO: rewrite with streams
     private fun addVariablesToLastRow(
             data: List<Map<Int, List<String>>>, rowData: Map<Int, List<String>>
     ): MutableMap<Int, List<String>> {

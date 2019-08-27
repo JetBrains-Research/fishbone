@@ -1,4 +1,6 @@
-package org.jetbrains.bio.util.chianti.model
+package org.jetbrains.bio.util.chianti.variable
+
+import org.jetbrains.bio.util.chianti.codebook.LaboCodebookColumn
 
 class NumericVariable(
     name: String,
@@ -24,18 +26,17 @@ class NumericVariable(
     private fun isHighValue() = { it: String -> it.toDouble() > q3 }
     private fun isNormalValue() = { it: String -> it.toDouble() in q1..q3 }
 
-    // TODO: codebookcolumn should be changeble
     companion object {
         fun fromDataMap(data: Map<Int, List<String>>): NumericVariable {
             return NumericVariable(
-                data.getValue(LaboCodebookColumn.Variable.index)[0],
-                data.getValue(LaboCodebookColumn.Meaning.index)[0],
-                data.getValue(LaboCodebookColumn.Max.index)[0].toDouble(),
-                data.getValue(LaboCodebookColumn.Min.index)[0].toDouble(),
-                data.getValue(LaboCodebookColumn.Mean.index)[0].toDouble(),
-                data.getValue(LaboCodebookColumn.Median.index)[0].toDouble(),
-                data.getValue(LaboCodebookColumn.Q1.index)[0].toDouble(),
-                data.getValue(LaboCodebookColumn.Q3.index)[0].toDouble()
+                    data.getValue(LaboCodebookColumn.Variable.index)[0],
+                    data.getValue(LaboCodebookColumn.Meaning.index)[0],
+                    data.getValue(LaboCodebookColumn.Max.index)[0].toDouble(),
+                    data.getValue(LaboCodebookColumn.Min.index)[0].toDouble(),
+                    data.getValue(LaboCodebookColumn.Mean.index)[0].toDouble(),
+                    data.getValue(LaboCodebookColumn.Median.index)[0].toDouble(),
+                    data.getValue(LaboCodebookColumn.Q1.index)[0].toDouble(),
+                    data.getValue(LaboCodebookColumn.Q3.index)[0].toDouble()
             )
         }
     }

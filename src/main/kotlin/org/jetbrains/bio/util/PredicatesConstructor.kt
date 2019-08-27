@@ -10,7 +10,7 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
 
-class PredicatesHelper {
+class PredicatesConstructor {
     companion object {
 
         /**

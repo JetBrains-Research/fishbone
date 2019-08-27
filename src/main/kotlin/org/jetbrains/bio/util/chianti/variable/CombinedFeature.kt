@@ -1,7 +1,11 @@
-package org.jetbrains.bio.util.chianti.model
+package org.jetbrains.bio.util.chianti.variable
 
 enum class CombinedFeature(
-        val title: String, val labels: Collection<String>, val combine: (Map<String, Double>) -> Double, params: Map<String, Double>
+        val title: String,
+        val labels: Collection<String>,
+        val combine: (Map<String, Double>) -> Double,
+        val params: Map<String, Double>,
+        val preserveSources: Boolean
 ) {
     VIT_E(
             "VIT_E",
@@ -9,7 +13,8 @@ enum class CombinedFeature(
             { params: Map<String, Double> ->
                 params.values.sum()
             },
-            emptyMap()
+            emptyMap(),
+            false
     ),
     Ratio_C18_9_C18_6(
             "Ratio_C18_9_C18_6",
@@ -22,8 +27,14 @@ enum class CombinedFeature(
                     "max_male" to 2.261903,
                     "mean_male" to 1.11923,
                     "q1_male" to 0.8990796,
-                    "q3_male" to 1.3147746
-            )
+                    "q3_male" to 1.3147746,
+                    "min_female" to 0.4684495,
+                    "max_female" to 4.63682,
+                    "mean_female" to 1.057451,
+                    "q1_female" to 0.8411347,
+                    "q3_female" to 1.2148196
+            ),
+            true
     );
 
     companion object {
