@@ -9,6 +9,9 @@ import org.jetbrains.bio.predicate.Predicate
 import org.jetbrains.bio.predicate.PredicatesConstructor
 import java.nio.file.Paths
 
+/**
+ * Experiment for genome based data (BED files).
+ */
 class GenomeBasedExperiment(outputFolder: String) : Experiment("$outputFolder/genome_based_exp_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(db[i])
 

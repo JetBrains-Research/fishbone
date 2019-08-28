@@ -7,8 +7,12 @@ import org.jetbrains.bio.miner.FishboneMiner
  * (see: https://en.wikipedia.org/wiki/False_discovery_rate#Benjamini%E2%80%93Hochberg_procedure)
  */
 class BenjaminiHochbergAdjustment {
+
     companion object : MultipleComparisonsAdjustment() {
-        override fun <T> test(pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int): List<Pair<FishboneMiner.Node<T>, Boolean>> {
+
+        override fun <T> test(
+                pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int
+        ): List<Pair<FishboneMiner.Node<T>, Boolean>> {
             val result = mutableListOf<Pair<FishboneMiner.Node<T>, Boolean>>()
             (0 until pVals.size).forEach { i ->
                 val level = (alpha * (i + 1)) / m

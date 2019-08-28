@@ -152,7 +152,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return sample
      */
-    private fun <V> sample(db: List<V>, target: Predicate<V>, strategy: SamplingStrategy): List<V> {
+    internal fun <V> sample(db: List<V>, target: Predicate<V>, strategy: SamplingStrategy): List<V> {
         val isTargetMajor = target.test(db).cardinality().toDouble() / db.size >= 0.5
         val majorClass = (if (isTargetMajor) target else target.not()).test(db)
         val majority = db.withIndex().filter { majorClass[it.index] }.map { it.value }

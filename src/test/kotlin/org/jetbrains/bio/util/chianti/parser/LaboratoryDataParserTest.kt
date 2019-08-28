@@ -5,7 +5,6 @@ import org.jetbrains.bio.predicate.OverlapSamplePredicate
 import org.jetbrains.bio.rule.Rule
 import org.jetbrains.bio.rule.validation.RuleImprovementCheck
 import org.jetbrains.bio.predicate.PredicatesConstructor
-import org.jetbrains.bio.util.chianti.parser.DataParser.Companion.AGE_COLUMN
 import org.jetbrains.bio.util.chianti.codebook.Codebook
 import org.jetbrains.bio.util.chianti.codebook.CodebookToPredicatesTransformer
 import org.jetbrains.bio.util.chianti.variable.CombinedFeature
@@ -13,7 +12,6 @@ import org.jetbrains.bio.util.chianti.variable.Reference
 import org.junit.Test
 import java.io.File
 import java.io.FileInputStream
-import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -28,7 +26,8 @@ class LaboratoryDataParserTest {
     private val sex = 2L
 
     private val databasePath = "$outputDir/target/database.txt"
-    private val specialFiles = listOf(databasePath, outputDir, "$outputDir/target")
+    private val targetPath = "$outputDir/target"
+    private val specialFiles = listOf(databasePath, outputDir, targetPath)
 
     private val processor = LaboratoryDataParser(referenceFilename, sexReferenceFilename, dataFilename)
     private val references = processor.readReferences()
@@ -158,12 +157,8 @@ class LaboratoryDataParserTest {
 
     @Test
     fun testNAPvalue() {
-        val target = PredicatesConstructor.createOverlapSamplePredicates(
-                listOf("/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp15_female/target/${AGE_COLUMN}_is_old")
-        )[0]
-        val database = Paths.get(
-                "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp15_female/target/database.txt"
-        ).toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
+        val target = PredicatesConstructor.createOverlapSamplePredicates(listOf(targetPath))[0]
+        val database = Paths.get(databasePath).toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
 
         val cortdhFile = File(outputDir).walkTopDown()
                 .filter { it.absolutePath !in specialFiles }

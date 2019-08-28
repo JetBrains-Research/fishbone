@@ -8,6 +8,7 @@ import weka.core.SelectedTag
 
 /**
  * Miner run FP-growth algorithm on specified data
+ * {@see: https://en.wikipedia.org/wiki/Association_rule_learning#FP-growth_algorithm}
  */
 class FPGrowthMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(FPGrowthMiner::class.java)

@@ -7,9 +7,8 @@ import weka.classifiers.rules.RuleStats
 import weka.core.Instances
 
 /**
- * This miner rus Ripper algorithm (see: https://www.sciencedirect.com/science/article/pii/B9781558603776500232)
- * on specified data.
- * This class uses JRipper class from Weka library (see: http://weka.sourceforge.net/doc.dev/weka/classifiers/rules/JRip.html)
+ * This miner rus Ripper algorithm on specified data
+ * {see: http://weka.sourceforge.net/doc.dev/weka/classifiers/rules/JRip.html}
  */
 class RipperMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(RipperMiner::class.java)

@@ -9,12 +9,26 @@ import org.jetbrains.bio.rule.validation.adjustment.BenjaminiHochbergAdjustment
 import org.jetbrains.bio.rule.validation.adjustment.NoAdjustment
 import org.slf4j.LoggerFactory
 
+/**
+ * This class provides method to check rule's productivity in terms of 'improvement'.
+ * {@see: https://www.tandfonline.com/doi/abs/10.1080/13658816.2018.1434525?journalCode=tgis20}
+ */
 class RuleImprovementCheck {
     companion object {
 
         private const val SMALL_DATABASE_SIZE_THRESHOLD = 100
         private val logger = LoggerFactory.getLogger(RuleImprovementCheck::class.java)
 
+        /**
+         * Filter out unproductive rules.
+         *
+         * @param rules rules to check
+         * @param alpha significance level
+         * @param db database
+         * @param adjust if we want to use multiple comparison adjustment
+         *
+         * @return productve rules only
+         */
         fun <T> productiveRules(
                 rules: List<FishboneMiner.Node<T>>, alpha: Double, db: List<T>, adjust: Boolean
         ): List<FishboneMiner.Node<T>> {
@@ -29,7 +43,13 @@ class RuleImprovementCheck {
         }
 
         /**
-         * Returns pvalue for corresponding Null Hypothesis
+         * Check is rule is productive
+         *
+         * @param rule rule to check
+         * @param database database
+         * @param testName test to use. Should be 'chi' or 'fisher'
+         *
+         * @return pvalue for corresponding Null Hypothesis
          */
         fun <T> testRuleProductivity(rule: Rule<T>, database: List<T>, testName: String? = null): Double {
             val test = testName ?: (if (database.size > SMALL_DATABASE_SIZE_THRESHOLD) "chi" else "fisher")
@@ -44,17 +64,20 @@ class RuleImprovementCheck {
                 val c = cFreq(reducedSources, x, target, database)
                 val d = dFreq(reducedSources, x, target, database)
 
-                SignificanceCheck.test(a, b, c, d, database.size, test)
+                StatisticalSignificanceCheck.test(a, b, c, d, database.size, test)
             }.max()!!
         }
 
+        /**
+         * Obtain a list of rule sources. For OR-connected predicates rule is rewrited with AND connections.
+         */
         private fun <T> buildSources(rule: Rule<T>): List<Predicate<T>> {
             return when (val conditionPredicate = rule.conditionPredicate) {
                 is AndPredicate -> conditionPredicate.operands
                 is OrPredicate -> {
                     val operands = conditionPredicate.operands
                     if (operands.size < 2) {
-                        throw IllegalArgumentException("Operands size is less than 2") //TODO: refactor
+                        throw IllegalArgumentException("Operands size is less than 2")
                     }
                     val initial = operands[0].not()
                     listOf(operands.drop(1).map { it.not() }.fold(initial, { acc, p -> acc.and(p.not()) }).not())
@@ -62,6 +85,8 @@ class RuleImprovementCheck {
                 else -> listOf(conditionPredicate)
             }
         }
+
+        // Functions for frequency table
 
         private fun <T> aFreq(sources: List<Predicate<T>>, target: Predicate<T>, database: List<T>) =
                 AndPredicate(sources + target).test(database).cardinality()

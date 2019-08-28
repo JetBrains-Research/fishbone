@@ -6,6 +6,9 @@ import org.jetbrains.bio.predicate.Predicate
 import org.jetbrains.bio.predicate.PredicatesConstructor
 import java.nio.file.Paths
 
+/**
+ * Experiment for InChianti dataset {@see: http://inchiantistudy.net/wp/inchianti-dataset/}
+ */
 class ChiantiDataExperiment(outputFolder: String) : Experiment("$outputFolder/chianti_based_exp_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(i as V)
 

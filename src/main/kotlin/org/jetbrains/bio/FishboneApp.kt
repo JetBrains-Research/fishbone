@@ -1,5 +1,6 @@
 package org.jetbrains.bio
 
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
@@ -18,6 +19,7 @@ import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.util.pipeline.PipelineContext
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.jetbrains.bio.api.ExperimentType
@@ -58,11 +60,8 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
                 route("/rules") {
                     // API to load rules from specified file
                     get {
-                        val fileName = call.request.queryParameters["filename"]
-                                ?: throw IllegalArgumentException("Filename parameter is expected")
-                        val experimentName = call.request.queryParameters["experiment"]
-                                ?: throw IllegalArgumentException("Experiment parameter is expected")
-                        call.respondFile(loadFile(fileName, experimentName))
+                        val file = loadRules()
+                        call.respondFile(file)
                     }
                     // API to mine rules on spesified data
                     post {
@@ -76,14 +75,12 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
 
     /**
      * Loads file with rules.
-     *
-     * @param fileName name of the rules file to load
-     * @param experimentName name of the experiment for which rules were mined.
-     * It's used to select correct output directory to search the file
-     *
-     * @return loaded file
      */
-    private fun loadFile(fileName: String, experimentName: String): File {
+    private fun PipelineContext<Unit, ApplicationCall>.loadRules(): File {
+        val fileName = call.request.queryParameters["filename"]
+                ?: throw IllegalArgumentException("Filename parameter is expected")
+        val experimentName = call.request.queryParameters["experiment"]
+                ?: throw IllegalArgumentException("Experiment parameter is expected")
         return if (fileName.contains(outputFolder)) {
             File(fileName)
         } else {

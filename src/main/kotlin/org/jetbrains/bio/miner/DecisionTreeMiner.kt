@@ -6,7 +6,8 @@ import weka.classifiers.rules.PART
 
 
 /**
- * Miner run decision tree algorithm on specified data
+ * Miner run PART algorithm on specified data
+ * {@see: http://weka.sourceforge.net/doc.dev/weka/classifiers/rules/PART.html}
  */
 class DecisionTreeMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(DecisionTreeMiner::class.java)

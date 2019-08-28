@@ -3,8 +3,15 @@ package org.jetbrains.bio.rule.validation
 import org.apache.commons.math3.distribution.ChiSquaredDistribution
 import org.jetbrains.bio.statistics.hypothesis.FisherExactTest
 
-class SignificanceCheck {
+/**
+ * Provides method to check statistical significance with specified method.
+ */
+class StatisticalSignificanceCheck {
 
+    /**
+     * Class for Chi-squared test.
+     * {@see: https://en.wikipedia.org/wiki/Chi-squared_test}
+     */
     class ChiSquareTest(private val a: Double, private val b: Double, private val c: Double, private val d: Double) {
         fun invoke(): Double {
             val t1 = if (a + b != 0.0) a + b else 1.0
@@ -30,13 +37,17 @@ class SignificanceCheck {
     }
 
     companion object {
+
+        /**
+         * Test statistical significance according to frequency table and test name ('chi' or 'fisher')
+         */
         fun test(a: Int, b: Int, c: Int, d: Int, len: Int, test: String): Double {
             return when (test) {
                 "fisher" -> FisherExactTest.forTable(a, b, c, d).invoke()
                 "chi" -> ChiSquareTest.forTable(
                         a.toDouble() / len, b.toDouble() / len, c.toDouble() / len, d.toDouble() / len
                 ).invoke()
-                else -> throw IllegalArgumentException("Unsipported test $test")
+                else -> throw IllegalArgumentException("Unsupported test $test")
             }
         }
     }
