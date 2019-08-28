@@ -129,7 +129,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return exploratory to holdout datasets
      */
-    private fun <V> splitDataset(
+    internal fun <V> splitDataset(
             db: List<V>, target: Predicate<V>, strategy: SamplingStrategy, exploratoryFraction: Double
     ): Pair<List<V>, List<V>> {
         val n = (exploratoryFraction * db.size).toInt()
@@ -230,7 +230,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return productive rules only
      */
-    private fun <V> getProductiveRules(
+    internal fun <V> getProductiveRules(
             miner: MiningAlgorithm, rules: List<FishboneMiner.Node<V>>, alpha: Double?, db: List<V>, adjust: Boolean
     ): List<FishboneMiner.Node<V>> {
         return if (alpha != null) {

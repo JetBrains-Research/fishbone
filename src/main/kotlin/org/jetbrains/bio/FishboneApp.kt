@@ -79,11 +79,11 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
     private fun PipelineContext<Unit, ApplicationCall>.loadRules(): File {
         val fileName = call.request.queryParameters["filename"]
                 ?: throw IllegalArgumentException("Filename parameter is expected")
-        val experimentName = call.request.queryParameters["experiment"]
-                ?: throw IllegalArgumentException("Experiment parameter is expected")
         return if (fileName.contains(outputFolder)) {
             File(fileName)
         } else {
+            val experimentName = call.request.queryParameters["experiment"]
+                    ?: throw IllegalArgumentException("Experiment parameter is expected")
             val experimentType = ExperimentType.valueOf(experimentName)
             val experiment = experiments[experimentType]
                     ?: throw IllegalArgumentException("Unexpected experiment name")
