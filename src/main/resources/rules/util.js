@@ -54,6 +54,17 @@ function initialize() {
     $('#show-top-filter').change(filterAndRender);
     $('#visualize-method').change(filterAndRender);
 
+    $('#experiment-type').change(function() {
+        if ($(this).val() === 'GENOME') {
+            $("#genome-label").show()
+            $("#genome").show()
+        }
+        if ($(this).val() === 'CHIANTI') {
+            $("#genome-label").hide()
+            $("#genome").hide()
+        }
+    });
+
     // File chooser listener
     $('#file').change(function () {
         $('#decisiontree-alg-dialog-pane').empty();
@@ -271,6 +282,7 @@ function runAnalysisOnLoadedData() {
     $('#fpgrowth-alg-dialog-pane').empty();
 
     window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("genome", document.getElementById('genome').value.toLowerCase());
     window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);

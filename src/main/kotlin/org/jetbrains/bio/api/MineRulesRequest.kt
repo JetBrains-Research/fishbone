@@ -12,6 +12,7 @@ import java.io.File
  */
 class MineRulesRequest(
         val experiment: ExperimentType,
+        val genome: String,
         val predicates: List<String>,
         val targets: List<String>,
         val database: String,

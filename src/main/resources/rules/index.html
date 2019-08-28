@@ -99,8 +99,15 @@
                    onclick="$('#targets-file').click();"/>
             <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
             <select id="experiment-type" name="name" required>
-                <option value="CIOFANI" selected="selected">CIOFANI</option>
+                <option value="GENOME" selected="selected">GENOME</option>
                 <option value="CHIANTI">CHIANTI</option>
+            </select>
+            <label id="genome-label" for="genome">Genome:</label>
+            <select id="genome" name="name">
+                <option value="mm10" selected="selected">mm10</option>
+                <option value="mm9">mm9</option>
+                <option value="hg38">hg38</option>
+                <option value="hg19">hg19</option>
             </select>
             <select id="info-criterion">
                 <option value="conviction">conviction</option>
@@ -150,7 +157,7 @@
             <input id="filename-to-download" class="form-control" placeholder="filename to dowload"/>
             <label id="experiment-type-label-download" for="experiment-type">Experiment type:</label>
             <select id="experiment-type-download" name="name" required>
-                <option value="CIOFANI" selected="selected">CIOFANI</option>
+                <option value="GENOME" selected="selected">GENOME</option>
                 <option value="CHIANTI">CHIANTI</option>
             </select>
             <input id="download-file-button" type="button" class="btn btn-primary" value="Download" style="display: none"
@@ -168,6 +175,8 @@
                         document.getElementById("run-analysis-button").style.display = "inline";
                         document.getElementById("experiment-type-label").style.display = "inline";
                         document.getElementById("experiment-type").style.display = "inline";
+                        document.getElementById("genome-label").style.display = "inline";
+                        document.getElementById("genome").style.display = "inline";
                         document.getElementById("significance-level-label").style.display = "inline";
                         document.getElementById("significance-level").style.display = "inline";
                         document.getElementById("algorithms").style.display = "inline";
@@ -215,6 +224,8 @@
                         document.getElementById("run-analysis-button").style.display = "none";
                         document.getElementById("experiment-type-label").style.display = "none";
                         document.getElementById("experiment-type").style.display = "none";
+                        document.getElementById("genome-label").style.display = "none";
+                        document.getElementById("genome").style.display = "none";
                         document.getElementById("significance-level-label").style.display = "none";
                         document.getElementById("significance-level").style.display = "none";
                         document.getElementById("algorithms").style.display = "none";
