@@ -8,10 +8,10 @@ import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
 import org.jetbrains.bio.genome.downloadTo
-import org.jetbrains.bio.predicates.OverlapPredicate
-import org.jetbrains.bio.predicates.Predicate
-import org.jetbrains.bio.rules.FishboneMiner
-import org.jetbrains.bio.rules.RulesLogger
+import org.jetbrains.bio.predicate.OverlapPredicate
+import org.jetbrains.bio.predicate.Predicate
+import org.jetbrains.bio.miner.FishboneMiner
+import org.jetbrains.bio.rule.RulesLogger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CopyOnWriteArrayList

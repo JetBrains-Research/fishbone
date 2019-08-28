@@ -114,7 +114,7 @@ shadowJar {
 jar {
     manifest {
         attributes provider: "gradle"
-        attributes "Application-Name": "SPAN $version"
+        attributes "Application-Name": "Fishbone $version"
         attributes "Built-By": "JetBrains Research TeamCity"
     }
 }

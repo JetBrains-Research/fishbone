@@ -1,7 +1,7 @@
 package org.jetbrains.bio.util.chianti.parser
 
 import com.epam.parso.impl.SasFileReaderImpl
-import org.jetbrains.bio.predicates.OverlapSamplePredicate
+import org.jetbrains.bio.predicate.OverlapSamplePredicate
 import org.nield.kotlinstatistics.range.ClosedOpenRange
 import org.nield.kotlinstatistics.range.until
 import java.io.File

@@ -2,7 +2,7 @@ package org.jetbrains.bio.util.chianti.parser
 
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
-import org.jetbrains.bio.predicates.OverlapSamplePredicate
+import org.jetbrains.bio.predicate.OverlapSamplePredicate
 import org.jetbrains.bio.util.chianti.codebook.Codebook
 import org.jetbrains.bio.util.chianti.codebook.CodebookToPredicatesTransformer
 import org.jetbrains.bio.util.parse

@@ -5,7 +5,7 @@ import joptsimple.OptionParser
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
-import org.jetbrains.bio.predicates.OverlapSamplePredicate
+import org.jetbrains.bio.predicate.OverlapSamplePredicate
 import org.jetbrains.bio.util.chianti.codebook.Codebook
 import org.jetbrains.bio.util.chianti.codebook.CodebookToPredicatesTransformer
 import org.jetbrains.bio.util.chianti.variable.CombinedFeature
@@ -28,7 +28,7 @@ class LaboratoryDataParser(
         dataFilename: String
 ) : DataParser(
         defaultDataOutputFolder = "/path/to/folder/for/predicates",
-        targetSexId = 2,
+        targetSexId = 1,
         prefix = Regex("""^[XYZQC]_"""),
         dataFilename = dataFilename
 ) {
@@ -54,6 +54,7 @@ class LaboratoryDataParser(
         val database = data.withIndex()
                 .filter { (_, sample) -> isValidSex(sample, dataByCode, sexColumnIdx) }
                 .filter { (_, sample) -> isValidAge(sample, dataByCode) }
+                .filter { (_, sample) -> dataByCode.getValue(sample[0].toString().toLong())[5].toString().toDouble() >= 60 }
                 .map { (sampleIndex, sample) ->
                     val code = sample[0].toString().toInt()
                     println(sampleIndex)

@@ -107,6 +107,8 @@
                 <option value="loe">loe</option>
             </select>
             <input id="run-name" placeholder="run name"/>&nbsp;
+            <label id="port-label" for="port">Port:</label>
+            <input type="number" id="port" name="port" value="8080">
             <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
                    onclick="runAnalysisOnLoadedData()"/>
 
@@ -186,6 +188,8 @@
                         document.getElementById("alphaHoldout").style.display = "inline";
                         document.getElementById("alphaFull-label").style.display = "inline";
                         document.getElementById("alphaFull").style.display = "inline";
+                        document.getElementById("port-label").style.display = "inline";
+                        document.getElementById("port").style.display = "inline";
 
                         document.getElementById("filename").style.display = "none";
                         document.getElementById("file-button").style.display = "none";
@@ -231,6 +235,8 @@
                         document.getElementById("alphaHoldout").style.display = "none";
                         document.getElementById("alphaFull-label").style.display = "none";
                         document.getElementById("alphaFull").style.display = "none";
+                        document.getElementById("port-label").style.display = "none";
+                        document.getElementById("port").style.display = "none";
 
                         document.getElementById("filename").style.display = "inline";
                         document.getElementById("file-button").style.display = "inline";

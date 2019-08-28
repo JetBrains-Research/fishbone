@@ -1,6 +1,5 @@
 package org.jetbrains.bio
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
@@ -9,9 +8,6 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.content.MultiPartData
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
 import io.ktor.jackson.jackson
 import io.ktor.request.receiveMultipart
 import io.ktor.response.respond
@@ -24,20 +20,16 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
-import org.jetbrains.bio.api.ExperimentSettings
 import org.jetbrains.bio.api.ExperimentType
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.MiningAlgorithm
-import org.jetbrains.bio.experiments.rules.ChiantiDataExperiment
-import org.jetbrains.bio.experiments.rules.CiofaniDataExperiment
-import org.jetbrains.bio.experiments.rules.Experiment
+import org.jetbrains.bio.experiment.GenomeBasedExperiment
+import org.jetbrains.bio.experiment.Experiment
 import org.jetbrains.bio.util.parse
 import java.io.File
-import kotlin.reflect.full.declaredMemberProperties
 
 
 class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, private val outputFolder: String) {
-    private val jacksonObjectMapper = jacksonObjectMapper()
 
     /**
      * HTTP API for Fishbone service
@@ -61,16 +53,11 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
             routing {
                 route("/rules") {
                     get {
-                        val filename = call.request.queryParameters["filename"]!!
-                        val file = if (filename.contains(outputFolder)) {
-                            File(filename)
-                        } else {
-                            val experimentType = ExperimentType.valueOf(call.request.queryParameters["experiment"]!!)
-                            val experiment = experiments[experimentType]
-                                    ?: throw IllegalArgumentException("Unexpected experiment name")
-                            File("${experiment.outputFolder}/$filename")
-                        }
-                        call.respondFile(file)
+                        val fileName = call.request.queryParameters["filename"]
+                                ?: throw IllegalArgumentException("Filename parameter is expected")
+                        val experimentName = call.request.queryParameters["experiment"]
+                                ?: throw IllegalArgumentException("Experiment parameter is expected")
+                        call.respondFile(loadFile(fileName, experimentName))
                     }
                     post {
                         call.respond(mineRules(call.receiveMultipart()))
@@ -81,50 +68,24 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
         server.start(wait = true)
     }
 
-    // TODO: run miners async
+    private fun loadFile(fileName: String, experimentName: String): File {
+        return if (fileName.contains(outputFolder)) {
+            File(fileName)
+        } else {
+            val experimentType = ExperimentType.valueOf(experimentName)
+            val experiment = experiments[experimentType]
+                    ?: throw IllegalArgumentException("Unexpected experiment name")
+            File("${experiment.outputFolder}/$fileName")
+        }
+    }
+
     private suspend fun mineRules(multipart: MultiPartData): Map<MiningAlgorithm, String> {
         val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
-        val request = multipartToMineRulesRequest(multipart, tempDir)
+        val request = MineRulesRequest.fromMultiPartData(multipart, tempDir)
         val experiment = experiments[request.experiment] ?: throw IllegalArgumentException("Unexpected experiment name")
         val result = experiment.run(request)
         tempDir.deleteRecursively()
         return result
-    }
-
-    // TODO: looks ugly, rewrite
-    private suspend fun multipartToMineRulesRequest(multipart: MultiPartData, tempDir: File): MineRulesRequest {
-        val requestMap = mutableMapOf<String, Any>()
-        val settingsMap = mutableMapOf<String, Any>()
-        multipart.forEachPart { part ->
-            val name = part.name!!
-            when (part) {
-                is PartData.FormItem -> {
-                    if (part.name == "miners") {
-                        requestMap[name] =
-                                part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet() //TODO: process array correctly
-                    } else {
-                        if (part.name in ExperimentSettings::class.java.declaredFields.map { it.name }) {
-                            settingsMap[name] = part.value
-                        } else {
-                            requestMap[name] = part.value
-                        }
-                    }
-                }
-                is PartData.FileItem -> {
-                    val file = File(tempDir, part.originalFileName)
-                    part.streamProvider().use { its -> file.outputStream().buffered().use { its.copyTo(it) } }
-                    requestMap[name] = if (name == "database") {
-                        file.absolutePath
-                    } else {
-                        (requestMap.getOrDefault(name, listOf<String>()) as List<String>) + file.absolutePath
-                    }
-                }
-            }
-        }
-        if (settingsMap.isNotEmpty()) {
-            requestMap["settings"] = settingsMap
-        }
-        return jacksonObjectMapper.convertValue(requestMap, MineRulesRequest::class.java)
     }
 
     companion object {
@@ -146,8 +107,8 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
             }.parse(args) { options ->
                 val outputFolder = options.valueOf("output").toString()
                 val experiments = mapOf(
-                        ExperimentType.CIOFANI to CiofaniDataExperiment(outputFolder),
-                        ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
+                        ExperimentType.CIOFANI to GenomeBasedExperiment(outputFolder),
+                        ExperimentType.CHIANTI to GenomeBasedExperiment(outputFolder)
                 )
                 val port = options.valueOf("port").toString().toInt()
                 FishboneApp(experiments, outputFolder).run(port)

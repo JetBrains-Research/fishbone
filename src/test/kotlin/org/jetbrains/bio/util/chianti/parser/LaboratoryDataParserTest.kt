@@ -1,10 +1,10 @@
 package org.jetbrains.bio.util.chianti.parser
 
 import com.epam.parso.impl.SasFileReaderImpl
-import org.jetbrains.bio.predicates.OverlapSamplePredicate
-import org.jetbrains.bio.rules.Rule
-import org.jetbrains.bio.rules.validation.RuleSignificanceCheck
-import org.jetbrains.bio.util.PredicatesConstructor
+import org.jetbrains.bio.predicate.OverlapSamplePredicate
+import org.jetbrains.bio.rule.Rule
+import org.jetbrains.bio.rule.validation.RuleImprovementCheck
+import org.jetbrains.bio.predicate.PredicatesConstructor
 import org.jetbrains.bio.util.chianti.parser.DataParser.Companion.AGE_COLUMN
 import org.jetbrains.bio.util.chianti.codebook.Codebook
 import org.jetbrains.bio.util.chianti.codebook.CodebookToPredicatesTransformer
@@ -20,20 +20,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class LaboratoryDataParserTest {
-    private val referenceFilename: String = "/home/nina.lukashina/projects/fishbone_materials/chianti_data/rbl_filtered.csv"
-    private val sexReferenceFilename: String = "/home/nina.lukashina/projects/fishbone_materials/chianti_data/sex_dependent_features_references/combined/ref_sd_bl.csv"
-    private val dataFilename: String = "/home/nina.lukashina/projects/fishbone_materials/InCHIANTI/english/4.data/sas_datasets/Assays/labo_raw.sas7bdat"
-    private val codebookFilename: String = "/home/nina.lukashina/projects/fishbone_materials/chianti_data/3.Codebooks/labo_raw_fixed.xlsx"
-    private val irrelevantFeatures = {
-        Files.readAllLines(Paths.get("/home/nina.lukashina/projects/fishbone/src/main/resources/util/chianti/irrelevant_features")).toList().toSet()
-    }()
-    private val redundantFeatures = {
-        Files.readAllLines(Paths.get("/home/nina.lukashina/projects/fishbone/src/main/resources/util/chianti/redundant_features")).toList().toSet()
-    }()
-    private val sexDependentFeatures = {
-        Files.readAllLines(Paths.get("/home/nina.lukashina/projects/fishbone/src/main/resources/util/chianti/sex_dependent_features")).toList().toSet()
-    }()
-    private val outputDir: String = "/home/nina.lukashina/projects/fishbone_materials/chianti_data/experiments/exp19_test_female"
+    private val referenceFilename: String = "/path/to/reference"
+    private val sexReferenceFilename: String = "/path/to/sex_reference"
+    private val dataFilename: String = "/path/to/data"
+    private val codebookFilename: String = "/path/to/codebook"
+    private val outputDir: String = "/path/to/output"
     private val sex = 2L
 
     private val databasePath = "$outputDir/target/database.txt"
@@ -43,7 +34,7 @@ class LaboratoryDataParserTest {
     private val references = processor.readReferences()
     private val predicatesMap = {
         CodebookToPredicatesTransformer(
-                Codebook(codebookFilename, irrelevantFeatures, redundantFeatures),
+                Codebook(codebookFilename, processor.irrelevantFeatures, processor.redundantFeatures),
                 references.map { ref -> Reference(ref[0], ref[1].toDouble(), ref[3].toDouble()) }
         ).predicates
     }()
@@ -87,7 +78,6 @@ class LaboratoryDataParserTest {
                             && label !in processor.sexDependentFeatures
                 }
                 .filter { predicateName ->
-                    println(predicateName)
                     val idx = columnsByIdx.keys.find { idx ->
                         val column = columnsByIdx.getValue(idx)
                         DataParser.predicateNameIsApplicableForColumn(column, predicateName)
@@ -101,10 +91,10 @@ class LaboratoryDataParserTest {
                 .toList()
 
         // Check irrelevant and redundant features
-        irrelevantFeatures.forEach { p ->
+        processor.irrelevantFeatures.forEach { p ->
             assertFalse(predicateFileNames.contains(p), "No irrelevant features must be used: $p")
         }
-        redundantFeatures.forEach { p ->
+        processor.redundantFeatures.forEach { p ->
             assertFalse(predicateFileNames.contains(p), "No redundant features must be used: $p")
         }
 
@@ -180,14 +170,14 @@ class LaboratoryDataParserTest {
                 .find { it.nameWithoutExtension == "low_CORTDH" }!!.absolutePath
         val cordthNoNa = PredicatesConstructor.createOverlapSamplePredicates(listOf(cortdhFile))[0]
         val ruleNoNa = Rule(cordthNoNa.not(), target, database)
-        val pNoNa = RuleSignificanceCheck.test(ruleNoNa, database)
+        val pNoNa = RuleImprovementCheck.testRuleProductivity(ruleNoNa, database)
 
         val naCortdh = data.filter { it[173] == null }.map { it[0].toString().toInt() }
         val cortdhWithNa = OverlapSamplePredicate(
                 cordthNoNa.name(), cordthNoNa.samples, cordthNoNa.notSamples + naCortdh
         )
         val ruleNa = Rule(cortdhWithNa.not(), target, database)
-        val pNa = RuleSignificanceCheck.test(ruleNa, database)
+        val pNa = RuleImprovementCheck.testRuleProductivity(ruleNa, database)
 
         assertTrue(pNoNa < pNa)
     }
@@ -207,7 +197,6 @@ class LaboratoryDataParserTest {
                         .replace("low_", "")
                         .replace("high_", "")
                         .replace("normal_", "")
-                println(label)
                 val isReferenceBasedFeature = "${label}_$sexName" in references.map { it[0] }
                 if (isReferenceBasedFeature) {
                     val idx = columnsByIdx.keys.find { idx ->
@@ -215,17 +204,12 @@ class LaboratoryDataParserTest {
                     }!!
                     p.samples.forEach { code ->
                         val patient = data.find { it[0].toString().toInt() == code }!!
-                        if (patient[0].toString().toInt() == 30 && label == "SHBG") {
-                            println()
-                        }
                         val ref = getReference(patient, p)
-                        println(patient[0])
                         assertTrue { ref(patient[idx].toString()) }
                     }
                     p.notSamples.forEach { code ->
                         val patient = data.find { it[0].toString().toInt() == code }!!
                         val ref = getReference(patient, p)
-                        println(patient[0])
                         assertFalse { ref(patient[idx].toString()) }
                     }
                     val naSamples = data

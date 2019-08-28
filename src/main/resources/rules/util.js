@@ -188,7 +188,7 @@ function showFPGrowthTable(table) {
 function renderFpGrowthAlgorithmResults(res) {
     document.getElementById('filename-to-download').value = res["FP_GROWTH"];
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: res["FP_GROWTH"]},
         success: function (res2) {
@@ -224,7 +224,7 @@ function showDecisionTree(tree) {
 function renderDecisionTreeAlgorithmsResults(res) {
     document.getElementById('filename-to-download').value = res["DECISION_TREE"];
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: res["DECISION_TREE"]},
         success: function (res3) {
@@ -238,7 +238,7 @@ function renderDecisionTreeAlgorithmsResults(res) {
 
 function renderFishboneResults(jsonPath) {
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: jsonPath},
         success: function (res) {
@@ -289,7 +289,7 @@ function runAnalysisOnLoadedData() {
 
     spinner.spin();
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "POST",
         data: window.myForm,
         processData: false,
@@ -323,7 +323,7 @@ function downloadFile() {
     let jsonPath = document.getElementById('filename-to-download').value;
     let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
     $.ajax({
-        url: 'http://localhost:8080/rules',
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: jsonPath, experiment: experiment},
         success: function(res) {
