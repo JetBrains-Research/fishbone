@@ -9,6 +9,17 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 interface Miner {
+
+    /**
+     * Mine association rules from specified data.
+     * @param database database
+     * @param predicates list of predicates over database
+     * @param targets list of targets over database
+     * @param predicateCheck function to test predicate against element at specified position in database
+     * @param params any other parameters to use, e.g. objective function
+     *
+     * @return list of mined rules per target
+     */
     fun <V> mine(
             database: List<V>,
             predicates: List<Predicate<V>>,
@@ -44,6 +55,18 @@ interface Miner {
             return Upset.of(database, rules.map { it.element }.filterNot { it is NotPredicate }, target)
         }
 
+        /**
+         * Update statistics for rules, which were mined on one database, with correct values for another database.
+         *
+         * This method is useful for holdout approach {@see https://link.springer.com/article/10.1007/s10994-007-5006-x},
+         * which is implemented in Experiment {@see org.jetbrains.bio.experiment.Experiment}
+         *
+         * @param rules list of rules to update
+         * @param target target
+         * @param database database to use to update rule statistics
+         *
+         * @return updated rules
+         */
         fun <V> updateRulesStatistics(
                 rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>,
                 target: Predicate<V>,
@@ -74,13 +97,18 @@ interface Miner {
                 node: FishboneMiner.Node<V>, database: List<V>, singleRules: MutableList<FishboneMiner.Node<V>>
         ): FishboneMiner.Node<V> {
             val newRule = Rule(node.rule.conditionPredicate, node.rule.targetPredicate, database)
+            // Go up to the first-level rules
             val parentNode = if (node.parent != null) newNode(node.parent, database, singleRules) else null
+
+            // If there is no parent, then it's a first-level rule -> save it to the list of single rules to build heatmap
             if (parentNode == null) {
                 val conditionPredicate = node.rule.conditionPredicate
                 if (conditionPredicate !is TruePredicate && conditionPredicate.collectAtomics().size == 1) {
                     singleRules.add(node)
                 }
             }
+
+            // Update statistics
             val newNode = FishboneMiner.Node(newRule, node.element, parentNode)
             val ruleAux = RuleAux(
                     rule = Combinations.of(
@@ -93,6 +121,7 @@ interface Miner {
                     )
             )
             newNode.aux = ruleAux
+
             return newNode
         }
 

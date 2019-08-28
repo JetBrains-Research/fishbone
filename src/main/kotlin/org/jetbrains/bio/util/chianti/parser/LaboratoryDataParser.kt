@@ -54,7 +54,6 @@ class LaboratoryDataParser(
         val database = data.withIndex()
                 .filter { (_, sample) -> isValidSex(sample, dataByCode, sexColumnIdx) }
                 .filter { (_, sample) -> isValidAge(sample, dataByCode) }
-                .filter { (_, sample) -> dataByCode.getValue(sample[0].toString().toLong())[5].toString().toDouble() >= 60 }
                 .map { (sampleIndex, sample) ->
                     val code = sample[0].toString().toInt()
                     println(sampleIndex)

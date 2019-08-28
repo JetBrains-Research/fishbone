@@ -7,6 +7,9 @@ import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
 import java.io.File
 
+/**
+ * Represents request to mine associations
+ */
 class MineRulesRequest(
         val experiment: ExperimentType,
         val predicates: List<String>,
@@ -21,6 +24,14 @@ class MineRulesRequest(
     companion object {
         private val jacksonObjectMapper = jacksonObjectMapper()
 
+        /**
+         * Method to construct MineRulesRequest from MultiPartData request
+         *
+         * @param multipart data based on which request is constructed
+         * @param tempDir temporary directory to store predicate files during mining
+         *
+         * @return constructed MineRulesRequest
+         */
         suspend fun fromMultiPartData(multipart: MultiPartData, tempDir: File): MineRulesRequest {
             val requestMap = mutableMapOf<String, Any>()
             val settingsMap = mutableMapOf<String, Any>()

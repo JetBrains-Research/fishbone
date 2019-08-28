@@ -39,6 +39,10 @@ class DecisionTreeMiner : WekaMiner() {
         }
     }
 
+    /**
+     * Represent PART results in a form of Fishbone graph.
+     * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
+     */
     private fun <V> buildRuleNodes(
             part: PART, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
@@ -49,6 +53,9 @@ class DecisionTreeMiner : WekaMiner() {
         }.flatten()
     }
 
+    /**
+     * Create a list of fishbone nodes for the rule
+     */
     private fun <V> ruleToListOfNodes(
             rule: String,
             predicatesByName: Map<String, Predicate<V>>,

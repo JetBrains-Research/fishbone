@@ -45,7 +45,7 @@ object FishboneMiner : Miner {
                     database,
                     sourcesToTargets,
                     { },
-                    maxComplexity = 3,//params.getOrDefault("maxComplexity", 6) as Int,
+                    maxComplexity = params.getOrDefault("maxComplexity", 3) as Int,
                     function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
                     or = true,
                     negate = true,

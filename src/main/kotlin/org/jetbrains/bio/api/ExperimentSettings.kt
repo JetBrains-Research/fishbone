@@ -1,5 +1,8 @@
 package org.jetbrains.bio.api
 
+/**
+ * Represents experiment settings for sampling, statistical significance checks, etc.
+ */
 class ExperimentSettings(
         val topRules: Int = 10,
         val exploratoryFraction: Double = 0.5,

@@ -23,12 +23,16 @@ import joptsimple.OptionParser
 import org.jetbrains.bio.api.ExperimentType
 import org.jetbrains.bio.api.MineRulesRequest
 import org.jetbrains.bio.api.MiningAlgorithm
+import org.jetbrains.bio.experiment.ChiantiDataExperiment
 import org.jetbrains.bio.experiment.GenomeBasedExperiment
 import org.jetbrains.bio.experiment.Experiment
 import org.jetbrains.bio.util.parse
 import java.io.File
 
-
+/**
+ * Main class for Fishbone application.
+ * Contains starter function and HTTP requests handling
+ */
 class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, private val outputFolder: String) {
 
     /**
@@ -52,6 +56,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
             }
             routing {
                 route("/rules") {
+                    // API to load rules from specified file
                     get {
                         val fileName = call.request.queryParameters["filename"]
                                 ?: throw IllegalArgumentException("Filename parameter is expected")
@@ -59,6 +64,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
                                 ?: throw IllegalArgumentException("Experiment parameter is expected")
                         call.respondFile(loadFile(fileName, experimentName))
                     }
+                    // API to mine rules on spesified data
                     post {
                         call.respond(mineRules(call.receiveMultipart()))
                     }
@@ -68,6 +74,15 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
         server.start(wait = true)
     }
 
+    /**
+     * Loads file with rules.
+     *
+     * @param fileName name of the rules file to load
+     * @param experimentName name of the experiment for which rules were mined.
+     * It's used to select correct output directory to search the file
+     *
+     * @return loaded file
+     */
     private fun loadFile(fileName: String, experimentName: String): File {
         return if (fileName.contains(outputFolder)) {
             File(fileName)
@@ -79,6 +94,9 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
         }
     }
 
+    /**
+     * Mine rules based on parameters from the request
+     */
     private suspend fun mineRules(multipart: MultiPartData): Map<MiningAlgorithm, String> {
         val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
         val request = MineRulesRequest.fromMultiPartData(multipart, tempDir)
@@ -107,8 +125,8 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
             }.parse(args) { options ->
                 val outputFolder = options.valueOf("output").toString()
                 val experiments = mapOf(
-                        ExperimentType.CIOFANI to GenomeBasedExperiment(outputFolder),
-                        ExperimentType.CHIANTI to GenomeBasedExperiment(outputFolder)
+                        ExperimentType.GENOME to GenomeBasedExperiment(outputFolder),
+                        ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
                 )
                 val port = options.valueOf("port").toString().toInt()
                 FishboneApp(experiments, outputFolder).run(port)

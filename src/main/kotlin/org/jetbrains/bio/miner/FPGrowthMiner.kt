@@ -12,7 +12,6 @@ import weka.core.SelectedTag
 class FPGrowthMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(FPGrowthMiner::class.java)
 
-    // TODO: add possibility to specify user-defined options, like min support
     override fun <V> mine(
             database: List<V>,
             predicates: List<Predicate<V>>,
@@ -21,6 +20,10 @@ class FPGrowthMiner : WekaMiner() {
             params: Map<String, Any>
     ): List<List<FishboneMiner.Node<V>>> {
         try {
+            if (targets.isEmpty()) {
+                return emptyList()
+            }
+
             val instancesByTarget = createInstances(database, predicates, targets, predicateCheck)
             val predicatesByName = (predicates + targets).associateBy { it.name() }
 
@@ -40,6 +43,10 @@ class FPGrowthMiner : WekaMiner() {
         }
     }
 
+    /**
+     * Represent PART results in a form of Fishbone graph.
+     * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
+     */
     private fun <V> buildRuleNodes(
             fpGrowth: FPGrowth, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
