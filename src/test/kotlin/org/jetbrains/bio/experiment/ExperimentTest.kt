@@ -1,8 +1,7 @@
-package org.jetbrains.bio
+package org.jetbrains.bio.experiment
 
 import org.jetbrains.bio.api.MiningAlgorithm
 import org.jetbrains.bio.api.SamplingStrategy
-import org.jetbrains.bio.experiment.ChiantiDataExperiment
 import org.jetbrains.bio.miner.FishboneMiner
 import org.jetbrains.bio.predicate.OverlapSamplePredicate
 import org.jetbrains.bio.predicate.ProbePredicate
