@@ -3,6 +3,14 @@ Tests [![tests](http://teamcity.jetbrains.com/app/rest/builds/buildType:(id:Biol
 
 Fishbone: association rule mining using Ishikawa diagrams 
 ==============
+```
+|\    \ \ \ \ \ \ \      __           ___
+|  \    \ \ \ \ \ \ \   | O~-_    _-~~   ~~-_
+|   >----|-|-|-|-|-|-|--|  __/   /  BELIEVE  )
+|  /    / / / / / / /   |__\   <              )
+|/     / / / / / / /             \_   ME !  _)
+                                   ~--___--~
+```
 
 # Project description
 
