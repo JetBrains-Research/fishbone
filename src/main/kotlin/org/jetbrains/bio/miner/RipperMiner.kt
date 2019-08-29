@@ -85,7 +85,7 @@ class RipperMiner : WekaMiner() {
     }
 
     /**
-     * Represent PART results in a form of Fishbone graph.
+     * Represent Ripper results in a form of Fishbone graph.
      * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
      */
     private fun <V> buildRuleNodes(
