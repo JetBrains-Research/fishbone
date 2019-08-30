@@ -102,7 +102,7 @@ shadowJar {
         exclude(dependency("org.yaml:.*"))
     }
     manifest {
-        attributes "Main-Class": "org.jetbrains.bio.FishboneApp"
+        attributes "Main-Class": "org.jetbrains.bio.fishbone.FishboneApp"
     }
 }
 
