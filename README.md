@@ -34,6 +34,15 @@ To build project use the following gradle command:
 This command will create executable jar file with name 
     
     fishbone-{version}.build.jar
+    
+
+# Testing
+
+In order to test service, use the following command from the project directory:
+
+    gradle test
+
+This command will run all available kotlin tests.
 
 # Run
 To run service use the following command:

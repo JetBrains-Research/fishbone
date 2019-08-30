@@ -132,46 +132,6 @@ class RulesLoggerTest {
             15,
             15
           ]
-        },
-        "target": {
-          "names": [
-            "[35;48)",
-            "[20;35)"
-          ],
-          "data": [
-            {
-              "first": [
-                0
-              ],
-              "second": 30
-            },
-            {
-              "first": [
-                0,
-                2
-              ],
-              "second": 15
-            },
-            {
-              "first": [
-                0,
-                1
-              ],
-              "second": 13
-            },
-            {
-              "first": [
-                2
-              ],
-              "second": 15
-            },
-            {
-              "first": [
-                1
-              ],
-              "second": 13
-            }
-          ]
         }
       },
       "operator": "none"
@@ -282,44 +242,142 @@ class RulesLoggerTest {
             17,
             13
           ]
+        }
+      },
+      "operator": "none"
+    },
+    {
+      "id": "id",
+      "condition": "TRUE",
+      "target": "[20;50)",
+      "database_count": 100,
+      "condition_count": 100,
+      "target_count": 30,
+      "intersection_count": 30,
+      "support": 1.0,
+      "confidence": 0.3,
+      "correlation": 0.0,
+      "lift": 1.0,
+      "conviction": 0.9859154929577465,
+      "loe": 0.1652973754638041,
+      "complexity": 1,
+      "node": "TRUE",
+      "aux": {
+        "heatmap": {
+          "tableData": [
+            {
+              "key": "[20;50)",
+              "values": [
+                {
+                  "key": "[20;50)",
+                  "value": 1.0
+                },
+                {
+                  "key": "[20;35)",
+                  "value": 0.641688947919748
+                },
+                {
+                  "key": "[35;48)",
+                  "value": 0.5904735420248883
+                }
+              ]
+            },
+            {
+              "key": "[20;35)",
+              "values": [
+                {
+                  "key": "[20;50)",
+                  "value": 0.641688947919748
+                },
+                {
+                  "key": "[20;35)",
+                  "value": 1.0
+                },
+                {
+                  "key": "[35;48)",
+                  "value": -0.16238586255274184
+                }
+              ]
+            },
+            {
+              "key": "[35;48)",
+              "values": [
+                {
+                  "key": "[20;50)",
+                  "value": 0.5904735420248883
+                },
+                {
+                  "key": "[20;35)",
+                  "value": -0.16238586255274184
+                },
+                {
+                  "key": "[35;48)",
+                  "value": 1.0
+                }
+              ]
+            }
+          ],
+          "rootData": {
+            "totalLength": 1.6197323762340963,
+            "children": [
+              {
+                "length": 0.28834550736523246,
+                "children": [
+                  {
+                    "length": 1.1313868688688637,
+                    "key": "[20;50)"
+                  },
+                  {
+                    "length": 1.1313868688688637,
+                    "key": "[20;35)"
+                  }
+                ]
+              },
+              {
+                "length": 1.5197323762340964,
+                "key": "[35;48)"
+              }
+            ]
+          }
         },
-        "target": {
+        "upset": {
           "names": [
-            "[35;48)",
-            "[20;35)"
+            "[20;50)",
+            "[20;35)",
+            "[35;48)"
           ],
           "data": [
             {
-              "first": [
+              "id": [
                 0
               ],
-              "second": 30
+              "n": 30
             },
             {
-              "first": [
-                0,
-                2
-              ],
-              "second": 15
-            },
-            {
-              "first": [
+              "id": [
                 0,
                 1
               ],
-              "second": 13
+              "n": 15
             },
             {
-              "first": [
+              "id": [
+                0,
                 2
               ],
-              "second": 15
+              "n": 13
             },
             {
-              "first": [
+              "id": [
                 1
               ],
-              "second": 13
+              "n": 15
+            },
+            {
+              "id": [
+                2
+              ],
+              "n": 13
             }
           ]
         }
@@ -332,6 +390,7 @@ class RulesLoggerTest {
     "[30;40)": "#ffffff",
     "[20;50)": "#ffffff",
     "[40;50)": "#ffffff",
+    "TRUE": "#ffffff",
     "[20;35)": "#ffffff"
   },
   "criterion": "conviction"

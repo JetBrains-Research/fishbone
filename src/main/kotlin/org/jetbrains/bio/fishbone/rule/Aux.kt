@@ -118,8 +118,7 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
             // Reorder labels
             val reordering = LinkedHashMap<Int, Int>()
             val topLabels = arrayListOf<String>()
-            // Will be reordered anyway by n
-            val topCs = cs.sortedByDescending { it.n }.map { c ->
+            val topCs = cs.sortedWith(comparator).map { c ->
                 UpsetRecord(c.id.map {
                     if (it !in reordering) {
                         reordering[it] = reordering.size
