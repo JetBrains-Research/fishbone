@@ -92,7 +92,7 @@ object FishboneMiner : Miner {
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
                  klDelta: Double = KL_DELTA,
-                 buildClusters: Boolean): List<List<Node<T>>> {
+                 buildClusters: Boolean = false): List<List<Node<T>>> {
         LOG.info("Rules mining: $title")
         toMine.forEach { (conditions, target) ->
             // For each complexity level and for aux info computation
