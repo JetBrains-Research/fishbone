@@ -58,7 +58,7 @@ class ExperimentTest {
 
     companion object {
         private val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
-        val experiment = ChiantiDataExperiment(tempDir.absolutePath)
+        val experiment = FeaturesSetExperiment(tempDir.absolutePath)
 
         @AfterClass
         fun cleanup() {

@@ -7,9 +7,9 @@ import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import java.nio.file.Paths
 
 /**
- * Experiment for InChianti dataset {@see: http://inchiantistudy.net/wp/inchianti-dataset/}
+ * Experiment for feature set dataset
  */
-class ChiantiDataExperiment(outputFolder: String) : Experiment("$outputFolder/chianti_based_exp_output") {
+class FeaturesSetExperiment(outputFolder: String) : Experiment("$outputFolder/feature_set_exp_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(i as V)
 
     override fun run(mineRulesRequest: MineRulesRequest): Map<MiningAlgorithm, String> {

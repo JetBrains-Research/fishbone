@@ -25,7 +25,7 @@ import joptsimple.OptionParser
 import org.jetbrains.bio.fishbone.api.ExperimentType
 import org.jetbrains.bio.fishbone.api.MineRulesRequest
 import org.jetbrains.bio.fishbone.api.MiningAlgorithm
-import org.jetbrains.bio.fishbone.experiment.ChiantiDataExperiment
+import org.jetbrains.bio.fishbone.experiment.FeaturesSetExperiment
 import org.jetbrains.bio.fishbone.experiment.GenomeBasedExperiment
 import org.jetbrains.bio.fishbone.experiment.Experiment
 import org.jetbrains.bio.util.parse
@@ -123,7 +123,7 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
                 val outputFolder = options.valueOf("output").toString()
                 val experiments = mapOf(
                         ExperimentType.GENOME to GenomeBasedExperiment(outputFolder),
-                        ExperimentType.CHIANTI to ChiantiDataExperiment(outputFolder)
+                        ExperimentType.FEATURE_SET to FeaturesSetExperiment(outputFolder)
                 )
                 val port = options.valueOf("port").toString().toInt()
                 FishboneApp(experiments, outputFolder).run(port)

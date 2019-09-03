@@ -59,7 +59,7 @@ function initialize() {
             $("#genome-label").show()
             $("#genome").show()
         }
-        if ($(this).val() === 'CHIANTI') {
+        if ($(this).val() === 'FEATURE_SET') {
             $("#genome-label").hide()
             $("#genome").hide()
         }
