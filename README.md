@@ -2,7 +2,7 @@ License [![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 Tests [![tests](http://teamcity.jetbrains.com/app/rest/builds/buildType:(id:Biolabs_Fishbone)/statusIcon.svg)](http://teamcity.jetbrains.com/viewType.html?buildTypeId=Biolabs_Fishbone&guest=1)
 
 Fishbone: association rule mining using Ishikawa diagrams 
-==============
+=========================================================
 ```
 |\    \ \ \ \ \ \ \      __           ___
 |  \    \ \ \ \ \ \ \   | O~-_    _-~~   ~~-_
@@ -14,44 +14,47 @@ Fishbone: association rule mining using Ishikawa diagrams
 
 # Project description
 
-Fishbone project provides a service to automatically construct [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram) for specified data files. A novel approach is used, which combines [Associated Rules](https://en.wikipedia.org/wiki/Association_rule_learning) learning technique and information theory.
+Fishbone project provides a service to automatically construct [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram) for specified data files. 
+A novel approach is used, which combines [Associated Rules](https://en.wikipedia.org/wiki/Association_rule_learning) learning technique and information theory.
 
-Fishone is a client-server application with HTTP API and web UI. 
+Fishbone is a client-server application with HTTP API and web UI. 
 
 # Requirements
- - Java 1.8
- - Gradle >= 5.51
+
+* Java 1.8
+* Gradle >= 5.51
  
 # Build
-Clone repository files:
 
+Clone repository files:
+    
     git clone https://github.com/JetBrains-Research/fishbone.git
     
 To build project use the following gradle command:
 
-    gradle shadowJar 
+    ./gradlew shadowJar 
    
 This command will create executable jar file with name 
     
-    fishbone-{version}.build.jar
+    build/libs/fishbone-{version}.build.jar
     
 
 # Testing
 
 In order to test service, use the following command from the project directory:
 
-    gradle test
+    ./gradlew test
 
 This command will run all available kotlin tests.
 
 # Run
 To run service use the following command:
     
-    java -Dgenomes.path={path_to_empty_folder_to_store_genomes} -jar fishbone-{version}.build.jar
+    java -Dgenomes.path={path_to_empty_folder_to_store_genomes} -jar build/libs/fishbone-{version}.build.jar
 
 Optional program options are:
-- --port {port to run server; default: 8080}
-- --output {path to output folder}
+* `--port` {port to run server; default: 8080}
+* `--output` {path to output folder}
 
 
 # Usage
@@ -68,8 +71,7 @@ Local result files for different algorithms could be selected to visualize.
 # Service algorithms
 
 This service implements a novel approach to mine association rules within specified data. <br/>
-It also implements filtering of unproductive rules according to 'improvement' metric (see: https://link.springer.com/article/10.1023/A:1009895914772)
-with corresponding significance check. Significance check is done using holdout approach (see: https://link.springer.com/article/10.1007/s10994-007-5006-x). <br/>
+It also implements filtering of unproductive rules according to 'improvement' metric [[1]](https://link.springer.com/article/10.1023/A:1009895914772) with corresponding significance check. Significance check is done using holdout approach [[2]](https://link.springer.com/article/10.1007/s10994-007-5006-x). <br/>
 The following scheme represents rule mining workflow: 
  
  ![alt text](src/main/resources/readme/stat.png "Workflow")
