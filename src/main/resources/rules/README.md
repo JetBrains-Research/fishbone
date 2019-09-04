@@ -27,7 +27,8 @@ Libraries
 * [Bootstrap](https://getbootstrap.com)
 * [Cytoscape JS](http://js.cytoscape.org)
 * [Venn.js](https://github.com/benfred/venn.js/)
-* [Upset.js](https://github.com/chuntul/d3-upset)
+* [Upset in JS](https://github.com/chuntul/d3-upset)
+* [Heatmap in D3](https://bl.ocks.org/dorothy32/ef877f9bba78dee8fcaa052d972a6016)
 * [ASCII art](http://ascii.co.uk/art/fish)
 
 Authors
