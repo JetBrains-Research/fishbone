@@ -13,7 +13,7 @@ import java.util.*
  * @author Oleg Shpynov
  * @since 17/11/14
  */
-abstract class Predicate<T>(val evalListFunction: ((List<T>) -> BitSet)? = null) {
+abstract class Predicate<T> {
 
     abstract fun test(item: T): Boolean
 
