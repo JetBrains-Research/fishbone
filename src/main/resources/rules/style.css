@@ -49,6 +49,26 @@ ul {
     list-style: none;
 }
 
+.vertical-centered {
+    position: relative;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
 #dialog {
     max-height: 1000px;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 128px;
+    height: 28px;
+    background: #333;
+    color: #ddd;
+    padding: 2px;
+    border: 0px;
+    border-radius: 8px;
+    opacity: 0;
 }

@@ -1,13 +1,16 @@
 "use strict";
 
 const CLASS_CONDITION_TARGET = "condition-target";
+const CLASS_AND = "and";
 const CLASS_PARENT_CHILD = "parent-child";
+const CLASS_OR = "or";
 const CLASS_MISSING_RULE = "missing-rule";
 const CLASS_NOT_EDGE = "not";
 const CLASS_GROUP = "group";
 const CLASS_HIGHLIGHTED = "highlighted";
 const DIALOG_WIDTH = 1200;
 
+let fishboneResponse = null, ripperResponse = null;
 let records, filteredRecords = [];
 
 // Filters
@@ -18,17 +21,14 @@ let support = 0;
 let confidence = 0;
 let conviction = 0;
 let complexity = 10;
-let convictionMax = 1.0;
+let criterionMax = 1.0;
 let showTop = 100;
 
 let palette = {};
+let criterion = "conviction";
 
 // Records grouped by Condition -> Target
 let groupedRecordsMap = {};
-
-// Graph
-let nodes = {};
-let edges = [];
 
 let spinner;
 
@@ -40,9 +40,8 @@ function initialize() {
         zIndex: 2000000000,
         left: '50%',
         top: '50%'
-    }).spin();
+    });
     $('#main-panel').append(spinner.el);
-    spinner.stop();
 
     // Bind render on change
     $('#target-filter').change(filterAndRender);
@@ -55,8 +54,22 @@ function initialize() {
     $('#show-top-filter').change(filterAndRender);
     $('#visualize-method').change(filterAndRender);
 
+    $('#experiment-type').change(function() {
+        if ($(this).val() === 'GENOME') {
+            $("#genome-label").show()
+            $("#genome").show()
+        }
+        if ($(this).val() === 'FEATURE_SET') {
+            $("#genome-label").hide()
+            $("#genome").hide()
+        }
+    });
+
     // File chooser listener
     $('#file').change(function () {
+        $('#decisiontree-alg-dialog-pane').empty();
+        $('#fpgrowth-alg-dialog-pane').empty();
+
         const [file] = this.files;
         $('#filename').text(file.name);
         const reader = new FileReader();
@@ -71,6 +84,65 @@ function initialize() {
             }
         };
         reader.readAsText(file);
+    });
+    $('#tree-file').change(function () {
+        $('#decisiontree-alg-dialog-pane').empty();
+        $('#fpgrowth-alg-dialog-pane').empty();
+
+        const [file] = this.files;
+        $('#tree-filename').text(file.name);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                let content = event.target.result;
+                showDecisionTree(content);
+            } catch (err) {
+                spinner.stop();
+                $.notify(err, {className: "error", position: 'bottom right'});
+                throw err;
+            }
+        };
+        reader.readAsText(file);
+    });
+    $('#fpgrowth').change(function () {
+        $('#decisiontree-alg-dialog-pane').empty();
+        $('#fpgrowth-alg-dialog-pane').empty();
+
+        const [file] = this.files;
+        $('#tree-filename').text(file.name);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                let content = event.target.result;
+                showFPGrowthTable(content);
+            } catch (err) {
+                spinner.stop();
+                $.notify(err, {className: "error", position: 'bottom right'});
+                throw err;
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    window.myForm = new FormData();
+    $('#predicates-file').change(function () {
+        window.myForm.delete('predicates');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('predicates', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " predicates", {className: "success", position: 'bottom right'});
+    });
+    $('#bed-database-file').change(function () {
+        window.myForm.delete('database');
+        window.myForm.append('database', this.files[0]);
+        $.notify("Uploaded database", {className: "success", position: 'bottom right'});
+    });
+    $('#targets-file').change(function () {
+        window.myForm.delete('targets');
+        for (var i = 0; i < this.files.length; ++i) {
+            window.myForm.append('targets', this.files[i]);
+        }
+        $.notify("Uploaded " + this.files.length + " targets", {className: "success", position: 'bottom right'});
     });
 
     // Load by hash if possible, this is useful for pipeline
@@ -88,9 +160,241 @@ function initialize() {
     }
 }
 
-function showProgress() {
+function showFPGrowthTable(table) {
+    let tableHtml = `
+                            <table class="table table-condensed table-tiny table-bordered" id="fp-growth-table">
+                                <thead class="thead-default"></thead>
+                                <tbody>
+                                     <tr>
+                                        <th>Rule</th>
+                                        <th>Support</th>
+                                        <th>Confidence</th>
+                                     </tr>
+                                    </tr>`;
+    for (let v = 0; v < table.split("\n").length - 1; v++) {
+        let line = table.split("\n")[v];
+        let rule = line.match(/\[.*?\] ==> \[.*?\]/g)[0];
+        let support = line.match(/support = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+        let confidence = line.match(/confidence = [0-9]*\.?[0-9]+/g)[0].split(" = ")[1];
+        tableHtml += `<tr>`;
+        tableHtml += (`<td>` + rule + `</td>`);
+        tableHtml += (`<td>` + support + `</td>`);
+        tableHtml += (`<td>` + confidence + `</td>`);
+        tableHtml += `</tr>`;
+    }
+    tableHtml += `
+                                </tbody>
+                            </table>`;
+
+    const panel = $('#fpgrowth-alg-dialog-pane');
+    panel.empty();
+    let dialog = $('#fpgrowth-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+    panel.append($(tableHtml));
+    dialog.dialog('open');
+}
+
+function renderFpGrowthAlgorithmResults(res) {
+    document.getElementById('filename-to-download').value = res["FP_GROWTH"];
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "GET",
+        data: {filename: res["FP_GROWTH"]},
+        success: function (res2) {
+            showFPGrowthTable(res2);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+function showDecisionTree(tree) {
+    const panel = $('#decisiontree-alg-dialog-pane');
+    panel.empty();
+    let dialog = $('#decisiontree-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    var viz = new Viz();
+
+    viz.renderSVGElement(tree, {'engine': 'dot'})
+        .then(function (element) {
+            panel.append($(element));
+        })
+        .catch(error => {
+            viz = new Viz();
+            console.error(error);
+        });
+    dialog.dialog('open');
+}
+
+function renderDecisionTreeAlgorithmsResults(res) {
+    document.getElementById('filename-to-download').value = res["DECISION_TREE"];
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "GET",
+        data: {filename: res["DECISION_TREE"]},
+        success: function (res3) {
+            showDecisionTree(res3);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+function renderFishboneResults(jsonPath) {
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "GET",
+        data: {filename: jsonPath},
+        success: function (res) {
+            load(JSON.stringify(res));
+
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+function getMiners() {
+    var miners = "fishbone";
+    if (document.getElementById("ripperAlgCheckbox").checked) {
+        miners += ", ripper";
+    }
+    if (document.getElementById("fpGrowthAlgCheckbox").checked) {
+        miners += ", fp-growth";
+    }
+    if (document.getElementById("decisionTreeAlgCheckbox").checked) {
+        miners += ", tree";
+    }
+    return miners;
+}
+
+function runAnalysisOnLoadedData() {
+    console.log("Sending request");
+    $('#decisiontree-alg-dialog-pane').empty();
+    $('#fpgrowth-alg-dialog-pane').empty();
+
+    window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("genome", document.getElementById('genome').value.toLowerCase());
+    window.myForm.append("runName", document.getElementById('run-name').value);
+    window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
+    window.myForm.append("criterion", document.getElementById("info-criterion").value);
+    window.myForm.append("topRules", document.getElementById("topRules").value);
+    window.myForm.append("exploratoryFraction", document.getElementById("exploratoryFraction").value);
+    window.myForm.append("nSampling", document.getElementById("nSampling").value);
+    window.myForm.append("samplingStrategy", document.getElementById("samplingStrategy").value);
+    window.myForm.append("alphaHoldout", document.getElementById("alphaHoldout").value);
+    window.myForm.append("alphaFull", document.getElementById("alphaFull").value);
+    var miners = getMiners();
+    if (miners === "") {
+        $.notify('No one algorithm was selected', {className: "error", position: 'bottom right'});
+        return
+    }
+    window.myForm.append("miners", miners);
+
     spinner.spin();
-    $('#main-panel').append(spinner.el);
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "POST",
+        data: window.myForm,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            if (response["FISHBONE"] != null) {
+                $('#fishboneSwitch').val("Switch to Ripper");
+
+                fishboneResponse = response["FISHBONE"];
+                document.getElementById('filename-to-download').value = fishboneResponse;
+                renderFishboneResults(fishboneResponse);
+            }
+            if (response["FP_GROWTH"] != null) {
+                renderFpGrowthAlgorithmResults(response);
+            }
+            if (response["DECISION_TREE"] != null) {
+                renderDecisionTreeAlgorithmsResults(response);
+            }
+            if (response["RIPPER"] != null) {
+                ripperResponse = response["RIPPER"];
+            }
+            spinner.stop();
+        },
+        error: function (errResponse) {
+            console.log(errResponse);
+        }
+    });
+}
+
+function downloadFile() {
+    let jsonPath = document.getElementById('filename-to-download').value;
+    let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
+    $.ajax({
+        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        type: "GET",
+        data: {filename: jsonPath, experiment: experiment},
+        success: function(res) {
+            let nameParts = jsonPath.split(".");
+            let type = nameParts.pop();
+            let name = nameParts.pop();
+            downloadTextFile(JSON.stringify(res), name + "." + type);
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+// TODO: check
+function downloadTextFile(text, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL( new Blob([text]) );
+    a.download = name;
+    a.click();
+}
+
+function showFPGrowthResults() {
+    let dialog = $('#fpgrowth-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    var checkBox = document.getElementById("fpGrowthCheckbox");
+    if (checkBox.checked === true) {
+        dialog.dialog('open');
+    } else {
+        dialog.dialog('close');
+    }
+}
+
+function showDecisionTreeResults() {
+    let dialog = $('#decisiontree-alg-dialog');
+    if (dialog.dialog('isOpen') !== true) {
+        dialog.dialog("option", "width", DIALOG_WIDTH);
+    }
+
+    var checkBox = document.getElementById("decisionTreeCheckbox");
+    if (checkBox.checked === true) {
+        dialog.dialog('open');
+    } else {
+        dialog.dialog('close');
+    }
+}
+
+function switchFishboneResults() {
+    let switchButton = $('#fishboneSwitch');
+    if(ripperResponse != null && switchButton.val() === "Switch to Ripper") {
+        switchButton.val("Switch to Fishbone");
+        renderFishboneResults(ripperResponse);
+    } else if (fishboneResponse != null && switchButton.val() === "Switch to Fishbone") {
+        switchButton.val("Switch to Ripper");
+        renderFishboneResults(fishboneResponse);
+    }
 }
 
 /**
@@ -109,7 +413,7 @@ function groupRecordsByConditionTarget() {
 
 
 function load(content) {
-    showProgress();
+    spinner.spin();
     $('#visualize-method').removeAttr('disabled');
     $('#target-filter').removeAttr('disabled');
     $('#correlation-filter-min').removeAttr('disabled');
@@ -119,8 +423,11 @@ function load(content) {
     $('#conviction-filter').removeAttr('disabled');
     $('#complexity-filter').removeAttr('disabled');
     $('#show-top-filter').removeAttr('disabled');
-    ({records: records, palette: palette} = JSON.parse(content.replace("NaN", "0")));
-    $.notify("Loaded " + records.length + " records", {className: "success", position: 'bottom right'});
+    ({records: records, palette: palette, criterion: criterion} = JSON.parse(content.replace("NaN", "0")));
+    $.notify("Loaded " + records.length + " records. Fishbone used " + criterion + " criterion", {
+        className: "success",
+        position: 'bottom right'
+    });
     groupRecordsByConditionTarget();
     filterAndRender();
 }
@@ -139,7 +446,7 @@ function filter_record(r) {
  * Apply filters to loaded rules records
  */
 function filterAndRender() {
-    showProgress();
+    spinner.spin();
 
     const target = $('#target-filter').val().trim();
     if (target.length > 0) {
@@ -181,7 +488,7 @@ function filterAndRender() {
     filteredRecords = records.filter(el => filter_record(el));
     // Sort records to show top
     filteredRecords.sort(function (r1, r2) {
-        return r2.conviction - r1.conviction;
+        return r2[criterion] - r1[criterion];
     });
     console.info("Filtered records: " + filteredRecords.length);
     if (filteredRecords.length > showTop) {
@@ -194,9 +501,9 @@ function filterAndRender() {
     } else {
         $.notify("Displayed " + filteredRecords.length, {className: "info", position: 'bottom right'});
     }
-    convictionMax = Math.max(...filteredRecords.map(r => r.conviction));
+    criterionMax = Math.max(...filteredRecords.map(r => r[criterion]));
     if (filteredRecords.length > 0) {
-        $.notify("Max conviction: " + convictionMax, {className: "info", position: 'bottom right'});
+        $.notify("Max " + criterion + ":" + criterionMax, {className: "info", position: 'bottom right'});
     }
     if ($('#visualize-method').val() === "Fishbone") {
         renderFishBone();
@@ -209,106 +516,6 @@ function filterAndRender() {
 /* Unified ID */
 function edgeId(start, end) {
     return start + ":" + end;
-}
-
-function RULE_GRAPH_STYLE(line_type) {
-    return [
-        {
-            selector: "node",
-            style: {
-                "label": "data(label)",
-                "padding-top": ".25em", "padding-bottom": ".25em",
-                "padding-left": ".5em", "padding-right": ".5em",
-                "font-size": 10,
-                "width": "label",
-                "height": "label",
-                "text-valign": "center",
-                "text-halign": "center",
-                "shape": "roundrectangle",
-                "border-width": 1,
-            }
-        },
-        {
-            selector: "node.group",
-            style: {
-                "text-opacity": 0,
-                "background-opacity": 0,
-                "border-opacity": 0.2,
-            }
-        },
-        {
-            selector: "node.colored",
-            style: {
-                "color": "data(text_color)",
-                "background-color": "data(background_color)",
-                "border-color": "black",
-                "shape": "ellipse"
-            }
-        },
-        {
-            selector: "node.colored_not",
-            style: {
-                "color": "data(text_color)",
-                "background-color": "data(background_color)",
-                "border-color": "red",
-            }
-        },
-        {
-            selector: "node.highlighted",
-            style: {
-                "border-width": "5px",
-                "border-color": "red",
-            }
-        },
-        {
-            selector: "edge",
-            style: {
-                "width": 1,
-                "curve-style": line_type,
-            }
-        },
-        {
-            selector: "edge.highlighted",
-            style: {
-                'line-style': "dashed"
-            }
-        },
-        {
-            selector: "edge.not",
-            style: {
-                "line-color": "black",
-                "width": 2
-            }
-        },
-        {
-            selector: "edge.condition-target",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "green",
-                "target-arrow-color": "green",
-                "width": "data(width)"
-            }
-        },
-        {
-            selector: "edge.missing-rule",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "gray",
-                "target-arrow-color": "gray",
-                "width": "data(width)",
-                "opacity": 0.3
-            }
-        },
-        {
-            selector: "edge.parent-child",
-            style: {
-                "target-arrow-shape": "triangle-backcurve",
-                "line-color": "blue",
-                "target-arrow-color": "blue",
-                "width": "data(width)"
-            }
-        }
-    ];
 }
 
 /**
@@ -329,63 +536,50 @@ function textColor(background) {
 function showInfoNode(node) {
     console.info("Information node: " + node.id);
     // Hack check for fish head
-    if (nodes[node.id].style.shape !== "polygon") {
+    if (!node.hasOwnProperty(CLASS_FISHBONE_HEAD)) {
         return
     }
-    if (complexity !== 1) {
-       $.notify('Primary effectors information is available for max complexity = 1',
-           {className: "error", position: 'bottom right'});
-        return
-    }
-
     const target = node.label;
     let infoId = `aux_${node.id}`.replace(new RegExp('[@<>!\\.:;\\(\\)\\[\\] ]', 'g'), "_");
     let html = `<div id="${infoId}"></div>`;
     const panel = $('#dialog-pane');
     panel.empty();
     panel.append($(html));
-    // Hack: this should saved separately per each target
-    let targetAux = records.filter(el => el.target === target && el.aux && "target" in el.aux);
+    // Hack[shpynov]: we save single technical record TRUE => target with this information
+    let targetAux = records.filter(el =>
+        el.target === target && el.aux && ("upset" in el.aux || "correlations" in el.aux));
     if (targetAux.length === 0) {
         return
     }
-    let somethingAdded = false;
-    for (let e of targetAux[0].aux.target) {
-        let allNamesShown =  e.names.filter(
-            n => filteredRecords.filter(el => el.target === target && el.condition === n).length > 0
-        ).length === e.names.filter(n => n !== target).length;
-        if (allNamesShown) {
-            somethingAdded = true;
-            showRepresentationInfo(e, infoId);
-        }
-    }
-    if (!somethingAdded) {
-        return
-    }
+    showInfoTarget(targetAux[0].aux, infoId);
     let dialog = $('#dialog');
-    dialog.dialog('option', 'title', `Primary effectors combinations => ${target}`);
+    dialog.dialog('option', 'title', `? => ${target}`);
     if (dialog.dialog('isOpen') !== true) {
         dialog.dialog("option", "width", DIALOG_WIDTH);
     }
     dialog.dialog('open');
 }
 
-
 let vennIndex = 0;
 
-function showRepresentationInfo(representation, infoId) {
-    let names = Object.entries(representation.names);
+function showInfoRule(combination, infoId) {
+    let names = Object.entries(combination.names);
     let infoIdDiv = $(`#${infoId}`);
     infoIdDiv.append($(`<br>`));
-    let probabilities = Object.entries(representation.probabilities);
+    let combinations = Object.entries(combination.combinations);
     let tableHtml = `
-<table class="table table-condensed table-tiny table-bordered">
+<table class="table table-condensed table-bordered table-striped vertical-centered">
     <thead class="thead-default">
-        <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>p</td></tr>
+        <tr>` + names.map(m => `<td>${m[1]}</td>`).join("") + `<td>#</td></tr>
     </thead>
     <tbody>
         </tr>`;
-    for (let v = 0; v < probabilities.length; v++) {
+    let total = 0;
+    for (let v = 1; v < combinations.length; v++) {
+        total += combinations[v][1];
+    }
+    // Ignore everything false
+    for (let v = 1; v < combinations.length; v++) {
         tableHtml += `<tr>`;
         for (let i = 0; i < names.length; i++) {
             tableHtml += `<td>`;
@@ -396,15 +590,17 @@ function showRepresentationInfo(representation, infoId) {
             }
             tableHtml += `</td>`;
         }
-        tableHtml += `<td style="background-color: rgba(0,0,255, ${probabilities[v][1]}">${probabilities[v][1]}</td>`;
+        let size = combinations[v][1];
+        tableHtml += `<td style="background-color: rgba(0,0,255, ${size / total}">${size}</td>`;
         tableHtml += `</tr>`;
     }
     tableHtml += `
     </tbody>
 </table>`;
+    // https://github.com/benfred/venn.js/
     if (names.length <= 5) {
         let vennData = [];
-        // Compute Venn numbers out of probabilities
+        // Compute Venn numbers out of combinations
         for (let v = 1; v < (1 << names.length); v++) {
             let sets = [];
             let size = 0;
@@ -413,60 +609,127 @@ function showRepresentationInfo(representation, infoId) {
                     sets.push(names[i][1]);
                 }
             }
-            for (let x = 0; x < probabilities.length; x++) {
+            for (let x = 0; x < combinations.length; x++) {
                 if ((v & x) === v) {
-                    size += probabilities[x][1];
+                    size += combinations[x][1];
                 }
             }
             if (size > 0) {
                 vennData.push({'sets': sets, 'size': size});
             }
         }
+
         vennIndex += 1;
-        infoIdDiv.append($(`<ul><li>${tableHtml}</li><li><div id="venn${vennIndex}" class="venn"></div></li></ul>`));
+        infoIdDiv.append($(`<ul><li>${tableHtml}</li><li><div id="venn${vennIndex}"></div></li></ul>`));
         let div = d3.select(`#venn${vennIndex}`);
-        div.datum(vennData).call(venn.VennDiagram());
+        div.datum(vennData).call(venn.VennDiagram()
+            .width(500)
+            .height(300)
+            .fontSize("13px"));
 
-        // add a tooltip
-        let tooltip = $(`<div></div>`);
-        infoIdDiv.append(tooltip);
+        const vennDiv = $(`#venn${vennIndex}`);
+        const tooltipDx = vennDiv.position().left + 10;
+        const tooltipDy = vennDiv.position().top + 10;
+        var tooltip = d3.select(`#venn${vennIndex}`).append("div")
+            .attr("class", "tooltip");
 
-        // add listeners to all the groups to display tooltip on mouseover
+        div.selectAll("path")
+            .style("stroke-opacity", 0)
+            .style("stroke", "#000000")
+            .style("stroke-width", 3);
+
         div.selectAll("g")
             .on("mouseover", function (d, i) {
                 // sort all the areas relative to the current item
                 venn.sortAreas(div, d);
 
-                // Display a tooltip
-                tooltip.text(d.sets + " : " + d.size);
+                // Display a tooltip with the current size
+                tooltip.style("opacity", .9);
+                tooltip.text(d.size);
 
                 // highlight the current path
                 var selection = d3.select(this);
                 selection.select("path")
-                    .style("stroke-width", 3)
-                    .style("fill-opacity", d.sets.length == 1 ? .4 : .1)
+                    .style("fill-opacity", d.sets.length === 1 ? .4 : .1)
                     .style("stroke-opacity", 1);
             })
+
+            .on("mousemove", function () {
+                tooltip.style("left", (d3.event.offsetX + tooltipDx) + "px")
+                    .style("top", (d3.event.offsetY + tooltipDy) + "px");
+            })
+
             .on("mouseout", function (d, i) {
-                // Display a tooltip with the current size
-                tooltip.text("");
+                tooltip.style("opacity", 0);
                 var selection = d3.select(this);
                 selection.select("path")
-                    .style("stroke-width", 0)
-                    .style("fill-opacity", d.sets.length == 1 ? .25 : .0)
+                    .style("fill-opacity", d.sets.length === 1 ? .25 : .0)
                     .style("stroke-opacity", 0);
             });
-    }
-
-    else {
+    } else {
         infoIdDiv.append($(tableHtml));
     }
 }
 
-function toggleAuxInfo(e, infoId) {
+let upsetIndex = 0;
+
+function showUpset(upset, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
+    infoIdDiv.append($(`<br>`));
+    upsetIndex += 1;
+    infoIdDiv.append($(`<div id="upset${upsetIndex}" class="venn"></div>`));
+    let data = [];
+    for (let d of Object.entries(upset.data)) {
+        data.push(d[1]);
+    }
+
+    visualizeUpset("upset" + upsetIndex, upset.names, data, 6);
+}
+
+
+let heatmapIndex = 0;
+
+function showHeatmap(heatmap, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
+    infoIdDiv.append($(`<br>`));
+    heatmapIndex += 1;
+    infoIdDiv.append($(`<div id="heatmap${heatmapIndex}"></div>`));
+    drawHeatMap("heatmap" + heatmapIndex, heatmap.tableData, heatmap.rootData, heatmap.rootData,
+        Math.max(10, 200 / heatmap.tableData.length));
+}
+
+function showInfoTarget(aux, infoId) {
+    let infoIdDiv = $(`#${infoId}`);
+    if (aux.heatmap != null) {
+        const heatmapId = infoId + "_heatmap";
+        infoIdDiv.append($(`
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">Correlation</h2>
+  </div>
+  <div id=${heatmapId} class="panel-body">
+  </div>
+</div>`));
+        showHeatmap(aux.heatmap, heatmapId);
+    }
+    if (aux.upset != null) {
+        const upsetId = infoId + "_upset";
+        infoIdDiv.append($(`
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">Combinations overlap</h2>
+  </div>
+  <div id=${upsetId} class="panel-body" style="overflow-x: scroll;">
+  </div>
+</div>`));
+        showUpset(aux.upset, upsetId);
+    }
+}
+
+function toggleAux(e, infoId) {
     if (e.value === '+') {
         let r = recordsAuxMap[infoId];
-        showRepresentationInfo(r.aux.rule, infoId);
+        showInfoRule(r.aux.rule, infoId);
         e.value = '-'
     } else {
         $(`#${infoId}`).empty();
@@ -495,7 +758,7 @@ function showInfoEdge(edge) {
 <table class="table table-condensed">
     <thead class="thead-default">
         <tr>
-            <th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>conv</th><th></th>
+            <th>id</th><th>condition</th><th>target</th><th>#c</th><th>#t</th><th>#\u2229</th><th>#d</th><th>corr</th><th>supp</th><th>conf</th><th>${criterion}</th><th></th>
         </tr>
     </thead>
     <tbody>
@@ -527,9 +790,9 @@ function showInfoEdge(edge) {
     <td>${r.correlation.toFixed(2)}</td>
     <td>${r.support.toFixed(2)}</td>
     <td>${r.confidence.toFixed(2)}</td>
-    <td>${r.conviction.toFixed(2)}</td>
+    <td>${r[criterion].toFixed(2)}</td>
     <td>
-        <input type="button" onclick="toggleAuxInfo(this, '${infoId}');" value="+"/>
+        <input type="button" onclick="toggleAux(this, '${infoId}');" value="+"/>
     </td>
 </tr>
 <tr>
