@@ -166,9 +166,9 @@ abstract class Experiment(val outputFolder: String) {
     }
 
     /**
-     * Mine rules over satabase
+     * Mine rules over database
      *
-     * @param miners mining algorthms to use
+     * @param miners mining algorithms to use
      * @param db database
      * @param predicates predicates
      * @param target target
