@@ -49,7 +49,7 @@ object FishboneMiner : Miner {
                     function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
                     or = false,
                     negate = true,
-                    buildClusters = false
+                    buildHeatmapAndUpset = false
             )
         } catch (t: Throwable) {
             t.printStackTrace()
@@ -92,7 +92,7 @@ object FishboneMiner : Miner {
                  function: (Rule<T>) -> Double = Rule<T>::conviction,
                  functionDelta: Double = FUNCTION_DELTA,
                  klDelta: Double = KL_DELTA,
-                 buildClusters: Boolean = false): List<List<Node<T>>> {
+                 buildHeatmapAndUpset: Boolean = false): List<List<Node<T>>> {
         LOG.info("Rules mining: $title")
         toMine.forEach { (conditions, target) ->
             // For each complexity level and for aux info computation
@@ -104,7 +104,7 @@ object FishboneMiner : Miner {
             val mineResult = mine(conditions, target, database,
                     maxComplexity, and, or, negate,
                     topPerComplexity, function,
-                    functionDelta, klDelta, buildClusters)
+                    functionDelta, klDelta, buildHeatmapAndUpset)
             logFunction(mineResult)
             mineResult
         }
@@ -125,7 +125,7 @@ object FishboneMiner : Miner {
                           function: (Rule<T>) -> Double,
                           functionDelta: Double = FUNCTION_DELTA,
                           klDelta: Double = KL_DELTA,
-                          buildClusters: Boolean = true): List<Node<T>> {
+                          buildHeatmapAndUpset: Boolean = true): List<Node<T>> {
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
         val best = mineByComplexity(predicates, target, database,
@@ -137,7 +137,7 @@ object FishboneMiner : Miner {
         val singleRules = best[1]
 
         // We don't need calculate additional statistics in case of sampling
-        val targetAux = if (buildClusters && singleRules.isNotEmpty()) {
+        val targetAux = if (buildHeatmapAndUpset && singleRules.isNotEmpty()) {
             // Collect pairwise correlations and all the top level predicates combinations
             TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
         } else null

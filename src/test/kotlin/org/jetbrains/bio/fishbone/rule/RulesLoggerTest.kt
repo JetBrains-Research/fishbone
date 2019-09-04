@@ -23,7 +23,7 @@ class RulesLoggerTest {
         val database = 0.until(100).toList()
         val logger = RulesLogger(null)
         FishboneMiner.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
-                { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2, buildClusters = true)
+                { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2, buildHeatmapAndUpset = true)
         assertEquals("""{
   "records": [
     {
