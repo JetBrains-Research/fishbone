@@ -1,20 +1,31 @@
 package org.jetbrains.bio.fishbone.miner
 
 import com.google.common.annotations.VisibleForTesting
-import org.slf4j.LoggerFactory
+import org.jetbrains.bio.fishbone.miner.FishboneMiner.Node
+import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
-import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
 import org.jetbrains.bio.fishbone.rule.*
 import org.jetbrains.bio.util.MultitaskProgress
 import org.jetbrains.bio.util.await
 import org.jetbrains.bio.util.awaitAll
 import org.jetbrains.bio.util.parallelismLevel
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import kotlin.math.min
 
 
+/**
+ * Fishbone Associated Rule Mining (FARM) algorithm.
+ * Used to mine hierarchical rules, combining both optimization metric and information gain.
+ * Result is a set of [Node], which represents a single node of a graph.
+ *
+ * FARM is based on Beam search (heuristic search algorithm that explores a graph
+ * by expanding the most promising node in a limited set).
+ * Beam search space is realised by [RulesBPQ].
+ * @see https://en.wikipedia.org/wiki/Beam_search
+ */
 object FishboneMiner : Miner {
     const val TOP_PER_COMPLEXITY = 100
     const val FUNCTION_DELTA = 1E-3
