@@ -9,5 +9,6 @@ class ExperimentSettings(
         val nSampling: Int = 200,
         val samplingStrategy: SamplingStrategy = SamplingStrategy.NONE,
         val alphaHoldout: Double = 0.2,
-        val alphaFull: Double = 0.2
+        val alphaFull: Double = 0.2,
+        val maxComplexity: Int = 3
 )

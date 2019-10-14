@@ -23,7 +23,7 @@ class FishboneExample(private val databaseUrl: String, private val sourceFolderU
         val mineRulesRequest = MineRulesRequest(ExperimentType.FEATURE_SET, "hg19", sourceFilesUrls,
                                                 targetFilesUrls, databaseUrl, setOf(MiningAlgorithm.FISHBONE),
                                                 "loe", 0.05, "FishboneExample",
-                                                ExperimentSettings(nSampling = 150))
+                                                ExperimentSettings(nSampling = 150, maxComplexity = 2))
         featuresSetExperiment.run(mineRulesRequest)
     }
 

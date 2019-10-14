@@ -63,6 +63,9 @@ abstract class Experiment(val outputFolder: String) {
         val topRules = settings.topRules
         logger.info("Holdout approach will be used for $topRules top rules")
 
+        val maxComplexity = settings.maxComplexity
+        logger.info("Max complexity is set to $maxComplexity")
+
         val checkSignificance = (request.significanceLevel != null)
         val alphaExploratory = request.significanceLevel
         val alphaHoldout = if (checkSignificance) settings.alphaHoldout else null
@@ -90,7 +93,8 @@ abstract class Experiment(val outputFolder: String) {
                                         criterion,
                                         alphaExploratory,
                                         checkSignificance,
-                                        topRules
+                                        topRules,
+                                        maxComplexity
                                 )
                                 testRules(exploredRules, alphaHoldout, holdout)
                             }
@@ -187,11 +191,13 @@ abstract class Experiment(val outputFolder: String) {
             criterion: String,
             alpha: Double?,
             checkSignificance: Boolean,
-            topRules: Int
+            topRules: Int,
+            maxComplexity: Int
     ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
         val objectiveFunction = Miner.getObjectiveFunction<V>(criterion)
         return miners
-                .map { miningAlgorithm -> mine(db, predicates, target, miningAlgorithm, objectiveFunction) }
+                .map { miningAlgorithm -> mine(db, predicates, target, miningAlgorithm, objectiveFunction,
+                                               maxComplexity) }
                 .map { (miner, rules) -> miner to getProductiveRules(miner, rules, alpha, db, false) }
                 .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
                 .map { (miner, rules) ->
@@ -209,11 +215,12 @@ abstract class Experiment(val outputFolder: String) {
             predicates: List<Predicate<V>>,
             target: Predicate<V>,
             algorithm: MiningAlgorithm,
-            objectiveFunction: (Rule<V>) -> Double
+            objectiveFunction: (Rule<V>) -> Double,
+            maxComplexity: Int
     ): Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>> {
         logger.info("Processing $algorithm")
         val miner = Miner.getMiner(algorithm)
-        val params = mapOf("objectiveFunction" to objectiveFunction)
+        val params = mapOf("objectiveFunction" to objectiveFunction, "maxComplexity" to maxComplexity)
         val miningResult = miner.mine(data, predicates, listOf(target), ::predicateCheck, params)
         // Get results for the first target only
         return algorithm to miningResult[0]
