@@ -104,6 +104,7 @@ shadowJar {
     manifest {
         attributes "Main-Class": "org.jetbrains.bio.fishbone.FishboneApp"
     }
+    zip64 true
 }
 
 jar {
