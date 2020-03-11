@@ -25,9 +25,9 @@ import joptsimple.OptionParser
 import org.jetbrains.bio.fishbone.api.ExperimentType
 import org.jetbrains.bio.fishbone.api.MineRulesRequest
 import org.jetbrains.bio.fishbone.api.MiningAlgorithm
+import org.jetbrains.bio.fishbone.experiment.Experiment
 import org.jetbrains.bio.fishbone.experiment.FeaturesSetExperiment
 import org.jetbrains.bio.fishbone.experiment.GenomeBasedExperiment
-import org.jetbrains.bio.fishbone.experiment.Experiment
 import org.jetbrains.bio.util.parse
 import java.io.File
 

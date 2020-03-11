@@ -1,7 +1,7 @@
 package org.jetbrains.bio.fishbone.miner
 
-import org.slf4j.LoggerFactory
 import org.jetbrains.bio.fishbone.predicate.Predicate
+import org.slf4j.LoggerFactory
 import weka.classifiers.rules.JRip
 import weka.classifiers.rules.RuleStats
 import weka.core.Instances

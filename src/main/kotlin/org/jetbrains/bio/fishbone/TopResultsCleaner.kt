@@ -1,13 +1,13 @@
 package org.jetbrains.bio.fishbone
 
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVParser
-import java.nio.file.Files
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.internal.LinkedTreeMap
 import joptsimple.OptionParser
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
 import org.jetbrains.bio.util.*
+import java.nio.file.Files
 
 class TopResultsCleaner {
 

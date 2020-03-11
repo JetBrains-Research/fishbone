@@ -2,8 +2,8 @@ package org.jetbrains.bio.fishbone.rule
 
 import com.google.common.collect.ComparisonChain
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
-import org.slf4j.LoggerFactory
 import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**

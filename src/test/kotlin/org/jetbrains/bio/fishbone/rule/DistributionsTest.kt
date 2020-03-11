@@ -1,12 +1,12 @@
 package org.jetbrains.bio.fishbone.rule
 
-import org.apache.log4j.Logger
 import org.jetbrains.bio.fishbone.miner.RangePredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.ProbePredicate
 import org.jetbrains.bio.fishbone.rule.Distribution.Companion.kullbackLeibler
 import org.junit.Assert
 import org.junit.Test
+import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
 
 class DistributionsTest {
@@ -200,6 +200,6 @@ class DistributionsTest {
     }
 
     companion object {
-        private val LOG = Logger.getLogger(DistributionsTest::class.java)
+        private val LOG = LoggerFactory.getLogger(DistributionsTest::class.java)
     }
 }

@@ -4,8 +4,8 @@ import com.google.common.primitives.Doubles
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.commons.math3.util.Precision
-import org.slf4j.LoggerFactory
 import org.jetbrains.bio.fishbone.predicate.*
+import org.slf4j.LoggerFactory
 import kotlin.math.ln
 import kotlin.math.log2
 import kotlin.math.max

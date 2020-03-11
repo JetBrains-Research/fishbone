@@ -2,11 +2,11 @@ package org.jetbrains.bio.fishbone.experiment
 
 import org.jetbrains.bio.fishbone.api.MineRulesRequest
 import org.jetbrains.bio.fishbone.api.MiningAlgorithm
+import org.jetbrains.bio.fishbone.predicate.Predicate
+import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import org.jetbrains.bio.genome.Genome
 import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.containers.LocationsMergingList
-import org.jetbrains.bio.fishbone.predicate.Predicate
-import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import java.nio.file.Paths
 
 /**
