@@ -4,13 +4,12 @@ import com.google.common.collect.ObjectArrays
 import com.google.gson.GsonBuilder
 import org.apache.commons.csv.CSVFormat.DEFAULT
 import org.apache.commons.csv.CSVRecord
-import org.jetbrains.bio.dataset.DataConfig
-import org.jetbrains.bio.dataset.DataType
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.predicate.AndPredicate
 import org.jetbrains.bio.fishbone.predicate.OrPredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.PredicateParser
+import org.jetbrains.bio.genome.data.DataConfig
 import org.jetbrains.bio.util.bufferedWriter
 import org.jetbrains.bio.util.deleteIfExists
 import org.jetbrains.bio.util.toPath
@@ -127,7 +126,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
     }
 
     /**
-     * Default colors by dataTypes
+     * Default colors
      */
     private fun trackColor(dataTypeId: String): Color {
         return when (dataTypeId.toLowerCase()) {
@@ -137,8 +136,8 @@ class RulesLogger(val path: Path?, vararg params: String) {
             "H3K4me3".toLowerCase() -> Color(51, 204, 51)
             "H3K36me3".toLowerCase() -> Color(0, 0, 204)
             "H3K9me3".toLowerCase() -> Color(255, 0, 255)
-            DataType.METHYLATION.name.toLowerCase() -> Color.green
-            DataType.TRANSCRIPTION.name.toLowerCase() -> Color.red
+            "methylation" -> Color.green
+            "transcription" -> Color.red
             else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
         }
     }
