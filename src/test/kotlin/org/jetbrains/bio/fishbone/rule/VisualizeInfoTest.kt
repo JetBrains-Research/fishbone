@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
  * @date 2019-07-16
  */
 
-class AuxTest {
+class VisualizeInfoTest {
     private fun predicates(number: Int): List<Predicate<Int>> {
         return 0.until(number).map {
             object : Predicate<Int>() {

@@ -79,7 +79,7 @@ interface Miner {
                     }
             singleRules = singleRules.distinctBy { it.rule }.toMutableList()
             val targetAux = if (singleRules.isNotEmpty()) {
-                TargetAux(heatmap(database, target, singleRules), upset(database, target, singleRules))
+                TargetVisualizeInfo(heatmap(database, target, singleRules), upset(database, target, singleRules))
             } else null
             return updatedRules.map { (miner, rules) ->
                 miner to rules.map { node ->
@@ -110,7 +110,7 @@ interface Miner {
 
             // Update statistics
             val newNode = FishboneMiner.Node(newRule, node.element, parentNode)
-            val ruleAux = RuleAux(
+            val ruleAux = RuleVisualizeInfo(
                     rule = Combinations.of(
                             database,
                             listOfNotNull(
@@ -120,7 +120,7 @@ interface Miner {
                             )
                     )
             )
-            newNode.aux = ruleAux
+            newNode.visualizeInfo = ruleAux
 
             return newNode
         }

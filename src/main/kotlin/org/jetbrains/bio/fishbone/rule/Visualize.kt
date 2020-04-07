@@ -19,12 +19,12 @@ import kotlin.math.roundToInt
 
 
 /**
- * Auxiliary info for visualization purposes.
+ * Info for visualization purposes.
  */
-interface Aux
+interface VisualizeInfo
 
-data class RuleAux(val rule: Combinations) : Aux
-data class TargetAux(val heatmap: HeatMap, val upset: Upset) : Aux
+data class RuleVisualizeInfo(val rule: Combinations) : VisualizeInfo
+data class TargetVisualizeInfo(val heatmap: HeatMap, val upset: Upset) : VisualizeInfo
 
 
 /**

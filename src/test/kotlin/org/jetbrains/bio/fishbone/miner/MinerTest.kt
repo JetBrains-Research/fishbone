@@ -63,6 +63,6 @@ class MinerTest {
                 newDatabase
         )
 
-        assertNotNull(updated[0].second[1].aux)
+        assertNotNull(updated[0].second[1].visualizeInfo)
     }
 }

@@ -37,7 +37,7 @@ object FishboneMiner : Miner {
     /**
      * Result of [mine] procedure.
      */
-    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var aux: Aux? = null)
+    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var visualizeInfo: VisualizeInfo? = null)
 
     override fun <V> mine(
             database: List<V>,
@@ -151,13 +151,13 @@ object FishboneMiner : Miner {
         // We don't need calculate additional statistics in case of sampling
         val targetAux = if (buildHeatmapAndUpset && singleRules.isNotEmpty()) {
             // Collect pairwise correlations and all the top level predicates combinations
-            TargetAux(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
+            TargetVisualizeInfo(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
         } else null
 
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
         result.map {
             Callable {
-                it.aux = RuleAux(rule =
+                it.visualizeInfo = RuleVisualizeInfo(rule =
                 Combinations.of(database,
                         listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)))
             }

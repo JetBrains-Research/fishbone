@@ -65,7 +65,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
                         "node" to node.element.name(),
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
                         "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
-                        "aux" to node.aux,
+                        "aux" to node.visualizeInfo,
                         "operator" to getOperatorName(conditionPredicate))
                 )
                 node = node.parent
