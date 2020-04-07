@@ -54,6 +54,9 @@ data class UpsetRecord(val id: List<Int>, val n: Int) {
     }
 }
 
+/**
+ * Bounded priority queue for [UpsetRecord]
+ */
 class UpsetBPQ(private val limit: Int,
                private val comparator: Comparator<UpsetRecord>,
                private val queue: Queue<UpsetRecord> = PriorityQueue(limit, comparator.reversed()))
