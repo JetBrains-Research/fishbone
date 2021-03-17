@@ -12,7 +12,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.github.jengelman.gradle.plugins:shadow:4.0.2"
+        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -113,6 +113,6 @@ jar {
     }
 }
 
-task wrapper(type: Wrapper, overwrite: true) {
-    gradleVersion = "5.51"
+wrapper {
+    gradleVersion = "6.5"
 }
