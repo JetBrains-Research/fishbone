@@ -30,6 +30,8 @@ targetCompatibility = sourceCompatibility
 compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 
+project(':bioinf-commons')
+
 dependencies {
     // Kotlin dependencies
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -49,7 +51,7 @@ dependencies {
     compile group: "nz.ac.waikato.cms.weka", name: "weka-stable", version: "3.8.3"
 
     // Bioinformatics (science) dependencies
-    compile "org.jetbrains.bio:bioinf-commons:$bioinf_commons_version"
+    compile project(':bioinf-commons')
     compile "org.nield:kotlin-statistics:1.2.1"
     compile group: "org.apache.commons", name: "commons-math3", version: "3.6.1"
 
@@ -113,6 +115,9 @@ jar {
     }
 }
 
-wrapper {
-    gradleVersion = "6.5"
+// https://github.com/gradle/gradle/issues/5816
+if (rootProject == project) {
+    wrapper {
+        gradleVersion = "6.5"
+    }
 }
