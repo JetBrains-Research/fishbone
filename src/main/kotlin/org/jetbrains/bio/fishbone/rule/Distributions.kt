@@ -13,12 +13,14 @@ import kotlin.math.max
 /**
  * Joint distribution of binary predicates over database.
  */
-open class Distribution<T>(val database: List<T>,
-                           val predicates: List<Predicate<T>>,
-                           protected val probabilities: DoubleArray = createProbabilitiesArray(predicates.size),
-                           private val indices: TObjectIntMap<Predicate<T>> = TObjectIntHashMap<Predicate<T>>().apply {
-                               predicates.forEachIndexed { i, p -> this.put(p, i) }
-                           }) {
+open class Distribution<T>(
+    val database: List<T>,
+    val predicates: List<Predicate<T>>,
+    protected val probabilities: DoubleArray = createProbabilitiesArray(predicates.size),
+    private val indices: TObjectIntMap<Predicate<T>> = TObjectIntHashMap<Predicate<T>>().apply {
+        predicates.forEachIndexed { i, p -> this.put(p, i) }
+    }
+) {
 
     /**
      * Probability of predicates combination encoded in bit-wise representation with int values.
@@ -31,9 +33,9 @@ open class Distribution<T>(val database: List<T>,
     }
 
     private fun probabilityIndependent(encoding: Int): Double =
-            empiricalMarginals(predicates, database)
-                    .mapIndexed { i, p -> if (encoding and (1 shl i) != 0) p else 1.0 - p }
-                    .fold(1.0) { a, b -> a * b }
+        empiricalMarginals(predicates, database)
+            .mapIndexed { i, p -> if (encoding and (1 shl i) != 0) p else 1.0 - p }
+            .fold(1.0) { a, b -> a * b }
 
 
     /**
@@ -109,7 +111,7 @@ open class Distribution<T>(val database: List<T>,
 
     // Empirical Bayes
     private fun <T> empiricalMarginals(predicates: List<Predicate<T>>, database: List<T>) =
-            DoubleArray(predicates.size) { predicates[it].test(database).cardinality().toDouble() / database.size }
+        DoubleArray(predicates.size) { predicates[it].test(database).cardinality().toDouble() / database.size }
 
     private fun xlog(x: Double): Double = if (x == 0.0) 0.0 else x * ln(x)
 
@@ -156,8 +158,8 @@ open class Distribution<T>(val database: List<T>,
 }
 
 
-class EmpiricalDistribution<T>(database: List<T>, predicates: List<Predicate<T>>)
-    : Distribution<T>(database, predicates) {
+class EmpiricalDistribution<T>(database: List<T>, predicates: List<Predicate<T>>) :
+    Distribution<T>(database, predicates) {
 
     init {
         probabilities.fill(0.0)

@@ -11,16 +11,17 @@
 
 Content
 =======
-This folder contains `Javascript` based visualization for  [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram).
+This folder contains `Javascript` based visualization
+for  [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram).
 
 * Open `index.html` in browser.
 * Upload `JSON` file with `RM` algorithm results.
 * Use **Fishbone** visualization for single predicate investigation and **Graph** for overall associations view.
 * Use filters to show only interesting association rules.
 
-
 Libraries
 =========
+
 * [jQuery](https://jquery.com)
 * [spin.js](http://spin.js.org)
 * [Notify.js jQuery plugin](https://notifyjs.jpillora.com)

@@ -1,7 +1,7 @@
 package org.jetbrains.bio.fishbone.predicate
 
 open class OverlapSamplePredicate(
-        private val name: String, val samples: List<Int>, val notSamples: List<Int>
+    private val name: String, val samples: List<Int>, val notSamples: List<Int>
 ) : Predicate<Int>() {
     override fun test(item: Int): Boolean {
         return samples.contains(item)

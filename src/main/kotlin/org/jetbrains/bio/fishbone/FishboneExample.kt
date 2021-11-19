@@ -9,22 +9,27 @@ import org.jetbrains.bio.fishbone.api.MiningAlgorithm
 import org.jetbrains.bio.fishbone.experiment.FeaturesSetExperiment
 import org.jetbrains.bio.util.*
 
-class FishboneExample(private val databaseUrl: String, private val sourceFolderUrl: String,
-                      private val targetFilesUrls: List<String>, private val outputFolder: String)
-    : Experiment("FishboneExperiment") {
+class FishboneExample(
+    private val databaseUrl: String, private val sourceFolderUrl: String,
+    private val targetFilesUrls: List<String>, private val outputFolder: String
+) : Experiment("FishboneExperiment") {
 
     override fun doCalculations() {
         val featuresSetExperiment = FeaturesSetExperiment(outputFolder)
 
         val sourceFilesUrls = sourceFolderUrl.toPath().list()
-                .filter { it.isRegularFile && !it.name.startsWith(".") }
-                .map { "${it.toAbsolutePath()}" }
+            .filter { it.isRegularFile && !it.name.startsWith(".") }
+            .map { "${it.toAbsolutePath()}" }
 
-        val mineRulesRequest = MineRulesRequest(ExperimentType.FEATURE_SET, "hg19", sourceFilesUrls,
-                                                targetFilesUrls, databaseUrl, setOf(MiningAlgorithm.FISHBONE),
-                                                "loe", 0.05, "FishboneExample",
-                                                ExperimentSettings(topRules = 100, nSampling = 150, maxComplexity = 2,
-                                                                   topPerComplexity = 1000))
+        val mineRulesRequest = MineRulesRequest(
+            ExperimentType.FEATURE_SET, "hg19", sourceFilesUrls,
+            targetFilesUrls, databaseUrl, setOf(MiningAlgorithm.FISHBONE),
+            "loe", 0.05, "FishboneExample",
+            ExperimentSettings(
+                topRules = 100, nSampling = 150, maxComplexity = 2,
+                topPerComplexity = 1000
+            )
+        )
         featuresSetExperiment.run(mineRulesRequest)
     }
 
@@ -39,10 +44,10 @@ class FishboneExample(private val databaseUrl: String, private val sourceFolderU
                 accepts("outputFolder", "Output folder").withRequiredArg()
             }.parse(args) { options ->
                 FishboneExample(
-                        options.valueOf("databaseUrl").toString(),
-                        options.valueOf("sourceFolderUrl").toString(),
-                        options.valueOf("targetFilesUrls").toString().split(" "),
-                        options.valueOf("outputFolder").toString()
+                    options.valueOf("databaseUrl").toString(),
+                    options.valueOf("sourceFolderUrl").toString(),
+                    options.valueOf("targetFilesUrls").toString().split(" "),
+                    options.valueOf("outputFolder").toString()
                 ).run()
             }
         }

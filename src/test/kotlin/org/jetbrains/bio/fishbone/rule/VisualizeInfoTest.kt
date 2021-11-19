@@ -38,10 +38,10 @@ class VisualizeInfoTest {
         }, combinations = 4)
         // Two alternatives are possible in this test due to parallel execution
         val expected = listOf(
-                "Upset(names=[target, p2, p1], data=[0:2, 0,1:1, 1:3, 1,2:2])",
-                "Upset(names=[target, p2, p1], data=[0:2, 0,1:1, 1:3, 2:2])"
+            "Upset(names=[target, p2, p1], data=[0:2, 0,1:1, 1:3, 1,2:2])",
+            "Upset(names=[target, p2, p1], data=[0:2, 0,1:1, 1:3, 2:2])"
         )
-        assertTrue(expected.any {  it == upset.toString() })
+        assertTrue(expected.any { it == upset.toString() })
     }
 
 
@@ -52,9 +52,13 @@ class VisualizeInfoTest {
             override fun test(item: Int) = item >= 2
             override fun name() = "target"
         }))
-        assertEquals("[{key=p0, values=[{key=p0, value=1.0}, {key=p1, value=0.5773502691896258}, {key=p2, value=0.3333333333333333}, {key=target, value=-0.5773502691896258}]}, {key=p1, values=[{key=p0, value=0.5773502691896258}, {key=p1, value=1.0}, {key=p2, value=0.5773502691896258}, {key=target, value=-1.0}]}, {key=p2, values=[{key=p0, value=0.3333333333333333}, {key=p1, value=0.5773502691896258}, {key=p2, value=1.0}, {key=target, value=-0.5773502691896258}]}, {key=target, values=[{key=p0, value=-0.5773502691896258}, {key=p1, value=-1.0}, {key=p2, value=-0.5773502691896258}, {key=target, value=1.0}]}]",
-                map.tableData.toString())
-        assertEquals("{totalLength=1.9526542071168778, children=[{length=1.054937225671509, children=[{length=0.1675479172666882, children=[{length=0.43016906417868067, key=p0}, {length=0.43016906417868067, key=p1}]}, {length=0.6977169814453689, key=p2}]}, {length=1.852654207116878, key=target}]}",
-                map.rootData.toString())
+        assertEquals(
+            "[{key=p0, values=[{key=p0, value=1.0}, {key=p1, value=0.5773502691896258}, {key=p2, value=0.3333333333333333}, {key=target, value=-0.5773502691896258}]}, {key=p1, values=[{key=p0, value=0.5773502691896258}, {key=p1, value=1.0}, {key=p2, value=0.5773502691896258}, {key=target, value=-1.0}]}, {key=p2, values=[{key=p0, value=0.3333333333333333}, {key=p1, value=0.5773502691896258}, {key=p2, value=1.0}, {key=target, value=-0.5773502691896258}]}, {key=target, values=[{key=p0, value=-0.5773502691896258}, {key=p1, value=-1.0}, {key=p2, value=-0.5773502691896258}, {key=target, value=1.0}]}]",
+            map.tableData.toString()
+        )
+        assertEquals(
+            "{totalLength=1.9526542071168778, children=[{length=1.054937225671509, children=[{length=0.1675479172666882, children=[{length=0.43016906417868067, key=p0}, {length=0.43016906417868067, key=p1}]}, {length=0.6977169814453689, key=p2}]}, {length=1.852654207116878, key=target}]}",
+            map.rootData.toString()
+        )
     }
 }

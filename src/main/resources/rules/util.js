@@ -54,7 +54,7 @@ function initialize() {
     $('#show-top-filter').change(filterAndRender);
     $('#visualize-method').change(filterAndRender);
 
-    $('#experiment-type').change(function() {
+    $('#experiment-type').change(function () {
         if ($(this).val() === 'GENOME') {
             $("#genome-label").show()
             $("#genome").show()
@@ -281,8 +281,8 @@ function runAnalysisOnLoadedData() {
     $('#decisiontree-alg-dialog-pane').empty();
     $('#fpgrowth-alg-dialog-pane').empty();
 
-    window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
-    window.myForm.append("genome", document.getElementById('genome').value.toLowerCase());
+    window.myForm.append("experiment", document.getElementById('experiment-type').value.uppercase());
+    window.myForm.append("genome", document.getElementById('genome').value.lowercase());
     window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
@@ -333,12 +333,12 @@ function runAnalysisOnLoadedData() {
 
 function downloadFile() {
     let jsonPath = document.getElementById('filename-to-download').value;
-    let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
+    let experiment = document.getElementById('experiment-type-download').value.uppercase();
     $.ajax({
         url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
         data: {filename: jsonPath, experiment: experiment},
-        success: function(res) {
+        success: function (res) {
             let nameParts = jsonPath.split(".");
             let type = nameParts.pop();
             let name = nameParts.pop();
@@ -353,7 +353,7 @@ function downloadFile() {
 // TODO: check
 function downloadTextFile(text, name) {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL( new Blob([text]) );
+    a.href = URL.createObjectURL(new Blob([text]));
     a.download = name;
     a.click();
 }
@@ -388,7 +388,7 @@ function showDecisionTreeResults() {
 
 function switchFishboneResults() {
     let switchButton = $('#fishboneSwitch');
-    if(ripperResponse != null && switchButton.val() === "Switch to Ripper") {
+    if (ripperResponse != null && switchButton.val() === "Switch to Ripper") {
         switchButton.val("Switch to Fishbone");
         renderFishboneResults(ripperResponse);
     } else if (fishboneResponse != null && switchButton.val() === "Switch to Fishbone") {

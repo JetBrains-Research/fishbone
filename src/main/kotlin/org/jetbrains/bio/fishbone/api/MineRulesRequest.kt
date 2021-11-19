@@ -1,26 +1,23 @@
 package org.jetbrains.bio.fishbone.api
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.http.content.MultiPartData
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
+import io.ktor.http.content.*
 import java.io.File
 
 /**
  * Represents request to mine associations
  */
 class MineRulesRequest(
-        val experiment: ExperimentType,
-        val genome: String,
-        val predicates: List<String>,
-        val targets: List<String>,
-        val database: String,
-        val miners: Set<MiningAlgorithm>,
-        val criterion: String,
-        val significanceLevel: Double?,
-        val runName: String,
-        val settings: ExperimentSettings = ExperimentSettings()
+    val experiment: ExperimentType,
+    val genome: String,
+    val predicates: List<String>,
+    val targets: List<String>,
+    val database: String,
+    val miners: Set<MiningAlgorithm>,
+    val criterion: String,
+    val significanceLevel: Double?,
+    val runName: String,
+    val settings: ExperimentSettings = ExperimentSettings()
 ) {
     companion object {
         private val jacksonObjectMapper = jacksonObjectMapper()

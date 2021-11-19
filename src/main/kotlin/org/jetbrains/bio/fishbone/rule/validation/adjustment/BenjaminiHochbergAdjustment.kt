@@ -11,7 +11,7 @@ class BenjaminiHochbergAdjustment {
     companion object : MultipleComparisonsAdjustment() {
 
         override fun <T> test(
-                pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int
+            pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int
         ): List<Pair<FishboneMiner.Node<T>, Boolean>> {
             val result = mutableListOf<Pair<FishboneMiner.Node<T>, Boolean>>()
             (0 until pVals.size).forEach { i ->

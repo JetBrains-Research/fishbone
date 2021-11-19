@@ -47,10 +47,10 @@ abstract class Experiment(val outputFolder: String) {
      * @return map of paths to result files per mining algorithm
      */
     fun <V> mine(
-            request: MineRulesRequest,
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>> = emptyList()
+        request: MineRulesRequest,
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>> = emptyList()
     ): MutableMap<MiningAlgorithm, String> {
         val settings = request.settings
 
@@ -75,57 +75,57 @@ abstract class Experiment(val outputFolder: String) {
         val alphaFullDb = if (checkSignificance) settings.alphaFull else null
 
         val targetsResults = targets
-                .map { target ->
-                    val bestExploredRules = (0 until settings.nSampling)
-                            .asSequence()
-                            .map {
-                                logger.info("Sampling ${it + 1} out of ${settings.nSampling}")
+            .map { target ->
+                val bestExploredRules = (0 until settings.nSampling)
+                    .asSequence()
+                    .map {
+                        logger.info("Sampling ${it + 1} out of ${settings.nSampling}")
 
-                                // Split dataset into exploratory and holdout if we want to check stat.significance
-                                if (checkSignificance) {
-                                    splitDataset(database, target, settings.samplingStrategy, settings.exploratoryFraction)
-                                } else (database to database)
-                            }
-                            .map { (exploratory, holdout) ->
-                                // Explore rules on exploratory dataset and test significance against holdout dataset
-                                val exploredRules = exploreRules(
-                                        request.miners,
-                                        exploratory,
-                                        predicates,
-                                        target,
-                                        criterion,
-                                        alphaExploratory,
-                                        checkSignificance,
-                                        topRules,
-                                        maxComplexity,
-                                        topPerComplexity
-                                )
-                                testRules(exploredRules, alphaHoldout, holdout)
-                            }
-                            .flatten()
-                            .fold(
-                                    mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>(),
-                                    { m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules) }
-                            )
-                            .map { (miner, rules) -> miner to rules.distinctBy { it.rule } }
-                            .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
-                            .toList()
+                        // Split dataset into exploratory and holdout if we want to check stat.significance
+                        if (checkSignificance) {
+                            splitDataset(database, target, settings.samplingStrategy, settings.exploratoryFraction)
+                        } else (database to database)
+                    }
+                    .map { (exploratory, holdout) ->
+                        // Explore rules on exploratory dataset and test significance against holdout dataset
+                        val exploredRules = exploreRules(
+                            request.miners,
+                            exploratory,
+                            predicates,
+                            target,
+                            criterion,
+                            alphaExploratory,
+                            checkSignificance,
+                            topRules,
+                            maxComplexity,
+                            topPerComplexity
+                        )
+                        testRules(exploredRules, alphaHoldout, holdout)
+                    }
+                    .flatten()
+                    .fold(
+                        mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>(),
+                        { m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules) }
+                    )
+                    .map { (miner, rules) -> miner to rules.distinctBy { it.rule } }
+                    .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
+                    .toList()
 
-                    val significantRules = testRules(bestExploredRules, alphaFullDb, database)
-                    Miner.updateRulesStatistics(significantRules, target, database)
-                }
-                .flatten()
-                .toList()
+                val significantRules = testRules(bestExploredRules, alphaFullDb, database)
+                Miner.updateRulesStatistics(significantRules, target, database)
+            }
+            .flatten()
+            .toList()
 
         return targetsResults
-                .map { (miner, rules) ->
-                    val outputPath = getOutputFilePath(miner, runName)
-                    saveRulesToFile(rules, criterion, criterion, outputPath)
-                    logger.info("$miner rules saved to $outputPath")
-                    miner to outputPath.toString().replace(".csv", ".json")
-                }
-                .toMap()
-                .toMutableMap()
+            .map { (miner, rules) ->
+                val outputPath = getOutputFilePath(miner, runName)
+                saveRulesToFile(rules, criterion, criterion, outputPath)
+                logger.info("$miner rules saved to $outputPath")
+                miner to outputPath.toString().replace(".csv", ".json")
+            }
+            .toMap()
+            .toMutableMap()
     }
 
     /**
@@ -138,7 +138,7 @@ abstract class Experiment(val outputFolder: String) {
      * @return exploratory to holdout datasets
      */
     internal fun <V> splitDataset(
-            db: List<V>, target: Predicate<V>, strategy: SamplingStrategy, exploratoryFraction: Double
+        db: List<V>, target: Predicate<V>, strategy: SamplingStrategy, exploratoryFraction: Double
     ): Pair<List<V>, List<V>> {
         val n = (exploratoryFraction * db.size).toInt()
         val exploratory = db.randomDistinct(n)
@@ -188,46 +188,52 @@ abstract class Experiment(val outputFolder: String) {
      * @return mined rules by mining algorithm
      */
     private fun <V> exploreRules(
-            miners: Set<MiningAlgorithm>,
-            db: List<V>,
-            predicates: List<Predicate<V>>,
-            target: Predicate<V>,
-            criterion: String,
-            alpha: Double?,
-            checkSignificance: Boolean,
-            topRules: Int,
-            maxComplexity: Int,
-            topPerComplexity: Int
+        miners: Set<MiningAlgorithm>,
+        db: List<V>,
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>,
+        criterion: String,
+        alpha: Double?,
+        checkSignificance: Boolean,
+        topRules: Int,
+        maxComplexity: Int,
+        topPerComplexity: Int
     ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
         val objectiveFunction = Miner.getObjectiveFunction<V>(criterion)
         return miners
-                .map { miningAlgorithm -> mine(db, predicates, target, miningAlgorithm, objectiveFunction,
-                                               maxComplexity, topPerComplexity) }
-                .map { (miner, rules) -> miner to getProductiveRules(miner, rules, alpha, db, false) }
-                .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
-                .map { (miner, rules) ->
-                    // Technical rule TRUE => target from Fishbone algorithm
-                    val technicalRule = rules.last()
-                    miner to (if (checkSignificance) rules.take(topRules) + technicalRule else rules)
-                }
+            .map { miningAlgorithm ->
+                mine(
+                    db, predicates, target, miningAlgorithm, objectiveFunction,
+                    maxComplexity, topPerComplexity
+                )
+            }
+            .map { (miner, rules) -> miner to getProductiveRules(miner, rules, alpha, db, false) }
+            .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
+            .map { (miner, rules) ->
+                // Technical rule TRUE => target from Fishbone algorithm
+                val technicalRule = rules.last()
+                miner to (if (checkSignificance) rules.take(topRules) + technicalRule else rules)
+            }
     }
 
     /**
      * Mine rules by specified algorithm
      */
     private fun <V> mine(
-            data: List<V>,
-            predicates: List<Predicate<V>>,
-            target: Predicate<V>,
-            algorithm: MiningAlgorithm,
-            objectiveFunction: (Rule<V>) -> Double,
-            maxComplexity: Int,
-            topPerComplexity: Int
+        data: List<V>,
+        predicates: List<Predicate<V>>,
+        target: Predicate<V>,
+        algorithm: MiningAlgorithm,
+        objectiveFunction: (Rule<V>) -> Double,
+        maxComplexity: Int,
+        topPerComplexity: Int
     ): Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>> {
         logger.info("Processing $algorithm")
         val miner = Miner.getMiner(algorithm)
-        val params = mapOf("objectiveFunction" to objectiveFunction, "maxComplexity" to maxComplexity,
-                           "topPerComplexity" to topPerComplexity)
+        val params = mapOf(
+            "objectiveFunction" to objectiveFunction, "maxComplexity" to maxComplexity,
+            "topPerComplexity" to topPerComplexity
+        )
         val miningResult = miner.mine(data, predicates, listOf(target), ::predicateCheck, params)
         // Get results for the first target only
         return algorithm to miningResult[0]
@@ -245,7 +251,7 @@ abstract class Experiment(val outputFolder: String) {
      * @return productive rules only
      */
     internal fun <V> getProductiveRules(
-            miner: MiningAlgorithm, rules: List<FishboneMiner.Node<V>>, alpha: Double?, db: List<V>, adjust: Boolean
+        miner: MiningAlgorithm, rules: List<FishboneMiner.Node<V>>, alpha: Double?, db: List<V>, adjust: Boolean
     ): List<FishboneMiner.Node<V>> {
         return if (alpha != null) {
             if (miner == MiningAlgorithm.FISHBONE) {
@@ -262,13 +268,13 @@ abstract class Experiment(val outputFolder: String) {
     }
 
     private fun <V> testRules(
-            rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>, alpha: Double?, db: List<V>
+        rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>, alpha: Double?, db: List<V>
     ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
         return rules.map { (miner, rules) -> miner to getProductiveRules(miner, rules, alpha, db, true) }
     }
 
     private fun <V> sortByObjectiveFunction(rules: List<FishboneMiner.Node<V>>, criterion: String) =
-            rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion)))
+        rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion)))
 
     private fun <V> saveRulesToFile(rules: List<FishboneMiner.Node<V>>, criterion: String, id: String, path: Path) {
         val rulesLogger = RulesLogger(path)

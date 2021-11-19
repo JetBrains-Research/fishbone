@@ -7,7 +7,11 @@ import org.jetbrains.bio.fishbone.miner.FishboneMiner
  */
 class NoAdjustment {
     companion object : MultipleComparisonsAdjustment() {
-        override fun <T> test(pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int): List<Pair<FishboneMiner.Node<T>, Boolean>> {
+        override fun <T> test(
+            pVals: List<Pair<FishboneMiner.Node<T>, Double>>,
+            alpha: Double,
+            m: Int
+        ): List<Pair<FishboneMiner.Node<T>, Boolean>> {
             return pVals.map { it.first to (it.second < alpha) }
         }
 

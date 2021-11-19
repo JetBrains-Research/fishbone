@@ -18,15 +18,23 @@ class PredicateParserTest : TestCase() {
     }
 
     fun testNamesFunction() {
-        assertEquals("PREDICATE",
-                PredicateParser.parse("PREDICATE",
-                        namesFunction(ImmutableList.of(testPredicate("PREDICATE"))))!!.name())
+        assertEquals(
+            "PREDICATE",
+            PredicateParser.parse(
+                "PREDICATE",
+                namesFunction(ImmutableList.of(testPredicate("PREDICATE")))
+            )!!.name()
+        )
     }
 
     fun testLookahead() {
-        assertEquals("[0;20)",
-                PredicateParser.parse("[0;20)",
-                        namesFunction(ImmutableList.of(testPredicate("[0;20)"))))!!.name())
+        assertEquals(
+            "[0;20)",
+            PredicateParser.parse(
+                "[0;20)",
+                namesFunction(ImmutableList.of(testPredicate("[0;20)")))
+            )!!.name()
+        )
     }
 
     @Throws(Exception::class)
@@ -47,7 +55,8 @@ class PredicateParserTest : TestCase() {
     @Throws(Exception::class)
     fun testParseRuleAnd3() {
         assertEquals("p1 AND p2 AND NOT p3",
-                PredicateParser.parse("p1 AND p2 AND NOT p3") { testPredicate(it) }!!.name())
+            PredicateParser.parse("p1 AND p2 AND NOT p3") { testPredicate(it) }!!.name()
+        )
     }
 
     @Throws(Exception::class)
@@ -58,21 +67,24 @@ class PredicateParserTest : TestCase() {
     @Throws(Exception::class)
     fun testParseRuleOr3() {
         assertEquals("p1 OR p2 OR NOT p3",
-                PredicateParser.parse("p1 OR p2 OR NOT p3") { testPredicate(it) }!!.name())
+            PredicateParser.parse("p1 OR p2 OR NOT p3") { testPredicate(it) }!!.name()
+        )
     }
 
     @Throws(Exception::class)
     fun testParseComplex() {
         assertEquals("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3",
-                PredicateParser.parse("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3") {
-                    testPredicate(it)
-                }!!.name())
+            PredicateParser.parse("NOT ICP AND NOT LCP AND NOT exons_except_first_H3K36me3") {
+                testPredicate(it)
+            }!!.name()
+        )
     }
 
     @Throws(Exception::class)
     fun testParseComplexOr() {
         assertEquals("Insulator AND exons_except_first_H3K36me3",
-                PredicateParser.parse("Insulator AND exons_except_first_H3K36me3") { testPredicate(it) }!!.name())
+            PredicateParser.parse("Insulator AND exons_except_first_H3K36me3") { testPredicate(it) }!!.name()
+        )
     }
 
     @Throws(Exception::class)
@@ -83,9 +95,13 @@ class PredicateParserTest : TestCase() {
 
     @Throws(Exception::class)
     fun testParseNoPredicate() {
-        assertEquals("methylation-",
-                PredicateParser.parse("methylation-",
-                        namesFunction(ImmutableList.of(testPredicate("methylation-"))))!!.name())
+        assertEquals(
+            "methylation-",
+            PredicateParser.parse(
+                "methylation-",
+                namesFunction(ImmutableList.of(testPredicate("methylation-")))
+            )!!.name()
+        )
     }
 
 

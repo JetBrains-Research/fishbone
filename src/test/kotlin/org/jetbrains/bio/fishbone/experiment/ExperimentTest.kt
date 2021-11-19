@@ -45,15 +45,26 @@ class ExperimentTest {
         val probes = (0.until(10)).map { ProbePredicate("probe_$it", database) }
         val target = ProbePredicate("target", database)
         val rules = FishboneMiner.mine(
-                probes,
-                target,
-                database,
-                maxComplexity = 2,
-                function = Rule<Int>::conviction
+            probes,
+            target,
+            database,
+            maxComplexity = 2,
+            function = Rule<Int>::conviction
         )
 
-        assertEquals(rules.size, experiment.getProductiveRules(MiningAlgorithm.FISHBONE, rules, 1.0, database, false).size)
-        assertTrue(rules.size > experiment.getProductiveRules(MiningAlgorithm.FISHBONE, rules, 0.05, database, false).size)
+        assertEquals(
+            rules.size,
+            experiment.getProductiveRules(MiningAlgorithm.FISHBONE, rules, 1.0, database, false).size
+        )
+        assertTrue(
+            rules.size > experiment.getProductiveRules(
+                MiningAlgorithm.FISHBONE,
+                rules,
+                0.05,
+                database,
+                false
+            ).size
+        )
     }
 
     companion object {

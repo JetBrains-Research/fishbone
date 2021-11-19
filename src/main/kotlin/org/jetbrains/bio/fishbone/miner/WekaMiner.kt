@@ -20,14 +20,14 @@ abstract class WekaMiner : Miner {
      * @return map of Instances per target
      */
     protected fun <V> createInstances(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean
     ): Map<Predicate<V>, Instances> {
         return targets.map { target ->
             val instances = createInstancesWithAttributesFromPredicates(
-                    target.name(), predicates.map { it.name() }, database.size
+                target.name(), predicates.map { it.name() }, database.size
             )
             addInstances(database, predicates + target, instances, predicateCheck)
             target to instances
@@ -35,7 +35,7 @@ abstract class WekaMiner : Miner {
     }
 
     private fun createInstancesWithAttributesFromPredicates(
-            targetName: String, predicateNames: List<String>, capacity: Int, name: String = Miner.timestamp()
+        targetName: String, predicateNames: List<String>, capacity: Int, name: String = Miner.timestamp()
     ): Instances {
         // Create attributes for target and predicates
         val classAttribute = Attribute(targetName, listOf("1.0", "0.0"))
@@ -49,10 +49,10 @@ abstract class WekaMiner : Miner {
     }
 
     private fun <V> addInstances(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            instances: Instances,
-            predicateCheck: (p: Predicate<V>, i: Int, db: List<V>) -> Boolean
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        instances: Instances,
+        predicateCheck: (p: Predicate<V>, i: Int, db: List<V>) -> Boolean
     ) {
         (0 until database.size).map { i ->
             // Attribute value is 1.0 if predicate is TRUE on a sample and 0.0 otherwise
@@ -67,7 +67,7 @@ abstract class WekaMiner : Miner {
      * Combine rule: merge conditions and target to the list of nodes
      */
     protected fun <V> listOfNodes(
-            conditions: List<Predicate<V>>, target: Predicate<V>, database: List<V>
+        conditions: List<Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
         return if (conditions.isEmpty()) {
             emptyList()
@@ -75,13 +75,13 @@ abstract class WekaMiner : Miner {
             val firstPredicate = conditions.first()
             val firstNode = FishboneMiner.Node(Rule(firstPredicate, target, database), firstPredicate, null)
             conditions.drop(1).fold(
-                    listOf(firstNode), { nodes, p -> nodes + buildNode(nodes, p, target, database) }
+                listOf(firstNode), { nodes, p -> nodes + buildNode(nodes, p, target, database) }
             )
         }
     }
 
     private fun <V> buildNode(
-            nodes: List<FishboneMiner.Node<V>>, p: Predicate<V>, target: Predicate<V>, database: List<V>
+        nodes: List<FishboneMiner.Node<V>>, p: Predicate<V>, target: Predicate<V>, database: List<V>
     ): FishboneMiner.Node<V> {
         val parent = nodes.last()
         val newPredicate = AndPredicate(listOf(parent.rule.conditionPredicate, p))

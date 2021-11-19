@@ -17,15 +17,27 @@ class RulesBPQTest : TestCase() {
         val t = RangePredicate(0, 40).named("t")
 
         val queue = RulesBPQ(100, data, Rule<Int>::conviction, 0.0, 0.0)
-        queue.add(FishboneMiner.Node(Rule(p1.or(p2).or(p3), t, data), p2,
-                FishboneMiner.Node(Rule(p1.or(p3), t, data), p1, null)))
-        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=2, parent=Node(rule=1 OR 3 => t, element=1, parent=null, visualizeInfo=null), visualizeInfo=null)]",
-                queue.toList().toString())
+        queue.add(
+            FishboneMiner.Node(
+                Rule(p1.or(p2).or(p3), t, data), p2,
+                FishboneMiner.Node(Rule(p1.or(p3), t, data), p1, null)
+            )
+        )
+        assertEquals(
+            "[Node(rule=1 OR 2 OR 3 => t, element=2, parent=Node(rule=1 OR 3 => t, element=1, parent=null, visualizeInfo=null), visualizeInfo=null)]",
+            queue.toList().toString()
+        )
         // Add same condition with greater parent, check replace
-        queue.add(FishboneMiner.Node(Rule(p1.or(p2).or(p3), t, data), p1,
-                FishboneMiner.Node(Rule(p2.or(p3), t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 OR 3 => t, element=1, parent=Node(rule=2 OR 3 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
-                queue.toList().toString())
+        queue.add(
+            FishboneMiner.Node(
+                Rule(p1.or(p2).or(p3), t, data), p1,
+                FishboneMiner.Node(Rule(p2.or(p3), t, data), p2, null)
+            )
+        )
+        assertEquals(
+            "[Node(rule=1 OR 2 OR 3 => t, element=1, parent=Node(rule=2 OR 3 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
+            queue.toList().toString()
+        )
     }
 
     @Test
@@ -37,13 +49,24 @@ class RulesBPQTest : TestCase() {
 
         val queue = RulesBPQ(100, data, Rule<Int>::conviction, 0.0, 0.0)
         // Nothing added because of wrong order
-        queue.add(FishboneMiner.Node(Rule(p1.or(p2), t, data), p2,
-                FishboneMiner.Node(Rule(p1, t, data), p1, null)))
+        queue.add(
+            FishboneMiner.Node(
+                Rule(p1.or(p2), t, data), p2,
+                FishboneMiner.Node(Rule(p1, t, data), p1, null)
+            )
+        )
         assertEquals("[]", queue.toList().toString())
 
-        queue.add(FishboneMiner.Node(Rule(p1.or(p2), t, data), p1,
-                FishboneMiner.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]", queue.toList().toString())
+        queue.add(
+            FishboneMiner.Node(
+                Rule(p1.or(p2), t, data), p1,
+                FishboneMiner.Node(Rule(p2, t, data), p2, null)
+            )
+        )
+        assertEquals(
+            "[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
+            queue.toList().toString()
+        )
     }
 
 
@@ -56,12 +79,16 @@ class RulesBPQTest : TestCase() {
 
         val queue = RulesBPQ(10, data, Rule<Int>::conviction, 0.0, 0.0)
         queue.add(FishboneMiner.Node(Rule(p1.or(p2), t, data), p1, FishboneMiner.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
-                queue.toList().toString())
+        assertEquals(
+            "[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
+            queue.toList().toString()
+        )
         // Adding the same rules doesn't change the queue
         queue.add(FishboneMiner.Node(Rule(p1.or(p2), t, data), p1, FishboneMiner.Node(Rule(p2, t, data), p2, null)))
-        assertEquals("[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
-                queue.toList().toString())
+        assertEquals(
+            "[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
+            queue.toList().toString()
+        )
     }
 
 }

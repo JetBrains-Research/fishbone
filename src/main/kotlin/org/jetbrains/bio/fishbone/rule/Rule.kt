@@ -8,12 +8,14 @@ import kotlin.math.sqrt
 /**
  * Association Rule
  */
-class Rule<T>(val conditionPredicate: Predicate<T>,
-              val targetPredicate: Predicate<T>,
-              val database: Int,
-              val condition: Int,
-              val target: Int,
-              val intersection: Int) {
+class Rule<T>(
+    val conditionPredicate: Predicate<T>,
+    val targetPredicate: Predicate<T>,
+    val database: Int,
+    val condition: Int,
+    val target: Int,
+    val intersection: Int
+) {
 
     val name: String = "${conditionPredicate.name()} ${PredicateParser.IMPL} ${targetPredicate.name()}"
 
@@ -29,13 +31,17 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
         check(target >= intersection) { "$name: Target: $target < support: $intersection" }
     }
 
-    constructor(conditionPredicate: Predicate<T>,
-                targetPredicate: Predicate<T>,
-                data: List<T>) :
-            this(conditionPredicate, targetPredicate, data.size,
-                    conditionPredicate.test(data).cardinality(),
-                    targetPredicate.test(data).cardinality(),
-                    conditionPredicate.and(targetPredicate).test(data).cardinality())
+    constructor(
+        conditionPredicate: Predicate<T>,
+        targetPredicate: Predicate<T>,
+        data: List<T>
+    ) :
+            this(
+                conditionPredicate, targetPredicate, data.size,
+                conditionPredicate.test(data).cardinality(),
+                targetPredicate.test(data).cardinality(),
+                conditionPredicate.and(targetPredicate).test(data).cardinality()
+            )
 
     /**
      * Lift measures how many times more often X and Y occur together than expected if they were statistically independent.
@@ -79,7 +85,8 @@ class Rule<T>(val conditionPredicate: Predicate<T>,
      * LOE(X -> Y) = (n*sup(X∩Y)−sup(X)sup(Y)) / sup(X)sup(¬Y) = (p(Y|X) - P(Y)) / P(not Y)
      * Important: in case A < B < C, LOE(A => C) == LOE(B => C). We use pow to fix this.
      */
-    val loe: Double = (1.0 * database * pow(intersection.toDouble(), 1.1) / (condition + 1.0) - target) / (database - target + 1.0)
+    val loe: Double =
+        (1.0 * database * pow(intersection.toDouble(), 1.1) / (condition + 1.0) - target) / (database - target + 1.0)
 
     /**
      * Computes correlation between condition and target.

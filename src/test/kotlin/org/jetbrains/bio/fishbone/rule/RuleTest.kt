@@ -7,12 +7,16 @@ import java.util.stream.IntStream
 
 class RuleTest : TestCase() {
 
-    private fun rule(size: Int,
-                     conditionSupport: Int,
-                     targetSupport: Int,
-                     conditionAndTarget: Int): Rule<Any> {
-        return Rule(TruePredicate(), TruePredicate(),
-                size, conditionSupport, targetSupport, conditionAndTarget)
+    private fun rule(
+        size: Int,
+        conditionSupport: Int,
+        targetSupport: Int,
+        conditionAndTarget: Int
+    ): Rule<Any> {
+        return Rule(
+            TruePredicate(), TruePredicate(),
+            size, conditionSupport, targetSupport, conditionAndTarget
+        )
     }
 
     @Throws(Exception::class)
@@ -46,13 +50,15 @@ class RuleTest : TestCase() {
         testIncreasing(10000, 9000, 9000, 0, 0, 0, 3000)
     }
 
-    private fun testIncreasing(dataSize: Int,
-                               condition: Int,
-                               target: Int,
-                               support: Int,
-                               deltaCondition: Int,
-                               deltaTarget: Int,
-                               deltaConditionAndTarget: Int) {
+    private fun testIncreasing(
+        dataSize: Int,
+        condition: Int,
+        target: Int,
+        support: Int,
+        deltaCondition: Int,
+        deltaTarget: Int,
+        deltaConditionAndTarget: Int
+    ) {
         var c = condition
         var t = target
         var s = support
@@ -76,10 +82,14 @@ class RuleTest : TestCase() {
         // [20;30) OR [30;40) => [20;50): ce = 2
         // and result values are SAME due to rounding issues
         IntStream.of(100, 1000, 10000).forEach { size ->
-            assertTrue(rule(size, 10, 30, 10).conviction <
-                    rule(size, 20, 30, 20).conviction)
-            assertTrue(rule(size, 20, 30, 20).conviction <
-                    rule(size, 30, 30, 30).conviction)
+            assertTrue(
+                rule(size, 10, 30, 10).conviction <
+                        rule(size, 20, 30, 20).conviction
+            )
+            assertTrue(
+                rule(size, 20, 30, 20).conviction <
+                        rule(size, 30, 30, 30).conviction
+            )
         }
     }
 

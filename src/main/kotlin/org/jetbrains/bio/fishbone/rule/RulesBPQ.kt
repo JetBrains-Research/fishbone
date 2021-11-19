@@ -10,14 +10,15 @@ import java.util.*
  * Thread safe Bounded Priority Queue.
  * Stores top [limit] items, prioritized by [comparator]
  */
-class RulesBPQ<T>(private val limit: Int,
-                  private val database: List<T>,
-                  private val function: (Rule<T>) -> Double = Rule<T>::conviction,
-                  private val functionDelta: Double,
-                  private val klDelta: Double,
-                  private val comparator: Comparator<FishboneMiner.Node<T>> = comparator(function),
-                  private val queue: Queue<FishboneMiner.Node<T>> = PriorityQueue(limit, comparator.reversed()))
-    : Queue<FishboneMiner.Node<T>> by queue {
+class RulesBPQ<T>(
+    private val limit: Int,
+    private val database: List<T>,
+    private val function: (Rule<T>) -> Double = Rule<T>::conviction,
+    private val functionDelta: Double,
+    private val klDelta: Double,
+    private val comparator: Comparator<FishboneMiner.Node<T>> = comparator(function),
+    private val queue: Queue<FishboneMiner.Node<T>> = PriorityQueue(limit, comparator.reversed())
+) : Queue<FishboneMiner.Node<T>> by queue {
 
     override fun add(element: FishboneMiner.Node<T>): Boolean = offer(element)
 
@@ -36,8 +37,10 @@ class RulesBPQ<T>(private val limit: Int,
                 val head = peek()
                 // NOTE[shpynov] queue is built upon reversed comparator
                 if (comparator.compare(node, head) > -1) {
-                    LOG.debug("FAILED function check against smallest in queue  ${function(rule)} < ${function(head.rule)}\n" +
-                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
+                    LOG.debug(
+                        "FAILED function check against smallest in queue  ${function(rule)} < ${function(head.rule)}\n" +
+                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}"
+                    )
                     return false
                 }
             }
@@ -46,22 +49,28 @@ class RulesBPQ<T>(private val limit: Int,
                 val sameConditionNode = queue.firstOrNull { it.rule.conditionPredicate == condition }
                 if (sameConditionNode != null) {
                     return if (comparator.compare(parent, sameConditionNode.parent) < 0) {
-                        LOG.debug("REMOVING from queue same condition\n" +
-                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent!!.rule.name}")
+                        LOG.debug(
+                            "REMOVING from queue same condition\n" +
+                                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent!!.rule.name}"
+                        )
                         remove(sameConditionNode)
                         queue.offer(node)
                     } else {
-                        LOG.debug("FAILED other parent check for same condition " +
-                                "${sameConditionNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
-                                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                        LOG.debug(
+                            "FAILED other parent check for same condition " +
+                                    "${sameConditionNode.parent!!.rule.conditionPredicate.name()} > ${parent!!.rule.conditionPredicate.name()}\n" +
+                                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}"
+                        )
                         false
                     }
                 }
             }
             // NOTE[shpynov] main difference with [PriorityQueue]!!!
             if (size >= limit) {
-                LOG.debug("REDUCING queue\n" +
-                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}")
+                LOG.debug(
+                    "REDUCING queue\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent?.rule?.name}"
+                )
                 poll()
             }
             return queue.offer(node)
@@ -74,23 +83,28 @@ class RulesBPQ<T>(private val limit: Int,
      * See [mine] for details on thresholds
      */
     private fun checkHierarchy(
-            node: FishboneMiner.Node<T>,
-            parent: FishboneMiner.Node<T>,
-            function: (Rule<T>) -> Double): Boolean {
+        node: FishboneMiner.Node<T>,
+        parent: FishboneMiner.Node<T>,
+        function: (Rule<T>) -> Double
+    ): Boolean {
         // Check order
         val elementF = function(Rule(node.element, node.rule.targetPredicate, database))
         val parentF = function(parent.rule)
         if (elementF > parentF) {
-            LOG.debug("FAILED Function Order element vs parent delta check $elementF > $parentF\n" +
-                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+            LOG.debug(
+                "FAILED Function Order element vs parent delta check $elementF > $parentF\n" +
+                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}"
+            )
             return false
         }
         // Check function delta
         val nodeF = function(node.rule)
         if (nodeF < parentF + functionDelta) {
-            LOG.debug("FAILED Function node vs parent delta check " +
-                    "$nodeF < $parentF + $functionDelta\n" +
-                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+            LOG.debug(
+                "FAILED Function node vs parent delta check " +
+                        "$nodeF < $parentF + $functionDelta\n" +
+                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}"
+            )
             return false
         }
         // If klDelta <= 0 ignore information check
@@ -107,14 +121,18 @@ class RulesBPQ<T>(private val limit: Int,
             }
             // Check that we gained at least klDelta improvement
             if (klRule >= klParent - klDelta * klIndependent) {
-                LOG.debug("FAILED Information delta node vs parent on full check " +
-                        "$klRule >= $klParent - $klDelta * $klIndependent\n" +
-                        "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+                LOG.debug(
+                    "FAILED Information delta node vs parent on full check " +
+                            "$klRule >= $klParent - $klDelta * $klIndependent\n" +
+                            "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}"
+                )
                 return false
             }
         }
-        LOG.debug("PASS rule\n" +
-                "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}")
+        LOG.debug(
+            "PASS rule\n" +
+                    "+ ${node.element.name()}, ${node.rule.conditionPredicate.name()} | ${parent.rule.name}"
+        )
         return true
     }
 
@@ -125,11 +143,11 @@ class RulesBPQ<T>(private val limit: Int,
          * @return Comparator by max function and min complexity
          */
         fun <T> comparator(function: (Rule<T>) -> Double) =
-                Comparator<FishboneMiner.Node<T>> { (r1, _), (r2, _) ->
-                    ComparisonChain.start()
-                            .compare(function(r2), function(r1))
-                            .compare(r1.conditionPredicate.complexity(), r2.conditionPredicate.complexity())
-                            .result()
-                }
+            Comparator<FishboneMiner.Node<T>> { (r1, _), (r2, _) ->
+                ComparisonChain.start()
+                    .compare(function(r2), function(r1))
+                    .compare(r1.conditionPredicate.complexity(), r2.conditionPredicate.complexity())
+                    .result()
+            }
     }
 }

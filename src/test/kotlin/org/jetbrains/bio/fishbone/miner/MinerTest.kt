@@ -27,9 +27,9 @@ class MinerTest {
         val newDatabase = listOf(1, 2, 4, 5)
 
         val updated = Miner.updateRulesStatistics(
-                listOf(MiningAlgorithm.FISHBONE to listOf(node)),
-                target,
-                newDatabase
+            listOf(MiningAlgorithm.FISHBONE to listOf(node)),
+            target,
+            newDatabase
         )[0].second[0].rule
         assertEquals(4, updated.database)
         assertEquals(3, updated.condition)
@@ -58,9 +58,9 @@ class MinerTest {
         val newDatabase = listOf(1, 2, 4, 5)
 
         val updated = Miner.updateRulesStatistics(
-                listOf(MiningAlgorithm.FISHBONE to listOf(node, fakeNode)),
-                target,
-                newDatabase
+            listOf(MiningAlgorithm.FISHBONE to listOf(node, fakeNode)),
+            target,
+            newDatabase
         )
 
         assertNotNull(updated[0].second[1].visualizeInfo)

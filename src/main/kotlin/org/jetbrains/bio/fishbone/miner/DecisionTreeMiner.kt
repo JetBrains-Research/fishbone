@@ -13,11 +13,11 @@ class DecisionTreeMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(DecisionTreeMiner::class.java)
 
     override fun <V> mine(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
-            params: Map<String, Any>
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+        params: Map<String, Any>
     ): List<List<FishboneMiner.Node<V>>> {
         try {
             if (targets.isEmpty()) {
@@ -45,7 +45,7 @@ class DecisionTreeMiner : WekaMiner() {
      * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
      */
     private fun <V> buildRuleNodes(
-            part: PART, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
+        part: PART, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
         val rulesDescription = part.toString().split("\n\n")
 
@@ -58,10 +58,10 @@ class DecisionTreeMiner : WekaMiner() {
      * Create a list of fishbone nodes for the rule
      */
     private fun <V> ruleToListOfNodes(
-            rule: String,
-            predicatesByName: Map<String, Predicate<V>>,
-            target: Predicate<V>,
-            database: List<V>
+        rule: String,
+        predicatesByName: Map<String, Predicate<V>>,
+        target: Predicate<V>,
+        database: List<V>
     ): List<FishboneMiner.Node<V>> {
         val conditions = rule.split("AND").map {
             val predicateName = it.trim().trim('\n').split(" ")[0]

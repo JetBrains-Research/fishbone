@@ -37,14 +37,19 @@ object FishboneMiner : Miner {
     /**
      * Result of [mine] procedure.
      */
-    data class Node<T>(val rule: Rule<T>, val element: Predicate<T>, val parent: Node<T>?, var visualizeInfo: VisualizeInfo? = null)
+    data class Node<T>(
+        val rule: Rule<T>,
+        val element: Predicate<T>,
+        val parent: Node<T>?,
+        var visualizeInfo: VisualizeInfo? = null
+    )
 
     override fun <V> mine(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
-            params: Map<String, Any>
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+        params: Map<String, Any>
     ): List<List<Node<V>>> {
         try {
             val sourcesToTargets = (if (targets.isNotEmpty()) targets else predicates).map { target ->
@@ -52,16 +57,16 @@ object FishboneMiner : Miner {
             }
 
             return mine(
-                    "All => All",
-                    database,
-                    sourcesToTargets,
-                    { },
-                    maxComplexity = params.getOrDefault("maxComplexity", 3) as Int,
-                    topPerComplexity = params.getOrDefault("topPerComplexity", TOP_PER_COMPLEXITY) as Int,
-                    function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
-                    or = false,
-                    negate = true,
-                    buildHeatmapAndUpset = false
+                "All => All",
+                database,
+                sourcesToTargets,
+                { },
+                maxComplexity = params.getOrDefault("maxComplexity", 3) as Int,
+                topPerComplexity = params.getOrDefault("topPerComplexity", TOP_PER_COMPLEXITY) as Int,
+                function = params.getOrDefault("objectiveFunction", Rule<V>::conviction) as (Rule<V>) -> Double,
+                or = false,
+                negate = true,
+                buildHeatmapAndUpset = false
             )
         } catch (t: Throwable) {
             t.printStackTrace()
@@ -92,19 +97,21 @@ object FishboneMiner : Miner {
      *      independent on adding extra atomics.
      *      This allows us to talk about learning "enough" information about the system.
      */
-    fun <T> mine(title: String,
-                 database: List<T>,
-                 toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
-                 logFunction: (List<Node<T>>) -> Unit,
-                 maxComplexity: Int,
-                 and: Boolean = true,
-                 or: Boolean = true,
-                 negate: Boolean = true,
-                 topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                 function: (Rule<T>) -> Double = Rule<T>::conviction,
-                 functionDelta: Double = FUNCTION_DELTA,
-                 klDelta: Double = KL_DELTA,
-                 buildHeatmapAndUpset: Boolean = false): List<List<Node<T>>> {
+    fun <T> mine(
+        title: String,
+        database: List<T>,
+        toMine: List<Pair<List<Predicate<T>>, Predicate<T>>>,
+        logFunction: (List<Node<T>>) -> Unit,
+        maxComplexity: Int,
+        and: Boolean = true,
+        or: Boolean = true,
+        negate: Boolean = true,
+        topPerComplexity: Int = TOP_PER_COMPLEXITY,
+        function: (Rule<T>) -> Double = Rule<T>::conviction,
+        functionDelta: Double = FUNCTION_DELTA,
+        klDelta: Double = KL_DELTA,
+        buildHeatmapAndUpset: Boolean = false
+    ): List<List<Node<T>>> {
         LOG.info("Rules mining: $title")
         toMine.forEach { (conditions, target) ->
             // For each complexity level and for aux info computation
@@ -113,10 +120,12 @@ object FishboneMiner : Miner {
         val mineResults = toMine.map { (conditions, target) ->
             // Cleanup predicates cache
             Predicate.dbCache = null
-            val mineResult = mine(conditions, target, database,
-                    maxComplexity, and, or, negate,
-                    topPerComplexity, function,
-                    functionDelta, klDelta, buildHeatmapAndUpset)
+            val mineResult = mine(
+                conditions, target, database,
+                maxComplexity, and, or, negate,
+                topPerComplexity, function,
+                functionDelta, klDelta, buildHeatmapAndUpset
+            )
             logFunction(mineResult)
             mineResult
         }
@@ -126,24 +135,28 @@ object FishboneMiner : Miner {
 
 
     @VisibleForTesting
-    internal fun <T> mine(predicates: List<Predicate<T>>,
-                          target: Predicate<T>,
-                          database: List<T>,
-                          maxComplexity: Int,
-                          and: Boolean = true,
-                          or: Boolean = true,
-                          negate: Boolean = true,
-                          topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                          function: (Rule<T>) -> Double,
-                          functionDelta: Double = FUNCTION_DELTA,
-                          klDelta: Double = KL_DELTA,
-                          buildHeatmapAndUpset: Boolean = true): List<Node<T>> {
+    internal fun <T> mine(
+        predicates: List<Predicate<T>>,
+        target: Predicate<T>,
+        database: List<T>,
+        maxComplexity: Int,
+        and: Boolean = true,
+        or: Boolean = true,
+        negate: Boolean = true,
+        topPerComplexity: Int = TOP_PER_COMPLEXITY,
+        function: (Rule<T>) -> Double,
+        functionDelta: Double = FUNCTION_DELTA,
+        klDelta: Double = KL_DELTA,
+        buildHeatmapAndUpset: Boolean = true
+    ): List<Node<T>> {
         // Since we use FishBone visualization as an analysis method,
         // we want all the results available for each complexity level available for inspection
-        val best = mineByComplexity(predicates, target, database,
-                maxComplexity, and, or, negate,
-                topPerComplexity, function,
-                functionDelta, klDelta)
+        val best = mineByComplexity(
+            predicates, target, database,
+            maxComplexity, and, or, negate,
+            topPerComplexity, function,
+            functionDelta, klDelta
+        )
 
         // NOTE[shpynov] hacks adding target information to all the nodes
         val singleRules = best[1]
@@ -151,15 +164,22 @@ object FishboneMiner : Miner {
         // We don't need calculate additional statistics in case of sampling
         val targetAux = if (buildHeatmapAndUpset && singleRules.isNotEmpty()) {
             // Collect pairwise correlations and all the top level predicates combinations
-            TargetVisualizeInfo(Miner.heatmap(database, target, singleRules), Miner.upset(database, target, singleRules))
+            TargetVisualizeInfo(
+                Miner.heatmap(database, target, singleRules),
+                Miner.upset(database, target, singleRules)
+            )
         } else null
 
         val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
         result.map {
             Callable {
-                it.visualizeInfo = RuleVisualizeInfo(rule =
-                Combinations.of(database,
-                        listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)))
+                it.visualizeInfo = RuleVisualizeInfo(
+                    rule =
+                    Combinations.of(
+                        database,
+                        listOfNotNull(it.element, it.parent?.rule?.conditionPredicate, it.rule.targetPredicate)
+                    )
+                )
             }
         }.await(parallel = true)
         MultitaskProgress.finishTask(target.name())
@@ -172,17 +192,19 @@ object FishboneMiner : Miner {
     /**
      * Dynamic programming algorithm storing optimization results by complexity.
      */
-    private fun <T> mineByComplexity(predicates: List<Predicate<T>>,
-                                     target: Predicate<T>,
-                                     database: List<T>,
-                                     maxComplexity: Int,
-                                     and: Boolean = true,
-                                     or: Boolean = true,
-                                     negate: Boolean = true,
-                                     topPerComplexity: Int = TOP_PER_COMPLEXITY,
-                                     function: (Rule<T>) -> Double,
-                                     functionDelta: Double = FUNCTION_DELTA,
-                                     klDelta: Double = KL_DELTA): Array<RulesBPQ<T>> {
+    private fun <T> mineByComplexity(
+        predicates: List<Predicate<T>>,
+        target: Predicate<T>,
+        database: List<T>,
+        maxComplexity: Int,
+        and: Boolean = true,
+        or: Boolean = true,
+        negate: Boolean = true,
+        topPerComplexity: Int = TOP_PER_COMPLEXITY,
+        function: (Rule<T>) -> Double,
+        functionDelta: Double = FUNCTION_DELTA,
+        klDelta: Double = KL_DELTA
+    ): Array<RulesBPQ<T>> {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
@@ -208,13 +230,13 @@ object FishboneMiner : Miner {
                 executor.awaitAll(bestByComplexity[k - 1].flatMap { parent ->
                     val startAtomics = parent.rule.conditionPredicate.collectAtomics() + target
                     predicates.filter { it !in startAtomics }
-                            .flatMap { p -> if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p) }
-                            .flatMap { p ->
-                                PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p, and = and, or = or)
-                                        .filter(Predicate<T>::defined).map {
-                                            Triple(parent, p, it)
-                                        }
-                            }
+                        .flatMap { p -> if (p.canNegate() && negate) listOf(p, p.not()) else listOf(p) }
+                        .flatMap { p ->
+                            PredicatesInjector.injectPredicate(parent.rule.conditionPredicate, p, and = and, or = or)
+                                .filter(Predicate<T>::defined).map {
+                                    Triple(parent, p, it)
+                                }
+                        }
                 }.map { (parent, p, candidate) ->
                     Callable {
                         queue.add(Node(Rule(candidate, target, database), p, parent))

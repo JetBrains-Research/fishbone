@@ -63,11 +63,11 @@ abstract class Predicate<T> {
                     cache = lastDbCache!!.second
                 } else {
                     cache = CacheBuilder
-                            .newBuilder()
-                            .maximumSize(1000) // To make it LRU
-                            .weakKeys()        // To use reference equality ===
-                            .softValues()      // To be memory friendly
-                            .build()
+                        .newBuilder()
+                        .maximumSize(1000) // To make it LRU
+                        .weakKeys()        // To use reference equality ===
+                        .softValues()      // To be memory friendly
+                        .build()
                     dbCache = items to cache!!
                 }
             }
@@ -123,13 +123,13 @@ abstract class Predicate<T> {
                 return UndefinedPredicate()
             }
             val processedOperands = operands
-                    // Remove unnecessary ()
-                    .map { o -> if (o is ParenthesesPredicate<*>) (o as ParenthesesPredicate<T>).operand else o }
-                    // Open underlying Or operands
-                    .flatMap { o -> if (o is OrPredicate<*>) (o as OrPredicate<T>).operands else listOf(o) }
-                    // Filter FALSE operands
-                    .filter { o -> o != FalsePredicate<T>() }
-                    .sortedBy { it.name() }
+                // Remove unnecessary ()
+                .map { o -> if (o is ParenthesesPredicate<*>) (o as ParenthesesPredicate<T>).operand else o }
+                // Open underlying Or operands
+                .flatMap { o -> if (o is OrPredicate<*>) (o as OrPredicate<T>).operands else listOf(o) }
+                // Filter FALSE operands
+                .filter { o -> o != FalsePredicate<T>() }
+                .sortedBy { it.name() }
             if (processedOperands.any { it == TruePredicate<T>() }) {
                 return TruePredicate()
             }
@@ -153,20 +153,20 @@ abstract class Predicate<T> {
                 return UndefinedPredicate()
             }
             val processedOperands = operands
-                    // Insert parenthesis within Or operands
-                    .map { o -> if (o is OrPredicate<*>) ParenthesesPredicate.of(o as Predicate<T>) else o }
-                    // Remove unnecessary ()
-                    .map { o ->
-                        if (o is ParenthesesPredicate<*> && o.operand !is OrPredicate<*>)
-                            (o as ParenthesesPredicate<T>).operand
-                        else
-                            o
-                    }
-                    // Open underlying And predicates
-                    .flatMap { o -> if (o is AndPredicate<*>) (o as AndPredicate<T>).operands else listOf(o) }
-                    // Filter TRUE operands
-                    .filter { o -> o != TruePredicate<T>() }
-                    .sortedBy { it.name() }
+                // Insert parenthesis within Or operands
+                .map { o -> if (o is OrPredicate<*>) ParenthesesPredicate.of(o as Predicate<T>) else o }
+                // Remove unnecessary ()
+                .map { o ->
+                    if (o is ParenthesesPredicate<*> && o.operand !is OrPredicate<*>)
+                        (o as ParenthesesPredicate<T>).operand
+                    else
+                        o
+                }
+                // Open underlying And predicates
+                .flatMap { o -> if (o is AndPredicate<*>) (o as AndPredicate<T>).operands else listOf(o) }
+                // Filter TRUE operands
+                .filter { o -> o != TruePredicate<T>() }
+                .sortedBy { it.name() }
             // Check FALSE inside operands
             if (processedOperands.any { it == FalsePredicate<T>() }) {
                 return FalsePredicate()

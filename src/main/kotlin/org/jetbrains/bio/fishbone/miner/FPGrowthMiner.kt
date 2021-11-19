@@ -14,11 +14,11 @@ class FPGrowthMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(FPGrowthMiner::class.java)
 
     override fun <V> mine(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
-            params: Map<String, Any>
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+        params: Map<String, Any>
     ): List<List<FishboneMiner.Node<V>>> {
         try {
             if (targets.isEmpty()) {
@@ -49,7 +49,7 @@ class FPGrowthMiner : WekaMiner() {
      * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
      */
     private fun <V> buildRuleNodes(
-            fpGrowth: FPGrowth, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
+        fpGrowth: FPGrowth, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
         return fpGrowth.associationRules.rules.map { rule ->
             val conditions = rule.consequence.map {

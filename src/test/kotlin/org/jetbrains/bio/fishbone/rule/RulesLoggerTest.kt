@@ -23,7 +23,8 @@ class RulesLoggerTest {
         val database = 0.until(100).toList()
         val logger = RulesLogger(null)
         FishboneMiner.mine("foo", database, listOf(predicates to RangePredicate(20, 50)),
-                { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2, buildHeatmapAndUpset = true)
+            { logger.log("id", it) }, maxComplexity = 3, topPerComplexity = 2, buildHeatmapAndUpset = true
+        )
         assertEquals("""{
   "records": [
     {
@@ -394,27 +395,34 @@ class RulesLoggerTest {
     "[20;35)": "#ffffff"
   },
   "criterion": "conviction"
-}""", logger.getJson({ Color.WHITE }))
+}""", logger.getJson({ Color.WHITE })
+        )
     }
 
 
     @Test
     fun testRuleRecordCSV() {
         val rule = Rule(FalsePredicate<Any>().named("foo"), FalsePredicate<Any>().named("bar"), 10, 8, 9, 7)
-        assertEquals(listOf("id", "foo", "bar", 10, 8, 9, 7, 0.8, 0.875,
-                -0.16666666666666666, 0.9722222222222222, 0.4, 0.22427683792970576, 1),
-                RuleRecord.fromRule(rule, "id").toCSV())
+        assertEquals(
+            listOf(
+                "id", "foo", "bar", 10, 8, 9, 7, 0.8, 0.875,
+                -0.16666666666666666, 0.9722222222222222, 0.4, 0.22427683792970576, 1
+            ),
+            RuleRecord.fromRule(rule, "id").toCSV()
+        )
     }
 
     @Test
     fun testRuleRecordMap() {
         val rule = Rule(FalsePredicate<Any>().named("foo"), FalsePredicate<Any>().named("bar"), 10, 8, 9, 7)
-        assertEquals("{id=id, condition=foo, target=bar, " +
-                "database_count=10, condition_count=8, target_count=9, intersection_count=7, " +
-                "support=0.8, confidence=0.875, " +
-                "correlation=-0.16666666666666666, lift=0.9722222222222222, conviction=0.4, loe=0.22427683792970576, " +
-                "complexity=1}",
-                RuleRecord.fromRule(rule, "id").toMap().toString())
+        assertEquals(
+            "{id=id, condition=foo, target=bar, " +
+                    "database_count=10, condition_count=8, target_count=9, intersection_count=7, " +
+                    "support=0.8, confidence=0.875, " +
+                    "correlation=-0.16666666666666666, lift=0.9722222222222222, conviction=0.4, loe=0.22427683792970576, " +
+                    "complexity=1}",
+            RuleRecord.fromRule(rule, "id").toMap().toString()
+        )
     }
 
 }

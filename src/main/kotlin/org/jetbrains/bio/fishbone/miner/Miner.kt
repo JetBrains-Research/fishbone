@@ -21,11 +21,11 @@ interface Miner {
      * @return list of mined rules per target
      */
     fun <V> mine(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
-            params: Map<String, Any>
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+        params: Map<String, Any>
     ): List<List<FishboneMiner.Node<V>>>
 
     companion object {
@@ -68,15 +68,15 @@ interface Miner {
          * @return updated rules
          */
         fun <V> updateRulesStatistics(
-                rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>,
-                target: Predicate<V>,
-                database: List<V>
+            rules: List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>>,
+            target: Predicate<V>,
+            database: List<V>
         ): List<Pair<MiningAlgorithm, List<FishboneMiner.Node<V>>>> {
             var singleRules = mutableListOf<FishboneMiner.Node<V>>()
             val updatedRules = rules
-                    .map { (miner, rules) ->
-                        miner to rules.map { node -> newNode(node, database, singleRules) }
-                    }
+                .map { (miner, rules) ->
+                    miner to rules.map { node -> newNode(node, database, singleRules) }
+                }
             singleRules = singleRules.distinctBy { it.rule }.toMutableList()
             val targetAux = if (singleRules.isNotEmpty()) {
                 TargetVisualizeInfo(heatmap(database, target, singleRules), upset(database, target, singleRules))
@@ -94,7 +94,7 @@ interface Miner {
         }
 
         private fun <V> newNode(
-                node: FishboneMiner.Node<V>, database: List<V>, singleRules: MutableList<FishboneMiner.Node<V>>
+            node: FishboneMiner.Node<V>, database: List<V>, singleRules: MutableList<FishboneMiner.Node<V>>
         ): FishboneMiner.Node<V> {
             val newRule = Rule(node.rule.conditionPredicate, node.rule.targetPredicate, database)
             // Go up to the first-level rules
@@ -111,14 +111,14 @@ interface Miner {
             // Update statistics
             val newNode = FishboneMiner.Node(newRule, node.element, parentNode)
             val ruleAux = RuleVisualizeInfo(
-                    rule = Combinations.of(
-                            database,
-                            listOfNotNull(
-                                    newNode.element,
-                                    newNode.parent?.rule?.conditionPredicate,
-                                    newNode.rule.targetPredicate
-                            )
+                rule = Combinations.of(
+                    database,
+                    listOfNotNull(
+                        newNode.element,
+                        newNode.parent?.rule?.conditionPredicate,
+                        newNode.rule.targetPredicate
                     )
+                )
             )
             newNode.visualizeInfo = ruleAux
 

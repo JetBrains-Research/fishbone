@@ -10,9 +10,6 @@ import weka.core.EuclideanDistance
 import weka.core.Instances
 import java.util.*
 import java.util.concurrent.Callable
-import kotlin.Comparator
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
 import kotlin.collections.set
 import kotlin.math.log2
 import kotlin.math.roundToInt
@@ -57,10 +54,11 @@ data class UpsetRecord(val id: List<Int>, val n: Int) {
 /**
  * Bounded priority queue for [UpsetRecord]
  */
-class UpsetBPQ(private val limit: Int,
-               private val comparator: Comparator<UpsetRecord>,
-               private val queue: Queue<UpsetRecord> = PriorityQueue(limit, comparator.reversed()))
-    : Queue<UpsetRecord> by queue {
+class UpsetBPQ(
+    private val limit: Int,
+    private val comparator: Comparator<UpsetRecord>,
+    private val queue: Queue<UpsetRecord> = PriorityQueue(limit, comparator.reversed())
+) : Queue<UpsetRecord> by queue {
 
     override fun add(element: UpsetRecord): Boolean = offer(element)
 
@@ -86,9 +84,11 @@ class UpsetBPQ(private val limit: Int,
  */
 data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
     companion object {
-        fun <T> of(database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
-                   combinations: Int = 100,
-                   maxCombinations: Int = 100_000): Upset {
+        fun <T> of(
+            database: List<T>, predicates: List<Predicate<T>>, target: Predicate<T>,
+            combinations: Int = 100,
+            maxCombinations: Int = 100_000
+        ): Upset {
             // Elements containing 0 should be on the top!
             val comparator = Comparator<UpsetRecord> { u1, u2 ->
                 return@Comparator when {
@@ -178,13 +178,14 @@ data class HeatMap(val tableData: List<Map<String, Any>>?, val rootData: Map<Str
             val tableData = order.map { i ->
                 val pI = predicates[i]
                 mapOf(
-                        "key" to pI.name(),
-                        "values" to order.map { j ->
-                            val pJ = predicates[j]
-                            mapOf(
-                                    "key" to pJ.name(),
-                                    "value" to Rule(pI, pJ, database).correlation)
-                        })
+                    "key" to pI.name(),
+                    "values" to order.map { j ->
+                        val pJ = predicates[j]
+                        mapOf(
+                            "key" to pJ.name(),
+                            "value" to Rule(pI, pJ, database).correlation
+                        )
+                    })
             }
             return HeatMap(tableData, rootData)
         }

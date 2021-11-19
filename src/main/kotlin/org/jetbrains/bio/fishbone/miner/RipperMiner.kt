@@ -14,11 +14,11 @@ class RipperMiner : WekaMiner() {
     private val logger = LoggerFactory.getLogger(RipperMiner::class.java)
 
     override fun <V> mine(
-            database: List<V>,
-            predicates: List<Predicate<V>>,
-            targets: List<Predicate<V>>,
-            predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
-            params: Map<String, Any>
+        database: List<V>,
+        predicates: List<Predicate<V>>,
+        targets: List<Predicate<V>>,
+        predicateCheck: (Predicate<V>, Int, List<V>) -> Boolean,
+        params: Map<String, Any>
     ): List<List<FishboneMiner.Node<V>>> {
         try {
             if (targets.isEmpty()) {
@@ -89,16 +89,16 @@ class RipperMiner : WekaMiner() {
      * NOTE: cannot be abstract function of WekaMiner class because of different hierarchy of Weka algorithms
      */
     private fun <V> buildRuleNodes(
-            jRip: JRip, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
+        jRip: JRip, predicatesByName: Map<String, Predicate<V>>, target: Predicate<V>, database: List<V>
     ): List<FishboneMiner.Node<V>> {
         val classesRange = 0 until 2
         return classesRange.map { classIndex ->
             val ruleStats = jRip.getRuleStats(classIndex)
             val rules = ruleStats.ruleset
             rules
-                    .filter { it.hasAntds() }
-                    .map { ruleToListOfNodes(it, predicatesByName, target, database) }
-                    .flatten()
+                .filter { it.hasAntds() }
+                .map { ruleToListOfNodes(it, predicatesByName, target, database) }
+                .flatten()
         }.flatten()
     }
 
@@ -106,18 +106,18 @@ class RipperMiner : WekaMiner() {
      * Create a list of fishbone nodes for the rule
      */
     private fun <V> ruleToListOfNodes(
-            it: weka.classifiers.rules.Rule?,
-            predicatesByName: Map<String, Predicate<V>>,
-            target: Predicate<V>,
-            database: List<V>
+        it: weka.classifiers.rules.Rule?,
+        predicatesByName: Map<String, Predicate<V>>,
+        target: Predicate<V>,
+        database: List<V>
     ): List<FishboneMiner.Node<V>> {
         val rule = it as JRip.RipperRule
         val conditions = rule.antds
-                .filter { predicatesByName.containsKey(it.attr.name()) }
-                .map {
-                    val predicate = predicatesByName.getValue(it.attr.name())
-                    if (it.attrValue.toInt() == 0) predicate.not() else predicate
-                }
+            .filter { predicatesByName.containsKey(it.attr.name()) }
+            .map {
+                val predicate = predicatesByName.getValue(it.attr.name())
+                if (it.attrValue.toInt() == 0) predicate.not() else predicate
+            }
 
         return listOfNodes(conditions, target, database)
     }

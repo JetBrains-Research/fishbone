@@ -30,14 +30,14 @@ class RuleImprovementCheck {
          * @return productve rules only
          */
         fun <T> productiveRules(
-                rules: List<FishboneMiner.Node<T>>, alpha: Double, db: List<T>, adjust: Boolean
+            rules: List<FishboneMiner.Node<T>>, alpha: Double, db: List<T>, adjust: Boolean
         ): List<FishboneMiner.Node<T>> {
             val pVals = rules.map { node -> node to testRuleProductivity(node.rule, db) }.sortedBy { it.second }
             val adjustment = if (adjust) BenjaminiHochbergAdjustment else NoAdjustment
             val multipleComparisonResults = adjustment.test(pVals, alpha, rules.size)
             val filteredRules = multipleComparisonResults
-                    .filter { it.second }
-                    .map { it.first }
+                .filter { it.second }
+                .map { it.first }
             logger.info("Significant rules P < $alpha: ${filteredRules.size} / ${rules.size}")
             return filteredRules
         }
@@ -65,7 +65,7 @@ class RuleImprovementCheck {
                 val d = dFreq(reducedSources, x, target, database)
 
                 StatisticalSignificanceCheck.test(a, b, c, d, database.size, test)
-            }.max()!!
+            }.maxOrNull()!!
         }
 
         /**
@@ -89,17 +89,17 @@ class RuleImprovementCheck {
         // Functions for frequency table
 
         private fun <T> aFreq(sources: List<Predicate<T>>, target: Predicate<T>, database: List<T>) =
-                AndPredicate(sources + target).test(database).cardinality()
+            AndPredicate(sources + target).test(database).cardinality()
 
         private fun <T> bFreq(sources: List<Predicate<T>>, target: Predicate<T>, database: List<T>) =
-                AndPredicate(sources + target.not()).test(database).cardinality()
+            AndPredicate(sources + target.not()).test(database).cardinality()
 
         private fun <T> cFreq(
-                reducedSources: List<Predicate<T>>, x: Predicate<T>, target: Predicate<T>, database: List<T>
+            reducedSources: List<Predicate<T>>, x: Predicate<T>, target: Predicate<T>, database: List<T>
         ) = AndPredicate(reducedSources + x.not() + target).test(database).cardinality()
 
         private fun <T> dFreq(
-                reducedSources: List<Predicate<T>>, x: Predicate<T>, target: Predicate<T>, database: List<T>
+            reducedSources: List<Predicate<T>>, x: Predicate<T>, target: Predicate<T>, database: List<T>
         ) = AndPredicate(reducedSources + x.not() + target.not()).test(database).cardinality()
     }
 

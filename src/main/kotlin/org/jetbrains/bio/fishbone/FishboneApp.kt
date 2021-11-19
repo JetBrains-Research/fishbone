@@ -1,25 +1,16 @@
 package org.jetbrains.bio.fishbone
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.features.CallLogging
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.http.content.MultiPartData
-import io.ktor.jackson.jackson
-import io.ktor.request.receiveMultipart
-import io.ktor.response.respond
-import io.ktor.response.respondFile
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.route
-import io.ktor.routing.routing
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.jackson.*
+import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.util.pipeline.*
 import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionParser
 import org.jetbrains.bio.fishbone.api.ExperimentType
@@ -78,15 +69,15 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
      */
     private fun PipelineContext<Unit, ApplicationCall>.loadRules(): File {
         val fileName = call.request.queryParameters["filename"]
-                ?: throw IllegalArgumentException("Filename parameter is expected")
+            ?: throw IllegalArgumentException("Filename parameter is expected")
         return if (fileName.contains(outputFolder)) {
             File(fileName)
         } else {
             val experimentName = call.request.queryParameters["experiment"]
-                    ?: throw IllegalArgumentException("Experiment parameter is expected")
+                ?: throw IllegalArgumentException("Experiment parameter is expected")
             val experimentType = ExperimentType.valueOf(experimentName)
             val experiment = experiments[experimentType]
-                    ?: throw IllegalArgumentException("Unexpected experiment name")
+                ?: throw IllegalArgumentException("Unexpected experiment name")
             File("${experiment.outputFolder}/$fileName")
         }
     }
@@ -112,18 +103,18 @@ class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, priv
         fun main(args: Array<String>) {
             OptionParser().apply {
                 accepts("port", "Server port (default 8080)").withOptionalArg().ofType(Int::class.java)
-                        .defaultsTo(defaultServerPort)
+                    .defaultsTo(defaultServerPort)
                 accepts(
-                        "output",
-                        "Output folder to store experiment's results (default - current directory)"
+                    "output",
+                    "Output folder to store experiment's results (default - current directory)"
                 ).withOptionalArg().ofType(String::class.java)
-                        .defaultsTo(defaultOutputFolder)
+                    .defaultsTo(defaultOutputFolder)
                 formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
                 val outputFolder = options.valueOf("output").toString()
                 val experiments = mapOf(
-                        ExperimentType.GENOME to GenomeBasedExperiment(outputFolder),
-                        ExperimentType.FEATURE_SET to FeaturesSetExperiment(outputFolder)
+                    ExperimentType.GENOME to GenomeBasedExperiment(outputFolder),
+                    ExperimentType.FEATURE_SET to FeaturesSetExperiment(outputFolder)
                 )
                 val port = options.valueOf("port").toString().toInt()
                 FishboneApp(experiments, outputFolder).run(port)

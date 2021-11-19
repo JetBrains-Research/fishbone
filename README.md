@@ -16,8 +16,8 @@ Fishbone: association rule mining using Ishikawa diagrams
 # Project description
 
 Fishbone project provides a service to automatically
-construct [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram) for specified data files. 
-A novel approach is used, which combines [Associated Rules](https://en.wikipedia.org/wiki/Association_rule_learning) 
+construct [Ishikawa diagrams](https://en.wikipedia.org/wiki/Ishikawa_diagram) for specified data files. A novel approach
+is used, which combines [Associated Rules](https://en.wikipedia.org/wiki/Association_rule_learning)
 learning technique and information theory.
 
 Fishbone is a client-server application with HTTP API and web UI.

@@ -12,10 +12,12 @@ import org.nield.kotlinstatistics.range.OpenRange
 import java.io.File
 import java.nio.file.Files
 
-class UniversalDataParser (private val dataFilename: String,
-                           private val outputFolder: String,
-                           private val youngAgeRange: OpenRange<Int>,
-                           private val oldAgeRange: OpenRange<Int>) {
+class UniversalDataParser(
+    private val dataFilename: String,
+    private val outputFolder: String,
+    private val youngAgeRange: OpenRange<Int>,
+    private val oldAgeRange: OpenRange<Int>
+) {
 
     private val idMap = mapOf("A" to "1", "B" to "2", "C" to "3", "D" to "4", "E" to "5")
 
@@ -25,40 +27,47 @@ class UniversalDataParser (private val dataFilename: String,
         fun main(args: Array<String>) {
             OptionParser().apply {
                 accepts("dataFilename", "Filename of input data file")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("outputFolder", "Folder for result files")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("youngMaxAge", "Max age limit for young cohort")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("oldMinAge", "Min age limit for old cohort")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("oldMaxAge", "Max age limit for old cohort")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("csvDelimiter", "Input csv data file delimiter")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("idColumnName", "Name of id column")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("ageColumnName", "Name of age column")
-                        .withRequiredArg().ofType(String::class.java)
+                    .withRequiredArg().ofType(String::class.java)
                 accepts("sexColumnName", "Name of sex column")
-                        .withOptionalArg().ofType(String::class.java)
+                    .withOptionalArg().ofType(String::class.java)
                 accepts("sexValue", "Sex value for filtering")
-                        .withOptionalArg().ofType(String::class.java)
+                    .withOptionalArg().ofType(String::class.java)
                 formatHelpWith(BuiltinHelpFormatter(200, 2))
             }.parse(args) { options ->
-                val processor = UniversalDataParser(options.valueOf("dataFilename").toString(),
-                                                    options.valueOf("outputFolder").toString(),
-                                                    OpenRange(0,
-                                                              options.valueOf("youngMaxAge").toString().toInt()),
-                                                    OpenRange(options.valueOf("oldMinAge").toString().toInt(),
-                                                              options.valueOf("oldMaxAge").toString().toInt()))
+                val processor = UniversalDataParser(
+                    options.valueOf("dataFilename").toString(),
+                    options.valueOf("outputFolder").toString(),
+                    OpenRange(
+                        0,
+                        options.valueOf("youngMaxAge").toString().toInt()
+                    ),
+                    OpenRange(
+                        options.valueOf("oldMinAge").toString().toInt(),
+                        options.valueOf("oldMaxAge").toString().toInt()
+                    )
+                )
 
                 val (database, predicates) = processor.createPredicatesFromData(
-                        options.valueOf("csvDelimiter").toString()[0],
-                        options.valueOf("idColumnName").toString(),
-                        options.valueOf("ageColumnName").toString(),
-                        options.valueOf("sexColumnName")?.toString(),
-                        options.valueOf("sexValue")?.toString())
+                    options.valueOf("csvDelimiter").toString()[0],
+                    options.valueOf("idColumnName").toString(),
+                    options.valueOf("ageColumnName").toString(),
+                    options.valueOf("sexColumnName")?.toString(),
+                    options.valueOf("sexValue")?.toString()
+                )
 
                 File(options.valueOf("outputFolder").toString()).mkdirs()
                 processor.saveDatabaseToFile(database)
@@ -67,32 +76,38 @@ class UniversalDataParser (private val dataFilename: String,
         }
     }
 
-    fun createPredicatesFromData(csvDelimiter: Char, idColumnName: String, ageColumnName: String,
-                                 sexColumnName: String?, sexValue: String?) :
+    fun createPredicatesFromData(
+        csvDelimiter: Char, idColumnName: String, ageColumnName: String,
+        sexColumnName: String?, sexValue: String?
+    ):
             Pair<List<Int>, List<OverlapSamplePredicate>> {
         val isInRange: (String) -> Boolean = { sample_value -> sample_value.toInt() in oldAgeRange }
         val dataReader = Files.newBufferedReader(dataFilename.toPath())
         val table = CSVParser(dataReader!!, CSVFormat.DEFAULT.withDelimiter(csvDelimiter))
-                .map { csvRecord -> csvRecord }
+            .map { csvRecord -> csvRecord }
         val header = table[0]
         val idColumnIndex = header.indexOf(idColumnName)
         val ageColumnIndex = header.indexOf(ageColumnName)
         val sexColumnIndex = if (sexColumnName == null) -1 else header.indexOf(sexColumnName)
-        val data = table.filterIndexed { index, sample -> index != 0 &&
-                (sample[ageColumnIndex].toInt() in oldAgeRange ||
-                        sample[ageColumnIndex].toInt() in youngAgeRange) &&
-                (sexColumnIndex == -1 || sample[sexColumnIndex] == sexValue)}.map {
+        val data = table.filterIndexed { index, sample ->
+            index != 0 &&
+                    (sample[ageColumnIndex].toInt() in oldAgeRange ||
+                            sample[ageColumnIndex].toInt() in youngAgeRange) &&
+                    (sexColumnIndex == -1 || sample[sexColumnIndex] == sexValue)
+        }.map {
             val group = it[idColumnIndex][0].toString()
             listOf(it[idColumnIndex].replace(group, idMap.getOrDefault(group, group))) +
                     it.toList().subList(1, it.size())
         }
         val database = data.map { it[idColumnIndex].toInt() }
 
-        val predicatesMap = header.filter { it != idColumnName && it != ageColumnName
-                && (sexColumnName == null || it != sexColumnName) }.map { column ->
+        val predicatesMap = header.filter {
+            it != idColumnName && it != ageColumnName
+                    && (sexColumnName == null || it != sexColumnName)
+        }.map { column ->
             val index = header.indexOf(column)
             val naValues = data.filterNot { it[index] != null && it[index] != "" && it[index] != "NA" }
-                    .map { it[idColumnIndex].toInt() }
+                .map { it[idColumnIndex].toInt() }
             val samples = data.filter { it[index] != null && it[index] != "" && it[index] != "NA" }
             (1..100).map { percent ->
                 val threshold = samples.map { it[index].toDouble() }.percentile(percent.toDouble())
@@ -102,14 +117,14 @@ class UniversalDataParser (private val dataFilename: String,
             }.distinctBy { it.second }.toMap()
         }.fold(emptyMap<String, Pair<List<Int>, List<Int>>>(), { map, t -> map + t }) +
                 mapOf("${ageColumnName}_is_old" to (data.filter { isInRange(it[ageColumnIndex]) }
-                        .map { it[idColumnIndex].toInt() } to emptyList() ))
+                    .map { it[idColumnIndex].toInt() } to emptyList()))
         val predicates = createOverlapSamplePredicates(predicatesMap, database)
 
         return Pair(database, predicates)
     }
 
     private fun createOverlapSamplePredicates(
-            predicates: Map<String, Pair<List<Int>, List<Int>>>, database: List<Int>
+        predicates: Map<String, Pair<List<Int>, List<Int>>>, database: List<Int>
     ): List<OverlapSamplePredicate> {
         return predicates.map {
             val samples = it.value.first

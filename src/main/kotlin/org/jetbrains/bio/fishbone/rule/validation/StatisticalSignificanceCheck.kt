@@ -20,11 +20,11 @@ class StatisticalSignificanceCheck {
             val t4 = if (b + d != 0.0) b + d else 1.0
             val chiStat = ((a * d - b * c) * (a + b + c + d)) / (t1 * t2 * t3 * t4)
             val pValue =
-                    if (chiStat.isInfinite() || chiStat.isNaN()) {
-                        0.0
-                    } else {
-                        chiSquaredDistribution.cumulativeProbability(chiStat)
-                    }
+                if (chiStat.isInfinite() || chiStat.isNaN()) {
+                    0.0
+                } else {
+                    chiSquaredDistribution.cumulativeProbability(chiStat)
+                }
             return 1.0 - pValue
         }
 
@@ -45,7 +45,7 @@ class StatisticalSignificanceCheck {
             return when (test) {
                 "fisher" -> FisherExactTest.forTable(a, b, c, d).invoke()
                 "chi" -> ChiSquareTest.forTable(
-                        a.toDouble() / len, b.toDouble() / len, c.toDouble() / len, d.toDouble() / len
+                    a.toDouble() / len, b.toDouble() / len, c.toDouble() / len, d.toDouble() / len
                 ).invoke()
                 else -> throw IllegalArgumentException("Unsupported test $test")
             }

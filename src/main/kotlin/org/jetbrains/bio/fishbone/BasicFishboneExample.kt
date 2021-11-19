@@ -11,17 +11,18 @@ import org.jetbrains.bio.fishbone.rule.RulesLogger
 import org.jetbrains.bio.util.*
 import java.nio.file.Paths
 
-class BasicFishboneExample(private val databaseUrl: String, private val sourceFolderUrl: String,
-                           private val targetFilesUrls: List<String>, private val criterion: String,
-                           private val outputFolder: String)
-    : Experiment("BasicFishboneExample") {
+class BasicFishboneExample(
+    private val databaseUrl: String, private val sourceFolderUrl: String,
+    private val targetFilesUrls: List<String>, private val criterion: String,
+    private val outputFolder: String
+) : Experiment("BasicFishboneExample") {
 
     fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(i as V)
 
     override fun doCalculations() {
         val sourceFilesUrls = sourceFolderUrl.toPath().list()
-                .filter { it.isRegularFile && !it.name.startsWith(".") }
-                .map { "${it.toAbsolutePath()}" }
+            .filter { it.isRegularFile && !it.name.startsWith(".") }
+            .map { "${it.toAbsolutePath()}" }
 
         val databasePath = Paths.get(databaseUrl)
         val database = databasePath.toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
@@ -29,13 +30,17 @@ class BasicFishboneExample(private val databaseUrl: String, private val sourceFo
         val targets = PredicatesConstructor.createOverlapSamplePredicates(targetFilesUrls)
         val objectiveFunction = Miner.getObjectiveFunction<Int>(criterion)
         val targetsResults =
-                Miner.getMiner(MiningAlgorithm.FISHBONE).mine(database, predicates, targets, ::predicateCheck,
-                                                              mapOf("maxComplexity" to 2,
-                                                                    "topPerComplexity" to 100,
-                                                                    "objectiveFunction" to objectiveFunction))
-                        .map { rules -> rules.distinctBy { it.rule } }
-                        .map { rules -> rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion))) }
-                        .flatten()
+            Miner.getMiner(MiningAlgorithm.FISHBONE).mine(
+                database, predicates, targets, ::predicateCheck,
+                mapOf(
+                    "maxComplexity" to 2,
+                    "topPerComplexity" to 100,
+                    "objectiveFunction" to objectiveFunction
+                )
+            )
+                .map { rules -> rules.distinctBy { it.rule } }
+                .map { rules -> rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion))) }
+                .flatten()
 
         val outputPath = outputFolder / ("LowLevelFishboneExample_rules_${Miner.timestamp()}.csv")
         val rulesLogger = RulesLogger(outputPath)
@@ -56,11 +61,11 @@ class BasicFishboneExample(private val databaseUrl: String, private val sourceFo
                 accepts("outputFolder", "Output folder").withRequiredArg()
             }.parse(args) { options ->
                 BasicFishboneExample(
-                        options.valueOf("databaseUrl").toString(),
-                        options.valueOf("sourceFolderUrl").toString(),
-                        options.valueOf("targetFilesUrls").toString().split(" "),
-                        options.valueOf("criterion").toString(),
-                        options.valueOf("outputFolder").toString()
+                    options.valueOf("databaseUrl").toString(),
+                    options.valueOf("sourceFolderUrl").toString(),
+                    options.valueOf("targetFilesUrls").toString().split(" "),
+                    options.valueOf("criterion").toString(),
+                    options.valueOf("outputFolder").toString()
                 ).run()
             }
         }

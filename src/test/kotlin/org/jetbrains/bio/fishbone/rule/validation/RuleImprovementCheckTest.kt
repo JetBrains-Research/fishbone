@@ -7,18 +7,18 @@ import org.jetbrains.bio.fishbone.predicate.ProbePredicate
 import org.jetbrains.bio.fishbone.rule.Rule
 import org.junit.Test
 
-class RuleImprovementCheckTest: TestCase() {
+class RuleImprovementCheckTest : TestCase() {
     @Test
     fun testRandomFisher() {
         val database = (0.until(100)).toList()
         val probes = (0.until(10)).map { ProbePredicate("probe_$it", database) }
         val target = ProbePredicate("target", database)
         val result = FishboneMiner.mine(
-                probes,
-                target,
-                database,
-                maxComplexity = 2,
-                function = Rule<Int>::conviction
+            probes,
+            target,
+            database,
+            maxComplexity = 2,
+            function = Rule<Int>::conviction
         ).first()
         assertFalse(RuleImprovementCheck.testRuleProductivity(result.rule, database, "fisher") < 0.05)
     }
@@ -43,11 +43,11 @@ class RuleImprovementCheckTest: TestCase() {
         val probes = (0.until(100)).map { ProbePredicate("probe_$it", database) }
         val target = ProbePredicate("target", database)
         val result = FishboneMiner.mine(
-                probes,
-                target,
-                database,
-                maxComplexity = 2,
-                function = Rule<Int>::conviction
+            probes,
+            target,
+            database,
+            maxComplexity = 2,
+            function = Rule<Int>::conviction
         ).first()
         assertFalse(RuleImprovementCheck.testRuleProductivity(result.rule, database, "chi") < 0.05)
     }

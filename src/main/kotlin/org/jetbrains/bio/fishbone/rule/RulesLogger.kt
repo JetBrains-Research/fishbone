@@ -34,8 +34,8 @@ class RulesLogger(val path: Path?, vararg params: String) {
 
     private val csvPrinter by lazy {
         DEFAULT.withCommentMarker('#')
-                .withHeader(*ObjectArrays.concat(RuleRecord.PARAMS.toTypedArray(), extraParams, String::class.java))
-                .print(path!!.bufferedWriter())
+            .withHeader(*ObjectArrays.concat(RuleRecord.PARAMS.toTypedArray(), extraParams, String::class.java))
+            .print(path!!.bufferedWriter())
     }
 
     @Synchronized
@@ -52,21 +52,23 @@ class RulesLogger(val path: Path?, vararg params: String) {
                 }
                 visited.add(conditionPredicate.name())
                 atomics.addAll(
-                        conditionPredicate.collectAtomics().map {
-                            // Hack OverlapSamplePredicate
-                            it.name().replace("${PredicateParser.NOT.token} ", "")
-                        }
+                    conditionPredicate.collectAtomics().map {
+                        // Hack OverlapSamplePredicate
+                        it.name().replace("${PredicateParser.NOT.token} ", "")
+                    }
                 )
                 atomics.addAll(r.targetPredicate.collectAtomics().map { it.name() })
                 // Log to csv
                 log(r)
                 // Json based visualization
-                graphRecords.add(r.toMap() + mapOf(
+                graphRecords.add(
+                    r.toMap() + mapOf(
                         "node" to node.element.name(),
                         "parent_node" to if (node.parent != null) node.parent!!.element.name() else null,
                         "parent_condition" to if (node.parent != null) node.parent!!.rule.conditionPredicate.name() else null,
                         "aux" to node.visualizeInfo,
-                        "operator" to getOperatorName(conditionPredicate))
+                        "operator" to getOperatorName(conditionPredicate)
+                    )
                 )
                 node = node.parent
             }
@@ -129,13 +131,13 @@ class RulesLogger(val path: Path?, vararg params: String) {
      * Default colors
      */
     private fun trackColor(dataTypeId: String): Color {
-        return when (dataTypeId.toLowerCase()) {
-            "H3K27ac".toLowerCase() -> Color(255, 0, 0)
-            "H3K27me3".toLowerCase() -> Color(153, 0, 255)
-            "H3K4me1".toLowerCase() -> Color(255, 153, 0)
-            "H3K4me3".toLowerCase() -> Color(51, 204, 51)
-            "H3K36me3".toLowerCase() -> Color(0, 0, 204)
-            "H3K9me3".toLowerCase() -> Color(255, 0, 255)
+        return when (dataTypeId.lowercase()) {
+            "H3K27ac".lowercase() -> Color(255, 0, 0)
+            "H3K27me3".lowercase() -> Color(153, 0, 255)
+            "H3K4me1".lowercase() -> Color(255, 153, 0)
+            "H3K4me3".lowercase() -> Color(51, 204, 51)
+            "H3K36me3".lowercase() -> Color(0, 0, 204)
+            "H3K9me3".lowercase() -> Color(255, 0, 255)
             "methylation" -> Color.green
             "transcription" -> Color.red
             else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
@@ -147,39 +149,42 @@ class RulesLogger(val path: Path?, vararg params: String) {
     fun getJson(palette: (String) -> Color, criterion: String = "conviction"): String {
         // We want null modification to map to "null"
         val json = mapOf(
-                "records" to graphRecords.toList(),
-                "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
-                "criterion" to criterion
+            "records" to graphRecords.toList(),
+            "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
+            "criterion" to criterion
         )
         return GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create().toJson(json)
     }
 
 }
 
-class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val targetPredicate: Predicate<T>,
-                    val database: Int, val condition: Int, val target: Int, val intersection: Int,
-                    val support: Double, val confidence: Double,
-                    val correlation: Double,
-                    val lift: Double,
-                    val conviction: Double,
-                    val loe: Double,
-                    val complexity: Int) {
+class RuleRecord<T>(
+    val id: String, val conditionPredicate: Predicate<T>, val targetPredicate: Predicate<T>,
+    val database: Int, val condition: Int, val target: Int, val intersection: Int,
+    val support: Double, val confidence: Double,
+    val correlation: Double,
+    val lift: Double,
+    val conviction: Double,
+    val loe: Double,
+    val complexity: Int
+) {
 
     fun toCSV() = listOf(
-            id,
-            conditionPredicate.name(),
-            targetPredicate.name(),
-            database,
-            condition,
-            target,
-            intersection,
-            support,
-            confidence,
-            if (!correlation.isNaN()) correlation else 0.0,
-            if (!lift.isNaN()) lift else 0.0,
-            if (!conviction.isNaN()) conviction else 0.0,
-            if (!loe.isNaN()) loe else 0.0,
-            complexity)
+        id,
+        conditionPredicate.name(),
+        targetPredicate.name(),
+        database,
+        condition,
+        target,
+        intersection,
+        support,
+        confidence,
+        if (!correlation.isNaN()) correlation else 0.0,
+        if (!lift.isNaN()) lift else 0.0,
+        if (!conviction.isNaN()) conviction else 0.0,
+        if (!loe.isNaN()) loe else 0.0,
+        complexity
+    )
 
 
     fun toMap() = PARAMS.zip(toCSV()).toMap()
@@ -201,47 +206,52 @@ class RuleRecord<T>(val id: String, val conditionPredicate: Predicate<T>, val ta
         private const val KEY_COMPLEXITY = "complexity"
 
         val PARAMS = listOf(
-                KEY_ID,
-                KEY_CONDITION,
-                KEY_TARGET,
-                KEY_DATABASE_COUNT,
-                KEY_CONDITION_COUNT,
-                KEY_TARGET_COUNT,
-                KEY_INTERSECTION_COUNT,
-                KEY_SUPPORT,
-                KEY_CONFIDENCE,
-                KEY_CORRELATION,
-                KEY_LIFT,
-                KEY_CONVICTION,
-                KEY_LOE,
-                KEY_COMPLEXITY)
+            KEY_ID,
+            KEY_CONDITION,
+            KEY_TARGET,
+            KEY_DATABASE_COUNT,
+            KEY_CONDITION_COUNT,
+            KEY_TARGET_COUNT,
+            KEY_INTERSECTION_COUNT,
+            KEY_SUPPORT,
+            KEY_CONFIDENCE,
+            KEY_CORRELATION,
+            KEY_LIFT,
+            KEY_CONVICTION,
+            KEY_LOE,
+            KEY_COMPLEXITY
+        )
 
         /**
          * These are consistent with [RuleRecord.toMap]
          */
         fun <T> fromRule(rule: Rule<T>, id: String = ""): RuleRecord<T> {
             with(rule) {
-                return RuleRecord(id, conditionPredicate, targetPredicate,
-                        database, condition, target, intersection,
-                        condition.toDouble() / database, intersection.toDouble() / condition,
-                        correlation, lift, conviction, loe,
-                        conditionPredicate.complexity())
+                return RuleRecord(
+                    id, conditionPredicate, targetPredicate,
+                    database, condition, target, intersection,
+                    condition.toDouble() / database, intersection.toDouble() / condition,
+                    correlation, lift, conviction, loe,
+                    conditionPredicate.complexity()
+                )
             }
         }
 
         fun <T> fromCSV(it: CSVRecord, factory: (String) -> Predicate<T>): RuleRecord<T> {
-            return RuleRecord(id = s(it, KEY_ID),
-                    conditionPredicate = PredicateParser.parse(s(it, KEY_CONDITION), factory)!!,
-                    targetPredicate = PredicateParser.parse(s(it, KEY_TARGET), factory)!!,
-                    database = i(it, KEY_DATABASE_COUNT),
-                    condition = i(it, KEY_CONDITION_COUNT), target = i(it, KEY_TARGET_COUNT),
-                    intersection = i(it, KEY_INTERSECTION_COUNT),
-                    support = d(it, KEY_SUPPORT), confidence = d(it, KEY_CONFIDENCE),
-                    correlation = d(it, KEY_CORRELATION),
-                    lift = d(it, KEY_LIFT),
-                    conviction = d(it, KEY_CONVICTION),
-                    loe = d(it, KEY_LOE),
-                    complexity = i(it, KEY_COMPLEXITY))
+            return RuleRecord(
+                id = s(it, KEY_ID),
+                conditionPredicate = PredicateParser.parse(s(it, KEY_CONDITION), factory)!!,
+                targetPredicate = PredicateParser.parse(s(it, KEY_TARGET), factory)!!,
+                database = i(it, KEY_DATABASE_COUNT),
+                condition = i(it, KEY_CONDITION_COUNT), target = i(it, KEY_TARGET_COUNT),
+                intersection = i(it, KEY_INTERSECTION_COUNT),
+                support = d(it, KEY_SUPPORT), confidence = d(it, KEY_CONFIDENCE),
+                correlation = d(it, KEY_CORRELATION),
+                lift = d(it, KEY_LIFT),
+                conviction = d(it, KEY_CONVICTION),
+                loe = d(it, KEY_LOE),
+                complexity = i(it, KEY_COMPLEXITY)
+            )
         }
 
         private fun s(it: CSVRecord, s: String) = if (it.isMapped(s)) it[s] else ""

@@ -125,7 +125,8 @@
                     <label id="topRules-label" for="topRules"># top rules:</label>
                     <input type="number" step="0.001" id="topRules" name="name" min="5" max="25" value="10">
                     <label id="exploratoryFraction-label" for="exploratoryFraction">Exploratory fraction:</label>
-                    <input type="number" step="0.1" id="exploratoryFraction" name="name" min="0.1" max="1.0" value="0.5">
+                    <input type="number" step="0.1" id="exploratoryFraction" name="name" min="0.1" max="1.0"
+                           value="0.5">
                     <label id="nSampling-label" for="nSampling"># sampling:</label>
                     <input type="number" step="10" id="nSampling" name="name" min="0" max="1000" value="150">
                     <label id="samplingType-label" for="samplingStrategy">Sampling type:</label>
@@ -135,7 +136,8 @@
                         <option value="DOWNSAMPLING">DOWNSAMPLING</option>
                     </select>
                     <label id="significance-level-label" for="significance-level">Alpha (exploratory):</label>
-                    <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1" value="0.05">
+                    <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1"
+                           value="0.05">
                     <label id="alphaHoldout-label" for="alphaHoldout">Alpha (holdout):</label>
                     <input type="number" step="0.001" id="alphaHoldout" name="name" min="0.001" max="1" value="0.2">
                     <label id="alphaFull-label" for="alphaFull">Alpha (full):</label>
@@ -146,17 +148,20 @@
             <div id="load-files" style="display: none">
                 <label id="filename" style="display: inline">Fishbone</label>
                 <input id="file" type="file" accept=".json" style="display: none"/>
-                <input id="file-button" type="button" class="btn btn-primary" value="Load *.json" style="display: inline"
+                <input id="file-button" type="button" class="btn btn-primary" value="Load *.json"
+                       style="display: inline"
                        onclick="$('#file').click();"/>
 
                 <label id="tree-filename" style="display: inline">Tree</label>
                 <input id="tree-file" type="file" accept=".dot" style="display: none"/>
-                <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot" style="display: inline"
+                <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot"
+                       style="display: inline"
                        onclick="$('#tree-file').click();"/>
 
                 <label id="fpgrowth-filename" style="display: inline">FP-growth</label>
                 <input id="fpgrowth-file" type="file" accept=".txt" style="display: none"/>
-                <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt" style="display: inline"
+                <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt"
+                       style="display: inline"
                        onclick="$('#fpgrowth-file').click();"/>
 
                 <input id="filename-to-download" class="form-control" placeholder="filename to dowload"/>
@@ -165,7 +170,8 @@
                     <option value="GENOME" selected="selected">GENOME</option>
                     <option value="FEATURE_SET">FEATURE_SET</option>
                 </select>
-                <input id="download-file-button" type="button" class="btn btn-primary" value="Download" style="display: inline"
+                <input id="download-file-button" type="button" class="btn btn-primary" value="Download"
+                       style="display: inline"
                        onclick="downloadFile();"/>
             </div>
             <script>
