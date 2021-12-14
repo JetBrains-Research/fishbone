@@ -31,7 +31,7 @@ targetCompatibility = sourceCompatibility
 compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 
-project(':bioinf-commons')
+project(":bioinf-commons")
 
 dependencies {
     // Kotlin dependencies
@@ -44,17 +44,17 @@ dependencies {
     implementation "io.ktor:ktor-jackson:$ktor_version"
 
     // Logging dependencies
-    implementation("ch.qos.logback:logback-classic:1.2.3")
-    implementation("ch.qos.logback:logback-core:1.2.3")
+    implementation "ch.qos.logback:logback-classic:1.2.3"
+    implementation "ch.qos.logback:logback-core:1.2.3"
     implementation "org.slf4j:slf4j-api:1.7.25"
 
     //ML dependencies
-    implementation group: "nz.ac.waikato.cms.weka", name: "weka-stable", version: "3.8.3"
+    implementation "nz.ac.waikato.cms.weka:weka-stable:3.8.3"
 
     // Bioinformatics (science) dependencies
-    implementation project(':bioinf-commons')
+    implementation project(":bioinf-commons")
     implementation "org.nield:kotlin-statistics:1.2.1"
-    implementation group: "org.apache.commons", name: "commons-math3", version: "3.6.1"
+    implementation "org.apache.commons:commons-math3:3.6.1"
 
     // Testing dependencies
     testImplementation "junit:junit:4.12"
@@ -117,6 +117,6 @@ jar {
 // https://github.com/gradle/gradle/issues/5816
 if (rootProject == project) {
     wrapper {
-        gradleVersion = "7.3"
+        gradleVersion = "6.8"
     }
 }
