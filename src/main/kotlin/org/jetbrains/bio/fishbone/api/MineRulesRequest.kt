@@ -40,7 +40,7 @@ class MineRulesRequest(
                         if (part.name == "miners") {
                             requestMap[name] = part.value.split(", ").map { MiningAlgorithm.byLable(it) }.toSet()
                         } else {
-                            if (part.name in ExperimentSettings::class.java.declaredFields.map { it.name }) {
+                            if (part.name!! in ExperimentSettings::class.java.declaredFields.map { it.name }) {
                                 settingsMap[name] = part.value
                             } else {
                                 requestMap[name] = part.value
