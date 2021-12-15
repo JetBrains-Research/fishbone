@@ -6,8 +6,8 @@ import org.jetbrains.bio.fishbone.api.MiningAlgorithm
 import org.jetbrains.bio.fishbone.miner.Miner
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
-import org.jetbrains.bio.fishbone.rule.RulesBPQ
-import org.jetbrains.bio.fishbone.rule.RulesLogger
+import org.jetbrains.bio.fishbone.rule.RulesBoundedPriorityQueue
+import org.jetbrains.bio.fishbone.rule.log.RulesLogger
 import org.jetbrains.bio.util.*
 import java.nio.file.Paths
 
@@ -39,7 +39,7 @@ class BasicFishboneExample(
                 )
             )
                 .map { rules -> rules.distinctBy { it.rule } }
-                .map { rules -> rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion))) }
+                .map { rules -> rules.sortedWith(RulesBoundedPriorityQueue.comparator(Miner.getObjectiveFunction(criterion))) }
                 .flatten()
 
         val outputPath = outputFolder / ("LowLevelFishboneExample_rules_${Miner.timestamp()}.csv")

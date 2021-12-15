@@ -1,10 +1,11 @@
-package org.jetbrains.bio.fishbone.rule
+package org.jetbrains.bio.fishbone.rule.log
 
 import junit.framework.TestCase.assertEquals
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.miner.RangePredicate
 import org.jetbrains.bio.fishbone.miner.named
 import org.jetbrains.bio.fishbone.predicate.FalsePredicate
+import org.jetbrains.bio.fishbone.rule.Rule
 import org.junit.Test
 import java.awt.Color
 

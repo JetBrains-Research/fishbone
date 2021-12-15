@@ -1,4 +1,4 @@
-package org.jetbrains.bio.fishbone.rule
+package org.jetbrains.bio.fishbone.rule.visualize
 
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.junit.Test
@@ -48,7 +48,7 @@ class VisualizeInfoTest {
     @Test
     fun testHeatMap() {
         val predicates = predicates(3)
-        val map = HeatMap.of((0..3).toList(), predicates + listOf(object : Predicate<Int>() {
+        val map = Heatmap.of((0..3).toList(), predicates + listOf(object : Predicate<Int>() {
             override fun test(item: Int) = item >= 2
             override fun name() = "target"
         }))

@@ -3,10 +3,10 @@ package org.jetbrains.bio.fishbone.miner
 import junit.framework.TestCase
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.ProbePredicate
-import org.jetbrains.bio.fishbone.rule.Distribution
-import org.jetbrains.bio.fishbone.rule.Distribution.Companion.kullbackLeibler
-import org.jetbrains.bio.fishbone.rule.EmpiricalDistribution
 import org.jetbrains.bio.fishbone.rule.Rule
+import org.jetbrains.bio.fishbone.rule.distribution.Distribution
+import org.jetbrains.bio.fishbone.rule.distribution.Distribution.Companion.kullbackLeibler
+import org.jetbrains.bio.fishbone.rule.distribution.EmpiricalDistribution
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import org.slf4j.LoggerFactory

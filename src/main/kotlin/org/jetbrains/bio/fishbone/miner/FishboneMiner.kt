@@ -6,6 +6,10 @@ import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
 import org.jetbrains.bio.fishbone.rule.*
+import org.jetbrains.bio.fishbone.rule.visualize.Combinations
+import org.jetbrains.bio.fishbone.rule.visualize.RuleVisualizeInfo
+import org.jetbrains.bio.fishbone.rule.visualize.TargetVisualizeInfo
+import org.jetbrains.bio.fishbone.rule.visualize.VisualizeInfo
 import org.jetbrains.bio.util.MultitaskProgress
 import org.jetbrains.bio.util.await
 import org.jetbrains.bio.util.awaitAll
@@ -23,7 +27,7 @@ import kotlin.math.min
  *
  * FARM is based on Beam search (heuristic search algorithm that explores a graph
  * by expanding the most promising node in a limited set).
- * Beam search space is realised by [RulesBPQ].
+ * Beam search space is realised by [RulesBoundedPriorityQueue].
  * @see https://en.wikipedia.org/wiki/Beam_search
  */
 object FishboneMiner : Miner {
@@ -170,7 +174,7 @@ object FishboneMiner : Miner {
             )
         } else null
 
-        val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBPQ.comparator(function))
+        val result = best.flatMap { it }.sortedWith<Node<T>>(RulesBoundedPriorityQueue.comparator(function))
         result.map {
             Callable {
                 it.visualizeInfo = RuleVisualizeInfo(
@@ -204,7 +208,7 @@ object FishboneMiner : Miner {
         function: (Rule<T>) -> Double,
         functionDelta: Double = FUNCTION_DELTA,
         klDelta: Double = KL_DELTA
-    ): Array<RulesBPQ<T>> {
+    ): Array<RulesBoundedPriorityQueue<T>> {
         if (klDelta <= 0) {
             LOG.debug("Information criterion check ignored")
         }
@@ -213,7 +217,7 @@ object FishboneMiner : Miner {
         }
         // Invariant: best[k] - best optimization results with complexity = k
         val bestByComplexity = Array(maxComplexity + 1) {
-            RulesBPQ(topPerComplexity, database, function, functionDelta, klDelta)
+            RulesBoundedPriorityQueue(topPerComplexity, database, function, functionDelta, klDelta)
         }
         val executor = Executors.newWorkStealingPool(parallelismLevel())
         (1..min(maxComplexity, predicates.size)).forEach { k ->

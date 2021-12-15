@@ -1,10 +1,11 @@
-package org.jetbrains.bio.fishbone.rule
+package org.jetbrains.bio.fishbone.rule.distribution
 
 import com.google.common.primitives.Doubles
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.apache.commons.math3.util.Precision
-import org.jetbrains.bio.fishbone.predicate.*
+import org.jetbrains.bio.fishbone.predicate.Predicate
+import org.jetbrains.bio.fishbone.rule.Rule
 import org.slf4j.LoggerFactory
 import kotlin.math.ln
 import kotlin.math.log2
@@ -156,66 +157,3 @@ open class Distribution<T>(
         }
     }
 }
-
-
-class EmpiricalDistribution<T>(database: List<T>, predicates: List<Predicate<T>>) :
-    Distribution<T>(database, predicates) {
-
-    init {
-        probabilities.fill(0.0)
-        val tests = predicates.map { it.test(database) }
-        val p = 1.0 / database.size
-        database.indices.forEach { index ->
-            var encoding = 0
-            tests.forEachIndexed { i, test ->
-                if (test[index])
-                    encoding = encoding or (1 shl i)
-            }
-            probabilities[encoding] += p
-        }
-    }
-}
-
-/**
- * Evaluate predicate setting given values to sub predicates.
- * @param encoding Long value encoding atomic sub predicates values.
- * @param indices Indices from predicates to encoding index bite.
- */
-fun <T> Predicate<T>.eval(encoding: Int, indices: TObjectIntMap<Predicate<T>>): Boolean {
-    var result = false
-    accept(object : PredicateVisitor<T>() {
-        override fun visitNot(predicate: NotPredicate<T>) {
-            if (indices.containsKey(predicate)) {
-                visit(predicate)
-            } else {
-                result = !predicate.operand.eval(encoding, indices)
-            }
-
-        }
-
-        override fun visitAndPredicate(predicate: AndPredicate<T>) {
-            if (indices.containsKey(predicate)) {
-                visit(predicate)
-            } else {
-                result = predicate.operands.all { it.eval(encoding, indices) }
-            }
-        }
-
-        override fun visitOrPredicate(predicate: OrPredicate<T>) {
-            if (indices.containsKey(predicate)) {
-                visit(predicate)
-            } else {
-                result = predicate.operands.any { it.eval(encoding, indices) }
-            }
-        }
-
-        override fun visit(predicate: Predicate<T>) {
-            check(indices.containsKey(predicate)) {
-                "Missing predicate ${predicate.name()} in indices"
-            }
-            result = encoding and (1 shl indices.get(predicate)) != 0
-        }
-    })
-    return result
-}
-

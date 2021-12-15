@@ -5,6 +5,7 @@ import org.jetbrains.bio.fishbone.predicate.NotPredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
 import org.jetbrains.bio.fishbone.rule.*
+import org.jetbrains.bio.fishbone.rule.visualize.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -47,8 +48,8 @@ interface Miner {
             }
         }
 
-        fun <V> heatmap(database: List<V>, target: Predicate<V>, rules: Collection<FishboneMiner.Node<V>>): HeatMap {
-            return HeatMap.of(database, listOf(target) + rules.map { it.element }.filterNot { it is NotPredicate })
+        fun <V> heatmap(database: List<V>, target: Predicate<V>, rules: Collection<FishboneMiner.Node<V>>): Heatmap {
+            return Heatmap.of(database, listOf(target) + rules.map { it.element }.filterNot { it is NotPredicate })
         }
 
         fun <V> upset(database: List<V>, target: Predicate<V>, rules: Collection<FishboneMiner.Node<V>>): Upset {

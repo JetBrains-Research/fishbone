@@ -1,9 +1,10 @@
-package org.jetbrains.bio.fishbone.rule
+package org.jetbrains.bio.fishbone.rule.distribution
 
 import org.jetbrains.bio.fishbone.miner.RangePredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.ProbePredicate
-import org.jetbrains.bio.fishbone.rule.Distribution.Companion.kullbackLeibler
+import org.jetbrains.bio.fishbone.rule.Rule
+import org.jetbrains.bio.fishbone.rule.distribution.Distribution.Companion.kullbackLeibler
 import org.junit.Assert
 import org.junit.Test
 import org.slf4j.LoggerFactory

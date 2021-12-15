@@ -3,14 +3,17 @@ package org.jetbrains.bio.fishbone.rule
 import com.google.common.collect.ComparisonChain
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
+import org.jetbrains.bio.fishbone.rule.distribution.Distribution
+import org.jetbrains.bio.fishbone.rule.distribution.EmpiricalDistribution
 import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
  * Thread safe Bounded Priority Queue.
- * Stores top [limit] items, prioritized by [comparator]
+ * Stores top [limit] items, prioritized by [comparator].
+ * Used ot implement beam search during rules optimizations.
  */
-class RulesBPQ<T>(
+class RulesBoundedPriorityQueue<T>(
     private val limit: Int,
     private val database: List<T>,
     private val function: (Rule<T>) -> Double = Rule<T>::conviction,
@@ -137,7 +140,7 @@ class RulesBPQ<T>(
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(RulesBPQ::class.java)
+        private val LOG = LoggerFactory.getLogger(RulesBoundedPriorityQueue::class.java)
 
         /**
          * @return Comparator by max function and min complexity

@@ -7,8 +7,8 @@ import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.miner.Miner
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.rule.Rule
-import org.jetbrains.bio.fishbone.rule.RulesBPQ
-import org.jetbrains.bio.fishbone.rule.RulesLogger
+import org.jetbrains.bio.fishbone.rule.RulesBoundedPriorityQueue
+import org.jetbrains.bio.fishbone.rule.log.RulesLogger
 import org.jetbrains.bio.fishbone.rule.validation.RuleImprovementCheck
 import org.jetbrains.bio.util.div
 import org.nield.kotlinstatistics.randomDistinct
@@ -103,10 +103,9 @@ abstract class Experiment(val outputFolder: String) {
                         testRules(exploredRules, alphaHoldout, holdout)
                     }
                     .flatten()
-                    .fold(
-                        mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>(),
-                        { m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules) }
-                    )
+                    .fold(mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>()) {
+                            m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules)
+                    }
                     .map { (miner, rules) -> miner to rules.distinctBy { it.rule } }
                     .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
                     .toList()
@@ -117,15 +116,12 @@ abstract class Experiment(val outputFolder: String) {
             .flatten()
             .toList()
 
-        return targetsResults
-            .map { (miner, rules) ->
-                val outputPath = getOutputFilePath(miner, runName)
-                saveRulesToFile(rules, criterion, criterion, outputPath)
-                logger.info("$miner rules saved to $outputPath")
-                miner to outputPath.toString().replace(".csv", ".json")
-            }
-            .toMap()
-            .toMutableMap()
+        return targetsResults.associate { (miner, rules) ->
+            val outputPath = getOutputFilePath(miner, runName)
+            saveRulesToFile(rules, criterion, criterion, outputPath)
+            logger.info("$miner rules saved to $outputPath")
+            miner to outputPath.toString().replace(".csv", ".json")
+        }.toMutableMap()
     }
 
     /**
@@ -274,7 +270,7 @@ abstract class Experiment(val outputFolder: String) {
     }
 
     private fun <V> sortByObjectiveFunction(rules: List<FishboneMiner.Node<V>>, criterion: String) =
-        rules.sortedWith(RulesBPQ.comparator(Miner.getObjectiveFunction(criterion)))
+        rules.sortedWith(RulesBoundedPriorityQueue.comparator(Miner.getObjectiveFunction(criterion)))
 
     private fun <V> saveRulesToFile(rules: List<FishboneMiner.Node<V>>, criterion: String, id: String, path: Path) {
         val rulesLogger = RulesLogger(path)

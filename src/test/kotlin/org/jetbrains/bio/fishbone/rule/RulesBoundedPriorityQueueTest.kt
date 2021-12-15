@@ -6,7 +6,7 @@ import org.jetbrains.bio.fishbone.miner.RangePredicate
 import org.jetbrains.bio.fishbone.miner.named
 import org.junit.Test
 
-class RulesBPQTest : TestCase() {
+class RulesBoundedPriorityQueueTest : TestCase() {
 
     @Test
     fun testBPQAddReplaceGreaterParent() {
@@ -16,7 +16,7 @@ class RulesBPQTest : TestCase() {
         val p3 = RangePredicate(20, 40).named("3")
         val t = RangePredicate(0, 40).named("t")
 
-        val queue = RulesBPQ(100, data, Rule<Int>::conviction, 0.0, 0.0)
+        val queue = RulesBoundedPriorityQueue(100, data, Rule<Int>::conviction, 0.0, 0.0)
         queue.add(
             FishboneMiner.Node(
                 Rule(p1.or(p2).or(p3), t, data), p2,
@@ -47,7 +47,7 @@ class RulesBPQTest : TestCase() {
         val p2 = RangePredicate(9, 20).named("2")
         val t = RangePredicate(0, 40).named("t")
 
-        val queue = RulesBPQ(100, data, Rule<Int>::conviction, 0.0, 0.0)
+        val queue = RulesBoundedPriorityQueue(100, data, Rule<Int>::conviction, 0.0, 0.0)
         // Nothing added because of wrong order
         queue.add(
             FishboneMiner.Node(
@@ -77,7 +77,7 @@ class RulesBPQTest : TestCase() {
         val p2 = RangePredicate(1, 9).named("2")
         val t = RangePredicate(0, 10).named("t")
 
-        val queue = RulesBPQ(10, data, Rule<Int>::conviction, 0.0, 0.0)
+        val queue = RulesBoundedPriorityQueue(10, data, Rule<Int>::conviction, 0.0, 0.0)
         queue.add(FishboneMiner.Node(Rule(p1.or(p2), t, data), p1, FishboneMiner.Node(Rule(p2, t, data), p2, null)))
         assertEquals(
             "[Node(rule=1 OR 2 => t, element=1, parent=Node(rule=2 => t, element=2, parent=null, visualizeInfo=null), visualizeInfo=null)]",
