@@ -14,7 +14,7 @@ class BenjaminiHochbergAdjustment {
             pVals: List<Pair<FishboneMiner.Node<T>, Double>>, alpha: Double, m: Int
         ): List<Pair<FishboneMiner.Node<T>, Boolean>> {
             val result = mutableListOf<Pair<FishboneMiner.Node<T>, Boolean>>()
-            (0 until pVals.size).forEach { i ->
+            (pVals.indices).forEach { i ->
                 val level = (alpha * (i + 1)) / m
                 val p = pVals[i].second
                 if (p >= level) {
