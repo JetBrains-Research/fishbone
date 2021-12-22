@@ -1,24 +1,18 @@
 buildscript {
-    ext.kotlin_version = "1.5.31"
+    ext.kotlin_version = "1.6.10"
     ext.ktor_version = "1.6.5"
 
     repositories {
-        maven { url "https://cache-redirector.jetbrains.com/repo1.maven.org/maven2" }
-        maven { url "https://cache-redirector.jetbrains.com/jcenter.bintray.com" }
-
+        maven { url("https://cache-redirector.jetbrains.com/repo1.maven.org/maven2") }
+        maven { url("https://cache-redirector.jetbrains.com/plugins.gradle.org/m2") }
         // In case of issues with cache redirector:
-        // jcenter()
+        // mavenCentral()
     }
 
     dependencies {
         classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
-}
-
-repositories {
-    maven { url "https://dl.bintray.com/jetbrains-research/maven" }
-    jcenter()
 }
 
 /* We can't use `plugins` block here because of the multi-root setup, since the `plugins` block doesn't allow
@@ -35,30 +29,30 @@ project(":bioinf-commons")
 
 dependencies {
     // Kotlin dependencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1"
-    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Server: Ktor dependencies
-    implementation "io.ktor:ktor-server-netty:$ktor_version"
-    implementation "io.ktor:ktor-jackson:$ktor_version"
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    implementation("io.ktor:ktor-jackson:$ktor_version")
 
     // Logging dependencies
-    implementation "ch.qos.logback:logback-classic:1.2.3"
-    implementation "ch.qos.logback:logback-core:1.2.3"
-    implementation "org.slf4j:slf4j-api:1.7.25"
+    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("ch.qos.logback:logback-core:1.2.3")
+    implementation("org.slf4j:slf4j-api:1.7.25")
 
     //ML dependencies
-    implementation "nz.ac.waikato.cms.weka:weka-stable:3.8.3"
+    implementation("nz.ac.waikato.cms.weka:weka-stable:3.8.3")
 
     // Bioinformatics (science) dependencies
     implementation project(":bioinf-commons")
-    implementation "org.nield:kotlin-statistics:1.2.1"
-    implementation "org.apache.commons:commons-math3:3.6.1"
+    implementation("org.nield:kotlin-statistics:1.2.1")
+    implementation("org.apache.commons:commons-math3:3.6.1")
 
     // Testing dependencies
-    testImplementation "junit:junit:4.12"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation("junit:junit:4.12")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 }
 
 tasks.withType(Test) {
