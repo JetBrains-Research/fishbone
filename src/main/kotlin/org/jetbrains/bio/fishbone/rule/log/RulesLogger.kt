@@ -27,6 +27,8 @@ class RulesLogger(val path: Path?, vararg params: String) {
 
     companion object {
         private val LOG = LoggerFactory.getLogger(RulesLogger::class.java)
+
+        val GSON = GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create()
     }
 
     private val graphRecords = LinkedHashSet<Map<String, Any?>>()
@@ -148,12 +150,16 @@ class RulesLogger(val path: Path?, vararg params: String) {
 
     fun getJson(palette: (String) -> Color, criterion: String = "conviction"): String {
         // We want null modification to map to "null"
-        val json = mapOf(
-            "records" to graphRecords.toList(),
-            "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
-            "criterion" to criterion
-        )
-        return GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create().toJson(json)
+        return GSON.toJson(prepareJson(palette, criterion))
     }
+
+    internal fun prepareJson(
+        palette: (String) -> Color,
+        criterion: String
+    ) = mapOf(
+        "records" to graphRecords.toList(),
+        "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
+        "criterion" to criterion
+    )
 
 }
