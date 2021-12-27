@@ -27,15 +27,20 @@ Fishbone is a client-server application with HTTP API and web UI.
 * Java 1.8
 * Gradle >= 5.51
 
-# Build
+# Build from sources
+------------------
 
-Clone repository files:
+Clone [bioinf-commons](https://github.com/JetBrains-Research/bioinf-commons) library under the project root.
 
-    git clone https://github.com/JetBrains-Research/fishbone.git
+  ```
+  git clone git@github.com:JetBrains-Research/bioinf-commons.git
+  ```
 
-To build project use the following gradle command:
+Launch the following command line to build jar:
 
-    ./gradlew shadowJar 
+  ```
+  ./gradlew shadowJar
+  ```
 
 This command will create executable jar file with name
 
