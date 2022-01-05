@@ -1,5 +1,7 @@
 package org.jetbrains.bio.fishbone.rule.visualize
 
+import org.jetbrains.bio.fishbone.rule.visualize.upset.Upset
+
 
 /**
  * Info for visualization purposes.

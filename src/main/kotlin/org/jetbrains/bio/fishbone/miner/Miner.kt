@@ -6,6 +6,7 @@ import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
 import org.jetbrains.bio.fishbone.rule.*
 import org.jetbrains.bio.fishbone.rule.visualize.*
+import org.jetbrains.bio.fishbone.rule.visualize.upset.Upset
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 

@@ -1,6 +1,7 @@
 package org.jetbrains.bio.fishbone.rule.visualize
 
 import org.jetbrains.bio.fishbone.predicate.Predicate
+import org.jetbrains.bio.fishbone.rule.visualize.upset.Upset
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

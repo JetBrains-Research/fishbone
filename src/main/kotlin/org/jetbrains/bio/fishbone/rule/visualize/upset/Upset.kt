@@ -1,15 +1,21 @@
-package org.jetbrains.bio.fishbone.rule.visualize
+package org.jetbrains.bio.fishbone.rule.visualize.upset
 
+import com.google.common.collect.Comparators.lexicographical
+import com.google.common.collect.ComparisonChain
+import com.google.common.primitives.Ints
 import org.apache.commons.math3.util.CombinatoricsUtils
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.util.await
-import java.util.*
 import java.util.concurrent.Callable
-import kotlin.Comparator
-import kotlin.collections.LinkedHashMap
 
 /**
- * Data class describing joint combinations, see UpsetR for details.
+ * Data class describing joint combinations, inspired by UpsetR.
+ * See [upset.js] for web-browser visualization of [Upset] converted to JSON.
+ *
+ * Reference:
+ * Lex, Alexander, et al. "UpSet: visualization of intersecting sets."
+ * IEEE transactions on visualization and computer graphics 20.12 (2014): 1983-1992.
+ *
  * @param names list of binary predicates names over given database
  * @param data map : items -> intersection
  */
@@ -25,11 +31,17 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
                 return@Comparator when {
                     0 in u1.id && 0 !in u2.id -> -1
                     0 !in u1.id && 0 in u2.id -> 1
-                    else -> -u1.n.compareTo(u2.n)
+                    else -> {
+                        @Suppress("UnstableApiUsage")
+                        ComparisonChain.start()
+                            .compare(u2.n, u1.n)
+                            .compare(u1.id, u2.id, lexicographical { a, b -> Ints.compare(a, b) })
+                            .result()
+                    }
                 }
             }
             val n = predicates.size + 1
-            val cs = UpsetBPQ(limit = combinations, comparator = comparator)
+            val cs = UpsetBoundedPriorityQueue(limit = combinations, comparator = comparator)
             var sumK = 0L
             (1..n).flatMap { k ->
                 if (sumK > maxCombinations) {
@@ -64,37 +76,5 @@ data class Upset(val names: List<String>, val data: List<UpsetRecord>) {
 
             return Upset(topLabels, topCs)
         }
-    }
-}
-
-data class UpsetRecord(val id: List<Int>, val n: Int) {
-    override fun toString(): String {
-        return "${id.joinToString(",") { it.toString() }}:$n"
-    }
-}
-
-/**
- * Bounded priority queue for [UpsetRecord]
- */
-class UpsetBPQ(
-    private val limit: Int,
-    private val comparator: java.util.Comparator<UpsetRecord>,
-    private val queue: Queue<UpsetRecord> = PriorityQueue(limit, comparator.reversed())
-) : Queue<UpsetRecord> by queue {
-
-    override fun add(element: UpsetRecord): Boolean = offer(element)
-
-    override fun offer(element: UpsetRecord): Boolean {
-        // NOTE[shpynov] main difference with [PriorityQueue]!!!
-        if (size >= limit) {
-            val head = peek()
-            if (comparator.compare(element, head) > -1) {
-                return false
-            }
-        }
-        if (size >= limit) {
-            poll()
-        }
-        return queue.offer(element)
     }
 }
