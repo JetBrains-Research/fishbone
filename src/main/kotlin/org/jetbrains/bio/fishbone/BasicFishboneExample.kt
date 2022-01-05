@@ -9,6 +9,7 @@ import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import org.jetbrains.bio.fishbone.rule.RulesBoundedPriorityQueue
 import org.jetbrains.bio.fishbone.rule.log.RulesLogger
 import org.jetbrains.bio.util.*
+import java.awt.Color
 import java.nio.file.Paths
 
 class BasicFishboneExample(
@@ -39,13 +40,21 @@ class BasicFishboneExample(
                 )
             )
                 .map { rules -> rules.distinctBy { it.rule } }
-                .map { rules -> rules.sortedWith(RulesBoundedPriorityQueue.comparator(Miner.getObjectiveFunction(criterion))) }
+                .map { rules ->
+                    rules.sortedWith(
+                        RulesBoundedPriorityQueue.comparator(
+                            Miner.getObjectiveFunction(
+                                criterion
+                            )
+                        )
+                    )
+                }
                 .flatten()
 
         val outputPath = outputFolder / ("LowLevelFishboneExample_rules_${Miner.timestamp()}.csv")
         val rulesLogger = RulesLogger(outputPath)
         rulesLogger.log("BasicFishboneExample", targetsResults)
-        rulesLogger.done(criterion)
+        rulesLogger.save(criterion) { Color.WHITE }
         print(outputPath.toString().replace(".csv", ".json"))
     }
 

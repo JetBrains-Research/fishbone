@@ -27,7 +27,7 @@ class RuleImprovementCheck {
          * @param db database
          * @param adjust if we want to use multiple comparison adjustment
          *
-         * @return productve rules only
+         * @return productive rules only
          */
         fun <T> productiveRules(
             rules: List<FishboneMiner.Node<T>>, alpha: Double, db: List<T>, adjust: Boolean
@@ -59,13 +59,13 @@ class RuleImprovementCheck {
             val a = aFreq(sources, target, database)
             val b = bFreq(sources, target, database)
 
-            return sources.map { x ->
+            return sources.maxOf { x ->
                 val reducedSources = sources.filter { source -> source != x }
                 val c = cFreq(reducedSources, x, target, database)
                 val d = dFreq(reducedSources, x, target, database)
 
                 StatisticalSignificanceCheck.test(a, b, c, d, database.size, test)
-            }.maxOrNull()!!
+            }
         }
 
         /**

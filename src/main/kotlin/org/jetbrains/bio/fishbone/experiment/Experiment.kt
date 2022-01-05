@@ -13,6 +13,7 @@ import org.jetbrains.bio.fishbone.rule.validation.RuleImprovementCheck
 import org.jetbrains.bio.util.div
 import org.nield.kotlinstatistics.randomDistinct
 import org.slf4j.LoggerFactory
+import java.awt.Color
 import java.nio.file.Path
 
 /**
@@ -103,8 +104,8 @@ abstract class Experiment(val outputFolder: String) {
                         testRules(exploredRules, alphaHoldout, holdout)
                     }
                     .flatten()
-                    .fold(mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>()) {
-                            m, (miner, rules) -> m + (miner to m.getOrDefault(miner, emptyList()) + rules)
+                    .fold(mapOf<MiningAlgorithm, List<FishboneMiner.Node<V>>>()) { m, (miner, rules) ->
+                        m + (miner to m.getOrDefault(miner, emptyList()) + rules)
                     }
                     .map { (miner, rules) -> miner to rules.distinctBy { it.rule } }
                     .map { (miner, rules) -> miner to sortByObjectiveFunction(rules, criterion) }
@@ -275,7 +276,7 @@ abstract class Experiment(val outputFolder: String) {
     private fun <V> saveRulesToFile(rules: List<FishboneMiner.Node<V>>, criterion: String, id: String, path: Path) {
         val rulesLogger = RulesLogger(path)
         rulesLogger.log(id, rules)
-        rulesLogger.done(criterion)
+        rulesLogger.save(criterion) { Color.WHITE }
     }
 
     private fun getOutputFilePath(miner: MiningAlgorithm, runName: String = ""): Path {

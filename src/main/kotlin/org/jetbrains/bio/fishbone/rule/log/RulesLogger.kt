@@ -1,6 +1,7 @@
 package org.jetbrains.bio.fishbone.rule.log
 
 import com.google.common.collect.ObjectArrays
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.apache.commons.csv.CSVFormat
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
@@ -9,7 +10,6 @@ import org.jetbrains.bio.fishbone.predicate.OrPredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.PredicateParser
 import org.jetbrains.bio.fishbone.rule.Rule
-import org.jetbrains.bio.genome.data.DataConfig
 import org.jetbrains.bio.util.bufferedWriter
 import org.jetbrains.bio.util.deleteIfExists
 import org.jetbrains.bio.util.toPath
@@ -24,12 +24,6 @@ import java.nio.file.Path
  */
 class RulesLogger(val path: Path?, vararg params: String) {
     private val extraParams: Array<out String> = params
-
-    companion object {
-        private val LOG = LoggerFactory.getLogger(RulesLogger::class.java)
-
-        val GSON = GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create()
-    }
 
     private val graphRecords = LinkedHashSet<Map<String, Any?>>()
     private val atomics = hashSetOf<String>()
@@ -103,63 +97,28 @@ class RulesLogger(val path: Path?, vararg params: String) {
         }
     }
 
-    fun done(criterion: String, palette: (String) -> Color = generatePalette()) {
+    fun save(criterion: String, palette: (String) -> Color) {
         if (path != null) {
             csvPrinter.close()
         }
         val jsonPath = path.toString().replace(".csv", ".json").toPath()
         jsonPath.deleteIfExists()
-        jsonPath.write(getJson(palette, criterion))
+        jsonPath.write(GSON.toJson(prepareJson(criterion, palette)))
     }
 
-    private fun generatePalette(): (String) -> Color = { name ->
-        val modification = modification(name)
-        if (modification != null) {
-            trackColor(modification)
-        } else {
-            Color.WHITE
-        }
-    }
 
-    private fun modification(predicate: String, configuration: DataConfig? = null): String? {
-        val m = "H3K\\d{1,2}(?:ac|me\\d)".toRegex(RegexOption.IGNORE_CASE).find(predicate) ?: return null
-        if (configuration != null && m.value !in configuration.dataTypes()) {
-            return null
-        }
-        return m.value
-    }
-
-    /**
-     * Default colors
-     */
-    private fun trackColor(dataTypeId: String): Color {
-        return when (dataTypeId.lowercase()) {
-            "H3K27ac".lowercase() -> Color(255, 0, 0)
-            "H3K27me3".lowercase() -> Color(153, 0, 255)
-            "H3K4me1".lowercase() -> Color(255, 153, 0)
-            "H3K4me3".lowercase() -> Color(51, 204, 51)
-            "H3K36me3".lowercase() -> Color(0, 0, 204)
-            "H3K9me3".lowercase() -> Color(255, 0, 255)
-            "methylation" -> Color.green
-            "transcription" -> Color.red
-            else -> Color(0, 0, 128) /* IGV_DEFAULT_COLOR  */
-        }
-    }
-
-    private fun Color.toHex(): String = "#%02x%02x%02x".format(red, green, blue)
-
-    fun getJson(palette: (String) -> Color, criterion: String = "conviction"): String {
-        // We want null modification to map to "null"
-        return GSON.toJson(prepareJson(palette, criterion))
-    }
-
-    internal fun prepareJson(
-        palette: (String) -> Color,
-        criterion: String
-    ) = mapOf(
+    internal fun prepareJson(criterion: String, palette: (String) -> Color) = mapOf(
         "records" to graphRecords.toList(),
         "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
         "criterion" to criterion
     )
+
+    companion object {
+        private val LOG = LoggerFactory.getLogger(RulesLogger::class.java)
+
+        val GSON: Gson = GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().create()
+
+        private fun Color.toHex(): String = "#%02x%02x%02x".format(red, green, blue)
+    }
 
 }

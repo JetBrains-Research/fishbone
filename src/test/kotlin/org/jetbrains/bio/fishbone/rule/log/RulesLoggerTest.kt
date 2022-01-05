@@ -6,8 +6,6 @@ import org.jetbrains.bio.fishbone.miner.RangePredicate
 import org.jetbrains.bio.fishbone.miner.named
 import org.jetbrains.bio.fishbone.predicate.FalsePredicate
 import org.jetbrains.bio.fishbone.rule.Rule
-import org.jetbrains.bio.util.bufferedWriter
-import org.jetbrains.bio.util.toPath
 import org.junit.Test
 import java.awt.Color
 
@@ -27,7 +25,7 @@ class RulesLoggerTest {
             "foo", database, listOf(predicates to RangePredicate(10, 20)),
             { logger.log("id", it) }, maxComplexity = 2, topPerComplexity = 1, buildHeatmapAndUpset = true
         )
-        val actualMap = logger.prepareJson({ Color.WHITE }, "conviction")
+        val actualMap = logger.prepareJson("conviction") { Color.WHITE }
         val expectedMap = RulesLogger.GSON.fromJson("""{
   "records": [
     {
