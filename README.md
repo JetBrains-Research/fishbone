@@ -81,12 +81,12 @@ Optional program options are:
 
 Web UI consists of two main parts: running analysis and visualize results from local files.
 
-To run analysis use the following part:
+###Run analysis 
 ![alt text](src/main/resources/readme/fishbone_ui_1.png "Run analysis UI")
 Predicate files, database file, experiment type and objective function must be specified to run Fishbone algorithm.
 Checkboxes on the right side could be also used to run alternative algorithms.
 
-To load results use the following part:
+### Load results from file
 ![alt text](src/main/resources/readme/fishbone_ui_2.png "Load results UI")
 Local result files for different algorithms could be selected to visualize.
 
