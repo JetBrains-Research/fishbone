@@ -3,10 +3,8 @@ buildscript {
     ext.ktor_version = "1.6.5"
 
     repositories {
-        maven { url("https://cache-redirector.jetbrains.com/repo1.maven.org/maven2") }
-        maven { url("https://cache-redirector.jetbrains.com/plugins.gradle.org/m2") }
-        // In case of issues with cache redirector:
-        // mavenCentral()
+        maven { url("https://repo1.maven.org/maven2") }
+        maven { url("https://plugins.gradle.org/m2") }
     }
 
     dependencies {
@@ -22,11 +20,8 @@ apply plugin: "com.github.johnrengelman.shadow"
 
 if (rootProject == project) {
     repositories {
-        maven { url("https://cache-redirector.jetbrains.com/repo1.maven.org/maven2") }
-        maven { url("https://cache-redirector.jetbrains.com/plugins.gradle.org/m2") }
-
-        // In case of issues with cache redirector:
-        // mavenCentral()
+        maven { url("https://repo1.maven.org/maven2") }
+        maven { url("https://plugins.gradle.org/m2") }
     }
 }
 
