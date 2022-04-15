@@ -16,7 +16,7 @@ import joptsimple.OptionParser
 import org.jetbrains.bio.fishbone.api.ExperimentType
 import org.jetbrains.bio.fishbone.api.MineRulesRequest
 import org.jetbrains.bio.fishbone.api.MiningAlgorithm
-import org.jetbrains.bio.fishbone.experiment.Experiment
+import org.jetbrains.bio.fishbone.experiment.FarmExperiment
 import org.jetbrains.bio.fishbone.experiment.FeaturesSetExperiment
 import org.jetbrains.bio.fishbone.experiment.GenomeBasedExperiment
 import org.jetbrains.bio.util.parse
@@ -26,7 +26,7 @@ import java.io.File
  * Main class for Fishbone application.
  * Contains starter function and HTTP requests handling
  */
-class FishboneApp(private val experiments: Map<ExperimentType, Experiment>, private val outputFolder: String) {
+class FishboneApp(private val experiments: Map<ExperimentType, FarmExperiment>, private val outputFolder: String) {
 
     /**
      * HTTP API for Fishbone service

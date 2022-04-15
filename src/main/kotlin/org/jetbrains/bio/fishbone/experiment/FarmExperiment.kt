@@ -20,7 +20,7 @@ import java.nio.file.Path
  * Experiment class provides methods for data analysis.
  * Abstract parts are related to specific preprocessing steps of data for different experiment types.
  */
-abstract class Experiment(val outputFolder: String) {
+abstract class FarmExperiment(val outputFolder: String) {
 
     /**
      * Main method to run analysis on specified data files. Should be implemented in the following manner:
@@ -35,7 +35,7 @@ abstract class Experiment(val outputFolder: String) {
      */
     abstract fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean
 
-    private val logger = LoggerFactory.getLogger(Experiment::class.java)
+    private val logger = LoggerFactory.getLogger(FarmExperiment::class.java)
 
     /**
      * Run patterns mining according to mine request
@@ -134,7 +134,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return exploratory to holdout datasets
      */
-    internal fun <V> splitDataset(
+    fun <V> splitDataset(
         db: List<V>, target: Predicate<V>, strategy: SamplingStrategy, exploratoryFraction: Double
     ): Pair<List<V>, List<V>> {
         val n = (exploratoryFraction * db.size).toInt()
@@ -157,7 +157,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return sample
      */
-    internal fun <V> sample(db: List<V>, target: Predicate<V>, strategy: SamplingStrategy): List<V> {
+    fun <V> sample(db: List<V>, target: Predicate<V>, strategy: SamplingStrategy): List<V> {
         val isTargetMajor = target.test(db).cardinality().toDouble() / db.size >= 0.5
         val majorClass = (if (isTargetMajor) target else target.not()).test(db)
         val majority = db.withIndex().filter { majorClass[it.index] }.map { it.value }
@@ -247,7 +247,7 @@ abstract class Experiment(val outputFolder: String) {
      *
      * @return productive rules only
      */
-    internal fun <V> getProductiveRules(
+    fun <V> getProductiveRules(
         miner: MiningAlgorithm, rules: List<FishboneMiner.Node<V>>, alpha: Double?, db: List<V>, adjust: Boolean
     ): List<FishboneMiner.Node<V>> {
         return if (alpha != null) {

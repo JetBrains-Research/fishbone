@@ -11,7 +11,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ExperimentTest {
+class FarmExperimentTest {
 
     @Test
     fun testSample() {
@@ -20,12 +20,12 @@ class ExperimentTest {
         val target = OverlapSamplePredicate("target", samples, database.subtract(samples).toList())
 
         val downsampled = experiment.sample(database, target, SamplingStrategy.DOWNSAMPLING)
-        assertEquals(4, downsampled.filter { it in samples }.count())
-        assertEquals(4, downsampled.filter { it !in samples }.count())
+        assertEquals(4, downsampled.count { it in samples })
+        assertEquals(4, downsampled.count { it !in samples })
 
         val upsampled = experiment.sample(database, target, SamplingStrategy.UPSAMPLING)
-        assertEquals(6, upsampled.filter { it in samples }.count())
-        assertEquals(6, upsampled.filter { it !in samples }.count())
+        assertEquals(6, upsampled.count { it in samples })
+        assertEquals(6, upsampled.count { it !in samples })
     }
 
     @Test

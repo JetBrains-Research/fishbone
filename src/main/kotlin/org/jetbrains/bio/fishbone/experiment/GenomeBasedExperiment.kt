@@ -12,7 +12,7 @@ import java.nio.file.Paths
 /**
  * Experiment for genome based data (BED files).
  */
-class GenomeBasedExperiment(outputFolder: String) : Experiment("$outputFolder/genome_based_exp_output") {
+class GenomeBasedExperiment(outputFolder: String) : FarmExperiment("$outputFolder/genome_based_exp_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(db[i])
 
     override fun run(mineRulesRequest: MineRulesRequest): Map<MiningAlgorithm, String> {

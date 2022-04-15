@@ -9,7 +9,7 @@ import java.nio.file.Paths
 /**
  * Experiment for feature set dataset
  */
-class FeaturesSetExperiment(outputFolder: String) : Experiment("$outputFolder/feature_set_exp_output") {
+class FeaturesSetExperiment(outputFolder: String) : FarmExperiment("$outputFolder/feature_set_exp_output") {
     override fun <V> predicateCheck(p: Predicate<V>, i: Int, db: List<V>): Boolean = p.test(i as V)
 
     override fun run(mineRulesRequest: MineRulesRequest): Map<MiningAlgorithm, String> {
