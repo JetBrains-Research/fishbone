@@ -138,8 +138,7 @@ object FishboneMiner : Miner {
     }
 
 
-    @VisibleForTesting
-    fun <T> mine(
+        fun <T> mine(
         predicates: List<Predicate<T>>,
         target: Predicate<T>,
         database: List<T>,

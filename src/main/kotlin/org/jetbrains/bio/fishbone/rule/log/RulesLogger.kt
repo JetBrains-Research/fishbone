@@ -107,7 +107,7 @@ class RulesLogger(val path: Path?, vararg params: String) {
     }
 
 
-    internal fun prepareJson(criterion: String, palette: (String) -> Color) = mapOf(
+    fun prepareJson(criterion: String, palette: (String) -> Color) = mapOf(
         "records" to graphRecords.toList(),
         "palette" to atomics.associateBy({ it }, { palette(it).toHex() }),
         "criterion" to criterion

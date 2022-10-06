@@ -16,8 +16,7 @@ import java.util.*
 
 
 object PredicatesIO {
-    @VisibleForTesting
-    internal val LOG = LoggerFactory.getLogger(PredicatesIO::class.java)
+        internal val LOG = LoggerFactory.getLogger(PredicatesIO::class.java)
 
     private const val INDEX_KEY = "index"
     private const val NOT = "NOT: "

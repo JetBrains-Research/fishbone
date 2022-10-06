@@ -37,7 +37,7 @@ Significance check is done using holdout approach [[2]](https://link.springer.co
 
 ## Requirements
 
-* Java 1.8
+* Java 11
 * Gradle >= 5.51
 
 ## Build from sources
