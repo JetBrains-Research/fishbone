@@ -1,6 +1,5 @@
 package org.jetbrains.bio.fishbone.miner
 
-import com.google.common.annotations.VisibleForTesting
 import org.jetbrains.bio.fishbone.miner.FishboneMiner.Node
 import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
 import org.jetbrains.bio.fishbone.predicate.Predicate

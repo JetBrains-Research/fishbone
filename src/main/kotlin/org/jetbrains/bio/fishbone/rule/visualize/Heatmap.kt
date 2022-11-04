@@ -7,7 +7,6 @@ import weka.core.Attribute
 import weka.core.DenseInstance
 import weka.core.EuclideanDistance
 import weka.core.Instances
-import java.util.ArrayList
 
 /**
  * Data class describing pairwise correlations cluster map

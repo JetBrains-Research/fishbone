@@ -1,6 +1,5 @@
 package org.jetbrains.bio.fishbone.predicate
 
-import com.google.common.annotations.VisibleForTesting
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
 import org.jetbrains.bio.dataframe.BitterSet
