@@ -7,6 +7,7 @@ import org.jetbrains.bio.fishbone.rule.Rule
 import org.jetbrains.bio.fishbone.rule.distribution.Distribution
 import org.jetbrains.bio.fishbone.rule.distribution.Distribution.Companion.kullbackLeibler
 import org.jetbrains.bio.fishbone.rule.distribution.EmpiricalDistribution
+import org.jetbrains.bio.statistics.distribution.Sampling
 import org.jetbrains.bio.util.time
 import org.junit.Test
 import org.slf4j.LoggerFactory
@@ -27,6 +28,8 @@ class RulesMinerTest : TestCase() {
         functionDelta: Double = FishboneMiner.FUNCTION_DELTA,
         klDelta: Double = FishboneMiner.KL_DELTA
     ): FishboneMiner.Node<T> {
+        // Fix seed for tests reproducibility
+        Sampling.RANDOM_DATA_GENERATOR.reSeed(42)
         // 10% of predicates are probes
         val probes = (0..conditions.size / 10).map { ProbePredicate("probe_$it", database) }
         return FishboneMiner.mine(
