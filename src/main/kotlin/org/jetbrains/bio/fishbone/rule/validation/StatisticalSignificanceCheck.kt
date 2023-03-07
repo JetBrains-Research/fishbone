@@ -47,6 +47,7 @@ class StatisticalSignificanceCheck {
                 "chi" -> ChiSquareTest.forTable(
                     a.toDouble() / len, b.toDouble() / len, c.toDouble() / len, d.toDouble() / len
                 ).invoke()
+
                 else -> throw IllegalArgumentException("Unsupported test $test")
             }
         }

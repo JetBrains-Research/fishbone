@@ -26,7 +26,8 @@ class RulesLoggerTest {
             { logger.log("id", it) }, maxComplexity = 2, topPerComplexity = 1, buildHeatmapAndUpset = true
         )
         val actualMap = logger.prepareJson("conviction") { Color.WHITE }
-        val expectedMap = RulesLogger.GSON.fromJson("""{
+        val expectedMap = RulesLogger.GSON.fromJson(
+            """{
   "records": [
     {
       "id": "id",
@@ -197,7 +198,8 @@ class RulesLoggerTest {
     "[10;20)": "#ffffff"
   },
   "criterion": "conviction"
-}""", Map::class.java)
+}""", Map::class.java
+        )
         val expected = RulesLogger.GSON.fromJson(RulesLogger.GSON.toJson(expectedMap), Map::class.java)
         val actual = RulesLogger.GSON.fromJson(RulesLogger.GSON.toJson(actualMap), Map::class.java)
         assertEquals(expected, actual)

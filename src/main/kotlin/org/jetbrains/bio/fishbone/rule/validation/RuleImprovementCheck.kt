@@ -82,6 +82,7 @@ class RuleImprovementCheck {
                     val initial = operands[0].not()
                     listOf(operands.drop(1).map { it.not() }.fold(initial, { acc, p -> acc.and(p.not()) }).not())
                 }
+
                 else -> listOf(conditionPredicate)
             }
         }

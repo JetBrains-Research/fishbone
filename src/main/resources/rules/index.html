@@ -5,21 +5,21 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet">
 
     <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
-          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" rel="stylesheet">
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    <script crossorigin="anonymous"
             integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
+            src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
     <!-- jquery-ui after bootstrap as a workaround for missing close icon.
     http://stackoverflow.com/questions/17367736/jquery-ui-dialog-missing-close-icon-->
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
     <!--Cytoscape-->
@@ -56,7 +56,7 @@
             $("#decisiontree-alg-dialog").dialog({autoOpen: false});
         });
     </script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body onload="initialize(); runAnalysis({checked: true})">
@@ -70,42 +70,42 @@
 <div id="decisiontree-alg-dialog" title="Decision tree algorithm results">
     <div id="decisiontree-alg-dialog-pane"></div>
 </div>
-<nav id="navbar-top" class="navbar navbar-default">
+<nav class="navbar navbar-default" id="navbar-top">
     <div class="container-fluid">
         <form class="navbar-form navbar-left">
             <label>
-                <input type="radio" name="action-type" onchange="runAnalysis(this)" checked="checked">
+                <input checked="checked" name="action-type" onchange="runAnalysis(this)" type="radio">
                 Run analysis on data files
             </label>
             <label></label>
             <label></label>
             <label>
-                <input type="radio" name="action-type" onchange="loadResultFile(this)">
+                <input name="action-type" onchange="loadResultFile(this)" type="radio">
                 Load result files
             </label>
 
             <div id="run-analysis">
                 <div>
-                    <label id="predicates-file-label" for="predicates-file-button">Predicates</label>
-                    <input id="predicates-file" type="file" style="display: none" multiple="multiple"/>
-                    <input id="predicates-file-button" type="button" class="btn btn-primary" value="Load"
-                           onclick="$('#predicates-file').click();"/>
-                    <label id="bed-database-file-label" for="bed-database-file-button">Database</label>
-                    <input id="bed-database-file" type="file" style="display: none" multiple="multiple"/>
-                    <input id="bed-database-file-button" type="button" class="btn btn-primary" value="Load"
-                           onclick="$('#bed-database-file').click();"/>
-                    <label id="targets-file-label" for="targets-file-button">Targets</label>
-                    <input id="targets-file" type="file" style="display: none" multiple="multiple"/>
-                    <input id="targets-file-button" type="button" class="btn btn-primary" value="Load"
-                           onclick="$('#targets-file').click();"/>
-                    <label id="experiment-type-label" for="experiment-type">Experiment type:</label>
+                    <label for="predicates-file-button" id="predicates-file-label">Predicates</label>
+                    <input id="predicates-file" multiple="multiple" style="display: none" type="file"/>
+                    <input class="btn btn-primary" id="predicates-file-button" onclick="$('#predicates-file').click();" type="button"
+                           value="Load"/>
+                    <label for="bed-database-file-button" id="bed-database-file-label">Database</label>
+                    <input id="bed-database-file" multiple="multiple" style="display: none" type="file"/>
+                    <input class="btn btn-primary" id="bed-database-file-button" onclick="$('#bed-database-file').click();" type="button"
+                           value="Load"/>
+                    <label for="targets-file-button" id="targets-file-label">Targets</label>
+                    <input id="targets-file" multiple="multiple" style="display: none" type="file"/>
+                    <input class="btn btn-primary" id="targets-file-button" onclick="$('#targets-file').click();" type="button"
+                           value="Load"/>
+                    <label for="experiment-type" id="experiment-type-label">Experiment type:</label>
                     <select id="experiment-type" name="name" required>
-                        <option value="GENOME" selected="selected">GENOME</option>
+                        <option selected="selected" value="GENOME">GENOME</option>
                         <option value="FEATURE_SET">FEATURE_SET</option>
                     </select>
-                    <label id="genome-label" for="genome">Genome:</label>
+                    <label for="genome" id="genome-label">Genome:</label>
                     <select id="genome" name="name">
-                        <option value="mm10" selected="selected">mm10</option>
+                        <option selected="selected" value="mm10">mm10</option>
                         <option value="mm9">mm9</option>
                         <option value="hg38">hg38</option>
                         <option value="hg19">hg19</option>
@@ -115,64 +115,64 @@
                         <option value="loe">loe</option>
                     </select>
                     <input id="run-name" placeholder="run name"/>&nbsp;
-                    <label id="port-label" for="port">Port:</label>
-                    <input type="number" id="port" name="port" value="8080">
-                    <input id="run-analysis-button" type="button" class="btn btn-primary" value="Run analysis"
-                           onclick="runAnalysisOnLoadedData()"/>
+                    <label for="port" id="port-label">Port:</label>
+                    <input id="port" name="port" type="number" value="8080">
+                    <input class="btn btn-primary" id="run-analysis-button" onclick="runAnalysisOnLoadedData()" type="button"
+                           value="Run analysis"/>
                 </div>
 
                 <div style="padding-top: 5px">
-                    <label id="topRules-label" for="topRules"># top rules:</label>
-                    <input type="number" step="0.001" id="topRules" name="name" min="5" max="25" value="10">
-                    <label id="exploratoryFraction-label" for="exploratoryFraction">Exploratory fraction:</label>
-                    <input type="number" step="0.1" id="exploratoryFraction" name="name" min="0.1" max="1.0"
+                    <label for="topRules" id="topRules-label"># top rules:</label>
+                    <input id="topRules" max="25" min="5" name="name" step="0.001" type="number" value="10">
+                    <label for="exploratoryFraction" id="exploratoryFraction-label">Exploratory fraction:</label>
+                    <input id="exploratoryFraction" max="1.0" min="0.1" name="name" step="0.1" type="number"
                            value="0.5">
-                    <label id="nSampling-label" for="nSampling"># sampling:</label>
-                    <input type="number" step="10" id="nSampling" name="name" min="0" max="1000" value="150">
-                    <label id="samplingType-label" for="samplingStrategy">Sampling type:</label>
+                    <label for="nSampling" id="nSampling-label"># sampling:</label>
+                    <input id="nSampling" max="1000" min="0" name="name" step="10" type="number" value="150">
+                    <label for="samplingStrategy" id="samplingType-label">Sampling type:</label>
                     <select id="samplingStrategy" name="name" required>
-                        <option value="NONE" selected="selected">NONE</option>
+                        <option selected="selected" value="NONE">NONE</option>
                         <option value="UPSAMPLING">UPSAMPLING</option>
                         <option value="DOWNSAMPLING">DOWNSAMPLING</option>
                     </select>
-                    <label id="significance-level-label" for="significance-level">Alpha (exploratory):</label>
-                    <input type="number" step="0.001" id="significance-level" name="name" min="0.001" max="1"
+                    <label for="significance-level" id="significance-level-label">Alpha (exploratory):</label>
+                    <input id="significance-level" max="1" min="0.001" name="name" step="0.001" type="number"
                            value="0.05">
-                    <label id="alphaHoldout-label" for="alphaHoldout">Alpha (holdout):</label>
-                    <input type="number" step="0.001" id="alphaHoldout" name="name" min="0.001" max="1" value="0.2">
-                    <label id="alphaFull-label" for="alphaFull">Alpha (full):</label>
-                    <input type="number" step="0.001" id="alphaFull" name="name" min="0.001" max="1" value="0.2">
+                    <label for="alphaHoldout" id="alphaHoldout-label">Alpha (holdout):</label>
+                    <input id="alphaHoldout" max="1" min="0.001" name="name" step="0.001" type="number" value="0.2">
+                    <label for="alphaFull" id="alphaFull-label">Alpha (full):</label>
+                    <input id="alphaFull" max="1" min="0.001" name="name" step="0.001" type="number" value="0.2">
                 </div>
             </div>
 
             <div id="load-files" style="display: none">
                 <label id="filename" style="display: inline">Fishbone</label>
-                <input id="file" type="file" accept=".json" style="display: none"/>
-                <input id="file-button" type="button" class="btn btn-primary" value="Load *.json"
-                       style="display: inline"
-                       onclick="$('#file').click();"/>
+                <input accept=".json" id="file" style="display: none" type="file"/>
+                <input class="btn btn-primary" id="file-button" onclick="$('#file').click();" style="display: inline"
+                       type="button"
+                       value="Load *.json"/>
 
                 <label id="tree-filename" style="display: inline">Tree</label>
-                <input id="tree-file" type="file" accept=".dot" style="display: none"/>
-                <input id="tree-file-button" type="button" class="btn btn-primary" value="Load *.dot"
-                       style="display: inline"
-                       onclick="$('#tree-file').click();"/>
+                <input accept=".dot" id="tree-file" style="display: none" type="file"/>
+                <input class="btn btn-primary" id="tree-file-button" onclick="$('#tree-file').click();" style="display: inline"
+                       type="button"
+                       value="Load *.dot"/>
 
                 <label id="fpgrowth-filename" style="display: inline">FP-growth</label>
-                <input id="fpgrowth-file" type="file" accept=".txt" style="display: none"/>
-                <input id="fpgrowth-file-button" type="button" class="btn btn-primary" value="Load *.txt"
-                       style="display: inline"
-                       onclick="$('#fpgrowth-file').click();"/>
+                <input accept=".txt" id="fpgrowth-file" style="display: none" type="file"/>
+                <input class="btn btn-primary" id="fpgrowth-file-button" onclick="$('#fpgrowth-file').click();" style="display: inline"
+                       type="button"
+                       value="Load *.txt"/>
 
-                <input id="filename-to-download" class="form-control" placeholder="filename to dowload"/>
-                <label id="experiment-type-label-download" for="experiment-type">Experiment type:</label>
+                <input class="form-control" id="filename-to-download" placeholder="filename to dowload"/>
+                <label for="experiment-type" id="experiment-type-label-download">Experiment type:</label>
                 <select id="experiment-type-download" name="name" required>
-                    <option value="GENOME" selected="selected">GENOME</option>
+                    <option selected="selected" value="GENOME">GENOME</option>
                     <option value="FEATURE_SET">FEATURE_SET</option>
                 </select>
-                <input id="download-file-button" type="button" class="btn btn-primary" value="Download"
-                       style="display: inline"
-                       onclick="downloadFile();"/>
+                <input class="btn btn-primary" id="download-file-button" onclick="downloadFile();" style="display: inline"
+                       type="button"
+                       value="Download"/>
             </div>
             <script>
                 function runAnalysis(x) {
@@ -191,24 +191,24 @@
             </script>
         </form>
         <form class="navbar-form navbar-right">
-            <label id="algorithms-label" for="algorithms">Run other algorithms</label>
-            <div id="algorithms" class="checkbox navbar-btn">
+            <label for="algorithms" id="algorithms-label">Run other algorithms</label>
+            <div class="checkbox navbar-btn" id="algorithms">
                 <!--<input type="checkbox" id="fishboneAlgCheckbox">
                 <label for="fishboneAlgCheckbox">Fishbone</label>-->
 
-                <input type="checkbox" id="ripperAlgCheckbox">
+                <input id="ripperAlgCheckbox" type="checkbox">
                 <label for="ripperAlgCheckbox">Ripper</label>
 
-                <input type="checkbox" id="fpGrowthAlgCheckbox">
+                <input id="fpGrowthAlgCheckbox" type="checkbox">
                 <label for="fpGrowthAlgCheckbox">FPGrowth</label>
 
-                <input type="checkbox" id="decisionTreeAlgCheckbox">
+                <input id="decisionTreeAlgCheckbox" type="checkbox">
                 <label for="decisionTreeAlgCheckbox">Decision tree</label>
             </div>
         </form>
     </div>
 </nav>
-<nav id="navbar" class="navbar navbar-default">
+<nav class="navbar navbar-default" id="navbar">
     <form class="navbar-form navbar-left">
         <label id="display-title">Display settings:</label>
 
@@ -223,39 +223,39 @@
         </select>&nbsp;&nbsp;&nbsp;
 
         <label for="target-filter">Target</label>
-        <input disabled id="target-filter" class="form-control" placeholder="filter"/>&nbsp;
+        <input class="form-control" disabled id="target-filter" placeholder="filter"/>&nbsp;
 
-        <input disabled id="correlation-filter-min" class="form-control" type="number" min="0" max="1" step="0.1"
+        <input class="form-control" disabled id="correlation-filter-min" max="1" min="0" step="0.1" type="number"
                value="0"/>
         <label for="correlation-filter-min">≤ Correlation ≤</label>
-        <input disabled id="correlation-filter-max" class="form-control" type="number" min="0" max="1" step="0.1"
+        <input class="form-control" disabled id="correlation-filter-max" max="1" min="0" step="0.1" type="number"
                value="1"/>&nbsp;
 
         <label for="support-filter">Support ≥</label>
-        <input disabled id="support-filter" class="form-control" type="number" min="0" max="1" step="0.1" value="0"/>&nbsp;
+        <input class="form-control" disabled id="support-filter" max="1" min="0" step="0.1" type="number" value="0"/>&nbsp;
 
         <label for="confidence-filter">Confidence ≥</label>
-        <input disabled id="confidence-filter" class="form-control" type="number" min="0" max="1" step="0.1" value="0"/>&nbsp;
+        <input class="form-control" disabled id="confidence-filter" max="1" min="0" step="0.1" type="number" value="0"/>&nbsp;
 
         <label for="conviction-filter">Conviction ≥</label>
-        <input disabled id="conviction-filter" class="form-control" type="number" min="0" step="0.5" value="1"/>&nbsp;
+        <input class="form-control" disabled id="conviction-filter" min="0" step="0.5" type="number" value="1"/>&nbsp;
 
         <label for="complexity-filter">Complexity ≤</label>
-        <input disabled id="complexity-filter" class="form-control" type="number" min="0" step="1" value="1"/>&nbsp;
+        <input class="form-control" disabled id="complexity-filter" min="0" step="1" type="number" value="1"/>&nbsp;
 
         <label for="show-top-filter">Show</label>
-        <input disabled id="show-top-filter" class="form-control" type="number" min="1" step="1" value="5"/>&nbsp;
+        <input class="form-control" disabled id="show-top-filter" min="1" step="1" type="number" value="5"/>&nbsp;
 
     </form>
     <form class="navbar-form navbar-right">
         <label for="alternative-results">Show other results</label>
-        <div id="alternative-results" class="checkbox navbar-btn">
-            <input type="button" id="fishboneSwitch" onclick="switchFishboneResults()" value="Switch to Ripper">
+        <div class="checkbox navbar-btn" id="alternative-results">
+            <input id="fishboneSwitch" onclick="switchFishboneResults()" type="button" value="Switch to Ripper">
 
-            <input type="checkbox" id="fpGrowthCheckbox" onclick="showFPGrowthResults()">
+            <input id="fpGrowthCheckbox" onclick="showFPGrowthResults()" type="checkbox">
             <label for="fpGrowthCheckbox">FPGrowth</label>
 
-            <input type="checkbox" id="decisionTreeCheckbox" onclick="showDecisionTreeResults()">
+            <input id="decisionTreeCheckbox" onclick="showDecisionTreeResults()" type="checkbox">
             <label for="decisionTreeCheckbox">Decision tree</label>
         </div>
     </form>
