@@ -2,7 +2,7 @@ package org.jetbrains.bio.fishbone.predicate
 
 import gnu.trove.map.TObjectIntMap
 import gnu.trove.map.hash.TObjectIntHashMap
-import org.jetbrains.bio.dataframe.BitterSet
+import org.jetbrains.bio.dataframe.BitList
 import org.jetbrains.bio.dataframe.DataFrame
 import org.jetbrains.bio.dataframe.DataFrameMappers
 import org.jetbrains.bio.dataframe.DataFrameSpec
@@ -29,7 +29,7 @@ object PredicatesIO {
         var df = DataFrame()
         predicates.forEach { predicate ->
             val result = predicate.test(dataBase)
-            val mask = BitterSet(dataBase.size) { result[it] }
+            val mask = BitList(dataBase.size) { result[it] }
             progress.report()
             df = df.with(predicate.name().intern(), mask)
         }
@@ -135,7 +135,7 @@ object PredicatesIO {
         private val originalName: String,
         private val originalCanNegate: Boolean,
         private val database: List<T>,
-        private val positives: BitterSet,
+        private val positives: BitList,
         private val indexMap: TObjectIntMap<T>
     ) : Predicate<T>() {
         override fun name() = originalName
