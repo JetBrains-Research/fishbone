@@ -9,6 +9,7 @@ import org.jetbrains.bio.fishbone.rule.distribution.Distribution.Companion.kullb
 import org.jetbrains.bio.fishbone.rule.distribution.EmpiricalDistribution
 import org.jetbrains.bio.statistics.distribution.Sampling
 import org.jetbrains.bio.util.time
+import org.jetbrains.bio.util.withLocaleUS
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -110,96 +111,99 @@ class RulesMinerTest : TestCase() {
 
     @Test
     fun testOptimizeConvictionThresholds() {
-        val predicates =
-            (0..5).map { RangePredicate(2.0.pow(it.toDouble()).toInt(), 2.0.pow(it.toDouble() + 1).toInt()) }
-        val database = (0..100).toList()
+        withLocaleUS {
+            val predicates =
+                (0..5).map { RangePredicate(2.0.pow(it.toDouble()).toInt(), 2.0.pow(it.toDouble() + 1).toInt()) }
+            val database = (0..100).toList()
 
-        val r0 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::conviction, functionDelta = FishboneMiner.FUNCTION_DELTA, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(6.65,0.79),[16;32)(9.98,0.62),[8;16)(11.64,0.50),[4;8)(12.48,0.42),[2;4)(12.89,0.38),[1;2)(13.10,0.35)",
-            r0.structure(database, function = Rule<Int>::conviction)
-        )
+            val r0 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = FishboneMiner.FUNCTION_DELTA, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6.65,0.79),[16;32)(9.98,0.62),[8;16)(11.64,0.50),[4;8)(12.48,0.42),[2;4)(12.89,0.38),[1;2)(13.10,0.35)",
+                r0.structure(database, function = Rule<Int>::conviction)
+            )
 
-        val r05 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::conviction, functionDelta = 0.5, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r05.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(6.65,0.76),[16;32)(9.98,0.57),[8;16)(11.64,0.43),[4;8)(12.48,0.35)",
-            r05.structure(database, function = Rule<Int>::conviction)
-        )
+            val r05 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 0.5, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r05.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6.65,0.76),[16;32)(9.98,0.57),[8;16)(11.64,0.43),[4;8)(12.48,0.35)",
+                r05.structure(database, function = Rule<Int>::conviction)
+            )
 
-        val r1 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::conviction, functionDelta = 1.0, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [32;64) OR [8;16)", r1.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(6.65,0.72),[16;32)(9.98,0.49),[8;16)(11.64,0.33)",
-            r1.structure(database, function = Rule<Int>::conviction)
-        )
+            val r1 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 1.0, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [32;64) OR [8;16)", r1.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6.65,0.72),[16;32)(9.98,0.49),[8;16)(11.64,0.33)",
+                r1.structure(database, function = Rule<Int>::conviction)
+            )
 
-        val r2 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::conviction, functionDelta = 2.0, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [32;64)", r2.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(6.65,0.60),[16;32)(9.98,0.27)",
-            r2.structure(database, function = Rule<Int>::conviction)
-        )
+            val r2 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 2.0, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [32;64)", r2.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6.65,0.60),[16;32)(9.98,0.27)",
+                r2.structure(database, function = Rule<Int>::conviction)
+            )
 
-        val r10 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::conviction, functionDelta = 10.0, klDelta = -1.0
-        )
-        assertEquals("[32;64)", r10.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(6.65,0.00)",
-            r10.structure(database, function = Rule<Int>::conviction)
-        )
+            val r10 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 10.0, klDelta = -1.0
+            )
+            assertEquals("[32;64)", r10.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6.65,0.00)",
+                r10.structure(database, function = Rule<Int>::conviction)
+            )
+        }
     }
 
     @Test
     fun testOptimizeLoeThresholds() {
-        val predicates =
-            (0..5).map { RangePredicate(2.0.pow(it.toDouble()).toInt(), 2.0.pow(it.toDouble() + 1).toInt()) }
-        val database = (0..100).toList()
-        val r0 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::loe, functionDelta = 0.0, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(2.66,0.79),[16;32)(2.99,0.62),[8;16)(3.11,0.50),[4;8)(3.16,0.42),[2;4)(3.19,0.38),[1;2)(3.20,0.35)",
-            r0.structure(database, function = Rule<Int>::loe)
-        )
+        withLocaleUS {
+            val predicates =
+                (0..5).map { RangePredicate(2.0.pow(it.toDouble()).toInt(), 2.0.pow(it.toDouble() + 1).toInt()) }
+            val database = (0..100).toList()
+            val r0 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::loe, functionDelta = 0.0, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(2.66,0.79),[16;32)(2.99,0.62),[8;16)(3.11,0.50),[4;8)(3.16,0.42),[2;4)(3.19,0.38),[1;2)(3.20,0.35)",
+                r0.structure(database, function = Rule<Int>::loe)
+            )
 
-        val r01 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::loe, functionDelta = 0.1, klDelta = -1.0
-        )
-        assertEquals("[16;32) OR [32;64) OR [8;16)", r01.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(2.66,0.72),[16;32)(2.99,0.49),[8;16)(3.11,0.33)",
-            r01.structure(database, function = Rule<Int>::loe)
-        )
+            val r01 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::loe, functionDelta = 0.1, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [32;64) OR [8;16)", r01.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(2.66,0.72),[16;32)(2.99,0.49),[8;16)(3.11,0.33)",
+                r01.structure(database, function = Rule<Int>::loe)
+            )
 
-        val r1 = optimizeWithProbes(
-            RangePredicate(0, 80), database, predicates,
-            function = Rule<Int>::loe, functionDelta = 1.0, klDelta = -1.0
-        )
-        assertEquals("[32;64)", r1.rule.conditionPredicate.name())
-        assertEquals(
-            "[32;64)(2.66,0.00)",
-            r1.structure(database, function = Rule<Int>::loe)
-        )
-
+            val r1 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::loe, functionDelta = 1.0, klDelta = -1.0
+            )
+            assertEquals("[32;64)", r1.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(2.66,0.00)",
+                r1.structure(database, function = Rule<Int>::loe)
+            )
+        }
     }
 
 
