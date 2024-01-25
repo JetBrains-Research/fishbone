@@ -61,6 +61,14 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 }
 
+private String settingsFolder(final String propertyName, final String folderName) {
+    if (!System.hasProperty(propertyName)) {
+        return "${rootProject.buildDir}/.tests/$folderName"
+    } else {
+        return System.getProperty(propertyName)
+    }
+}
+
 tasks.withType(Test) {
     // Continue execution even if tests for some of the sub-projects failed.
     ignoreFailures = true
