@@ -33,7 +33,7 @@ compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 project(":bioinf-commons")
 
 dependencies {
-    compile project(":bioinf-commons")
+    implementation project(":bioinf-commons")
 
     // Kotlin dependencies
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version")
