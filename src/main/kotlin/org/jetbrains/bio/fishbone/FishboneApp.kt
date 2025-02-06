@@ -48,6 +48,14 @@ class FishboneApp(private val experiments: Map<ExperimentType, FarmExperiment>, 
                 anyHost()
             }
             routing {
+                route("/") {
+                    get {
+                        call.respondText(
+                            this::class.java.classLoader.getResource("rules/index.html")!!.readText(),
+                            ContentType.Text.Html
+                        )
+                    }
+                }
                 route("/rules") {
                     // API to load rules from specified file
                     get {
