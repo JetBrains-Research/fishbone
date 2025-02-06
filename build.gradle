@@ -50,6 +50,16 @@ dependencies {
     //ML dependencies
     implementation("nz.ac.waikato.cms.weka:weka-stable:3.8.6")
 
+    // Command line
+    implementation("net.sf.jopt-simple:jopt-simple:5.0.4")
+
+    // Utility
+    implementation("net.sf.trove4j:trove4j:3.0.3")
+    implementation("com.google.guava:guava:32.0.1-jre")
+    implementation("org.apache.commons:commons-csv:1.10.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("net.sf.jopt-simple:jopt-simple:5.0.4")
+
     // Bioinformatics (science) dependencies
     implementation project(":bioinf-commons")
     implementation("org.nield:kotlin-statistics:1.2.1")
@@ -103,16 +113,7 @@ shadowJar {
     baseName = "fishbone"
     version = "${version}.${project.buildCounter}"
     classifier = ""
-    minimize {
-        // kotlin.jvm.KotlinReflectionNotSupportedError: Kotlin reflection implementation is not found at runtime. Make sure you have kotlin-reflect.jar in the classpath
-        exclude(dependency("org.jetbrains.kotlin:.*"))
-        // ch.qos.logback.core.util.DynamicClassLoadingException: Failed to instantiate type ch.qos.logback.core.rolling.RollingFileAppender
-        exclude(dependency("org.slf4j:.*"))
-        // java.lang.NoClassDefFoundError: com/fasterxml/jackson/dataformat/yaml/YAMLFactory
-        exclude(dependency("com.fasterxml.jackson.dataformat:.*"))
-        // java.lang.NoClassDefFoundError: org/yaml/snakeyaml/error/YAMLException
-        exclude(dependency("org.yaml:.*"))
-    }
+
     manifest {
         attributes "Main-Class": "org.jetbrains.bio.fishbone.FishboneApp"
     }
