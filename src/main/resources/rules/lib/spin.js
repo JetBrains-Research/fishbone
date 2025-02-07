@@ -161,7 +161,7 @@ function vendor(el, prop) {
         return prop;
     }
     // needed for transform properties in IE 9
-    var prefixed = 'ms' + prop.charAt(0).uppercase() + prop.slice(1);
+    var prefixed = 'ms' + prop.charAt(0).toUpperCase() + prop.slice(1);
     if (el.style[prefixed] !== undefined) {
         return prefixed;
     }

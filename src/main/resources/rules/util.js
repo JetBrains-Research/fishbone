@@ -281,8 +281,8 @@ function runAnalysisOnLoadedData() {
     $('#decisiontree-alg-dialog-pane').empty();
     $('#fpgrowth-alg-dialog-pane').empty();
 
-    window.myForm.append("experiment", document.getElementById('experiment-type').value.uppercase());
-    window.myForm.append("genome", document.getElementById('genome').value.lowercase());
+    window.myForm.append("experiment", document.getElementById('experiment-type').value.toUpperCase());
+    window.myForm.append("genome", document.getElementById('genome').value.toLowerCase());
     window.myForm.append("runName", document.getElementById('run-name').value);
     window.myForm.append("significanceLevel", document.getElementById('significance-level').value);
     window.myForm.append("criterion", document.getElementById("info-criterion").value);
@@ -300,8 +300,10 @@ function runAnalysisOnLoadedData() {
     window.myForm.append("miners", miners);
 
     spinner.spin();
+    let host = window.location.protocol + "//" + window.location.host;
+    let port = document.getElementById('port').value;
     $.ajax({
-        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        url: `${host}:${port}/rules`,
         type: "POST",
         data: window.myForm,
         processData: false,
@@ -333,7 +335,7 @@ function runAnalysisOnLoadedData() {
 
 function downloadFile() {
     let jsonPath = document.getElementById('filename-to-download').value;
-    let experiment = document.getElementById('experiment-type-download').value.uppercase();
+    let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
     $.ajax({
         url: `http://localhost:${document.getElementById('port').value}/rules`,
         type: "GET",
