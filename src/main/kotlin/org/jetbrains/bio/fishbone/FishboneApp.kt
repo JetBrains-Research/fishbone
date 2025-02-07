@@ -67,6 +67,10 @@ class FishboneApp(private val experiments: Map<ExperimentType, FarmExperiment>, 
                         call.respond(mineRules(call.receiveMultipart()))
                     }
                 }
+                // Configure static content routing for "rules" folder
+                static("/") {
+                    resources("rules")
+                }
             }
         }
         server.start(wait = true)
