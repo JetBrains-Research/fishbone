@@ -198,8 +198,9 @@ function showFPGrowthTable(table) {
 
 function renderFpGrowthAlgorithmResults(res) {
     document.getElementById('filename-to-download').value = res["FP_GROWTH"];
+    let host = window.location.protocol + "//" + window.location.host;
     $.ajax({
-        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        url: `${host}/rules`,
         type: "GET",
         data: {filename: res["FP_GROWTH"]},
         success: function (res2) {
@@ -234,8 +235,9 @@ function showDecisionTree(tree) {
 
 function renderDecisionTreeAlgorithmsResults(res) {
     document.getElementById('filename-to-download').value = res["DECISION_TREE"];
+    let host = window.location.protocol + "//" + window.location.host;
     $.ajax({
-        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        url: `${host}/rules`,
         type: "GET",
         data: {filename: res["DECISION_TREE"]},
         success: function (res3) {
@@ -248,8 +250,9 @@ function renderDecisionTreeAlgorithmsResults(res) {
 }
 
 function renderFishboneResults(jsonPath) {
+    let host = window.location.protocol + "//" + window.location.host;
     $.ajax({
-        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        url: `${host}/rules`,
         type: "GET",
         data: {filename: jsonPath},
         success: function (res) {
@@ -301,9 +304,8 @@ function runAnalysisOnLoadedData() {
 
     spinner.spin();
     let host = window.location.protocol + "//" + window.location.host;
-    let port = document.getElementById('port').value;
     $.ajax({
-        url: `${host}:${port}/rules`,
+        url: `${host}/rules`,
         type: "POST",
         data: window.myForm,
         processData: false,
@@ -336,8 +338,9 @@ function runAnalysisOnLoadedData() {
 function downloadFile() {
     let jsonPath = document.getElementById('filename-to-download').value;
     let experiment = document.getElementById('experiment-type-download').value.toUpperCase();
+    let host = window.location.protocol + "//" + window.location.host;
     $.ajax({
-        url: `http://localhost:${document.getElementById('port').value}/rules`,
+        url: `${host}/rules`,
         type: "GET",
         data: {filename: jsonPath, experiment: experiment},
         success: function (res) {
