@@ -34,4 +34,4 @@ Libraries
 
 Authors
 =======
-JetBrains Research BioLabs [homepage](https://research.jetbrains.org/groups/biolabs)
+JetBrains Research BioLabs [homepage](https://lp.jetbrains.com/research/biolabs/)
