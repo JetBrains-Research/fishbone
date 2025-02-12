@@ -122,7 +122,7 @@ class RulesMinerTest : TestCase() {
             )
             assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r0.rule.conditionPredicate.name())
             assertEquals(
-                "[32;64)(6.65,0.79),[16;32)(9.98,0.62),[8;16)(11.64,0.50),[4;8)(12.48,0.42),[2;4)(12.89,0.38),[1;2)(13.10,0.35)",
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
                 r0.structure(database, function = Rule<Int>::conviction)
             )
 
@@ -130,9 +130,9 @@ class RulesMinerTest : TestCase() {
                 RangePredicate(0, 80), database, predicates,
                 function = Rule<Int>::conviction, functionDelta = 0.5, klDelta = -1.0
             )
-            assertEquals("[16;32) OR [32;64) OR [4;8) OR [8;16)", r05.rule.conditionPredicate.name())
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r05.rule.conditionPredicate.name())
             assertEquals(
-                "[32;64)(6.65,0.76),[16;32)(9.98,0.57),[8;16)(11.64,0.43),[4;8)(12.48,0.35)",
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
                 r05.structure(database, function = Rule<Int>::conviction)
             )
 
@@ -140,9 +140,9 @@ class RulesMinerTest : TestCase() {
                 RangePredicate(0, 80), database, predicates,
                 function = Rule<Int>::conviction, functionDelta = 1.0, klDelta = -1.0
             )
-            assertEquals("[16;32) OR [32;64) OR [8;16)", r1.rule.conditionPredicate.name())
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r1.rule.conditionPredicate.name())
             assertEquals(
-                "[32;64)(6.65,0.72),[16;32)(9.98,0.49),[8;16)(11.64,0.33)",
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
                 r1.structure(database, function = Rule<Int>::conviction)
             )
 
@@ -150,9 +150,9 @@ class RulesMinerTest : TestCase() {
                 RangePredicate(0, 80), database, predicates,
                 function = Rule<Int>::conviction, functionDelta = 2.0, klDelta = -1.0
             )
-            assertEquals("[16;32) OR [32;64)", r2.rule.conditionPredicate.name())
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r2.rule.conditionPredicate.name())
             assertEquals(
-                "[32;64)(6.65,0.60),[16;32)(9.98,0.27)",
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
                 r2.structure(database, function = Rule<Int>::conviction)
             )
 
@@ -160,11 +160,43 @@ class RulesMinerTest : TestCase() {
                 RangePredicate(0, 80), database, predicates,
                 function = Rule<Int>::conviction, functionDelta = 10.0, klDelta = -1.0
             )
-            assertEquals("[32;64)", r10.rule.conditionPredicate.name())
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r10.rule.conditionPredicate.name())
             assertEquals(
-                "[32;64)(6.65,0.00)",
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
                 r10.structure(database, function = Rule<Int>::conviction)
             )
+
+            val r1e4 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 1e4, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [1;2) OR [2;4) OR [32;64) OR [4;8) OR [8;16)", r1e4.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6653465.35,0.79),[16;32)(9980198.02,0.62),[8;16)(11643564.36,0.50),[4;8)(12475247.52,0.42),[2;4)(12891089.11,0.38),[1;2)(13099009.90,0.35)",
+                r1e4.structure(database, function = Rule<Int>::conviction)
+            )
+
+            val r1e6 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 1e6, klDelta = -1.0
+            )
+            assertEquals("[16;32) OR [32;64) OR [8;16)", r1e6.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6653465.35,0.72),[16;32)(9980198.02,0.49),[8;16)(11643564.36,0.33)",
+                r1e6.structure(database, function = Rule<Int>::conviction)
+            )
+
+            val r1e7 = optimizeWithProbes(
+                RangePredicate(0, 80), database, predicates,
+                function = Rule<Int>::conviction, functionDelta = 1e7, klDelta = -1.0
+            )
+            assertEquals("[32;64)", r1e7.rule.conditionPredicate.name())
+            assertEquals(
+                "[32;64)(6653465.35,0.00)",
+                r1e7.structure(database, function = Rule<Int>::conviction)
+            )
+
+
         }
     }
 

@@ -73,7 +73,7 @@ class OverlapSamplePredicateTest {
         val rule1 = Rule(creatinineHighPredicate, malePredicate, database)
         assertEquals(71, rule1.intersection)
         Assert.assertEquals(1.183333, rule1.lift, 1e-4)
-        Assert.assertEquals(12.000, rule1.conviction, 1e-4)
-
+        Assert.assertEquals(12.000, rule1.conviction, 1e-2)
+        Assert.assertNotEquals(12.000, rule1.conviction, 1e-6)
     }
 }

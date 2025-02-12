@@ -27,10 +27,19 @@ class RuleTest : TestCase() {
 
     @Throws(Exception::class)
     fun testConvictionCondition() {
-        assertTrue(rule(100, 90, 10, 10).conviction > rule(100, 100, 10, 10).conviction)
+        assertTrue(
+            rule(100, 90, 10, 10).conviction >
+                rule(100, 100, 10, 10).conviction
+        )
 
         // In case of small databases this is false
-        assertFalse(rule(3, 2, 1, 1).conviction > rule(3, 3, 1, 1).conviction)
+        // KZ: why? real values of conviction in these cases are 4/3 and 1
+        assertEquals(1.3333, rule(3, 2, 1, 1).conviction, 1e-3)
+        assertEquals(1.0, rule(3, 3, 1, 1).conviction, 1e-3)
+        assertTrue(
+            rule(3, 2, 1, 1).conviction >
+                    rule(3, 3, 1, 1).conviction
+        )
     }
 
     fun testType1Errors() {

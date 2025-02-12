@@ -41,7 +41,7 @@ class RulesLoggerTest {
       "confidence": 1,
       "correlation": 1,
       "lift": 5,
-      "conviction": 8,
+      "conviction": 8000000.0,
       "loe": 1.151802008640984,
       "complexity": 2,
       "node": "NOT [0;10)",
@@ -80,7 +80,7 @@ class RulesLoggerTest {
       "confidence": 0.5,
       "correlation": 0.6123724356957945,
       "lift": 2.5,
-      "conviction": 1.4545454545454546,
+      "conviction": 1.5999998400000162,
       "loe": 0.48718084308604387,
       "complexity": 1,
       "node": "[0;20)",
@@ -112,7 +112,7 @@ class RulesLoggerTest {
       "confidence": 0.2,
       "correlation": 0,
       "lift": 1,
-      "conviction": 0.975609756097561,
+      "conviction": 0.9999999750000007,
       "loe": 0.057131853609317905,
       "complexity": 1,
       "node": "TRUE",
@@ -212,7 +212,7 @@ class RulesLoggerTest {
         assertEquals(
             listOf(
                 "id", "foo", "bar", 10, 8, 9, 7, 0.8, 0.875,
-                -0.16666666666666666, 0.9722222222222222, 0.4, 0.22427683792970576, 1
+                -0.16666666666666666, 0.9722222222222222, 0.7999992000008002, 0.22427683792970576, 1
             ),
             RuleRecord.fromRule(rule, "id").toCSV()
         )
@@ -225,7 +225,7 @@ class RulesLoggerTest {
             "{id=id, condition=foo, target=bar, " +
                     "database_count=10, condition_count=8, target_count=9, intersection_count=7, " +
                     "support=0.8, confidence=0.875, " +
-                    "correlation=-0.16666666666666666, lift=0.9722222222222222, conviction=0.4, loe=0.22427683792970576, " +
+                    "correlation=-0.16666666666666666, lift=0.9722222222222222, conviction=0.7999992000008002, loe=0.22427683792970576, " +
                     "complexity=1}",
             RuleRecord.fromRule(rule, "id").toMap().toString()
         )

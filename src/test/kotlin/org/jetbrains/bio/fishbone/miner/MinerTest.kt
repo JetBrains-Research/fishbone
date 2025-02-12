@@ -36,7 +36,7 @@ class MinerTest {
         assertEquals(3, updated.target)
         assertEquals(3, updated.intersection)
 
-        assertTrue(rule.condition > updated.conviction)
+        assertTrue(rule.conviction > updated.conviction)
         assertTrue(rule.loe > updated.loe)
     }
 

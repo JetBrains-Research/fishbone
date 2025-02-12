@@ -43,6 +43,17 @@ class Rule<T>(
                 conditionPredicate.and(targetPredicate).test(data).cardinality()
             )
 
+    val support: Double = if (database == 0)
+        0.0
+    else
+        intersection.toDouble() / database.toDouble()
+
+    val confidence: Double = if (condition == 0)
+        0.0
+    else
+        intersection.toDouble() / condition.toDouble()
+
+
     /**
      * Lift measures how many times more often X and Y occur together than expected if they were statistically independent.
 
@@ -69,7 +80,10 @@ class Rule<T>(
      *
      * conviction(X -> Y) = (1-supp(Y))/(1-conf(X -> Y)) = P(X)P(not Y)/P(X and not Y) = P(not Y)/P(not Y | X)
      */
-    val conviction: Double = 1.0 * condition / database * (database - target) / (errorType1 + 1.0)
+    val conviction: Double = 1.0 * (database - target)  / database * // 1 - supp(Y)
+            condition / (condition - intersection + 1e-6) // 1 - conf(X->Y) + small addition
+    // addition of small value in denominator guarantees finite value
+    // but in other cases the function approximates conviction
 
     /**
      * Scenario1: The expert Er tolerates the appearance of a certain number of counter-examples
