@@ -52,7 +52,8 @@ class RuleImprovementCheck {
          * @return pvalue for corresponding Null Hypothesis
          */
         fun <T> testRuleProductivity(rule: Rule<T>, database: List<T>, testName: String? = null): Double {
-            val test = testName ?: (if (database.size > SMALL_DATABASE_SIZE_THRESHOLD) "chi" else "fisher")
+            // val test = testName ?: (if (database.size > SMALL_DATABASE_SIZE_THRESHOLD) "chi" else "fisher")
+            val test = "fisher"
             val sources = buildSources(rule)
             val target = rule.targetPredicate
 
@@ -64,6 +65,7 @@ class RuleImprovementCheck {
                 val c = cFreq(reducedSources, x, target, database)
                 val d = dFreq(reducedSources, x, target, database)
 
+                // logger.info("Testing ${rule.name} with $test : a - $a, b - $b, c - $c , d - $d")
                 StatisticalSignificanceCheck.test(a, b, c, d, database.size, test)
             }
         }

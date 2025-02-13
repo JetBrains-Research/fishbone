@@ -1,6 +1,7 @@
 package org.jetbrains.bio.fishbone.rule.validation
 
 import org.apache.commons.math3.distribution.ChiSquaredDistribution
+import org.jetbrains.bio.statistics.hypothesis.Alternative
 import org.jetbrains.bio.statistics.hypothesis.FisherExactTest
 
 /**
@@ -43,7 +44,7 @@ class StatisticalSignificanceCheck {
          */
         fun test(a: Int, b: Int, c: Int, d: Int, len: Int, test: String): Double {
             return when (test) {
-                "fisher" -> FisherExactTest.forTable(a, b, c, d).invoke()
+                "fisher" -> FisherExactTest.forTable(a, b, c, d).invoke(alternative = Alternative.TWO_SIDED)
                 "chi" -> ChiSquareTest.forTable(
                     a.toDouble() / len, b.toDouble() / len, c.toDouble() / len, d.toDouble() / len
                 ).invoke()

@@ -3,39 +3,19 @@ package org.jetbrains.bio.fishbone.experiment
 import org.jetbrains.bio.fishbone.api.*
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.predicate.OverlapSamplePredicate
+import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import org.jetbrains.bio.fishbone.rule.Rule
+import org.jetbrains.bio.fishbone.experiment.FarmExperiment
 import org.junit.AfterClass
 import org.junit.Test
+import java.nio.file.Paths
+import kotlin.io.path.toPath
 import kotlin.test.assertEquals
 
 class ABF300FeatureSetExperimentTest {
 
     companion object {
-        private val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
-        val experiment = FeaturesSetExperiment(tempDir.absolutePath)
-        val request = MineRulesRequest(
-            experiment = ExperimentType.FEATURE_SET,
-            genome = "",
-            predicates = listOf(),
-            targets = listOf(),
-            database = "",
-            miners = HashSet(listOf(MiningAlgorithm.FISHBONE)),
-            criterion = "conviction",
-            significanceLevel = 0.05,
-            runName = "test-abf300",
-            settings = ExperimentSettings(),
-        )
-
-        @JvmStatic
-        @AfterClass
-        fun cleanup(): Unit {
-            tempDir.deleteRecursively()
-        }
-    }
-
-    @Test
-    fun testABF300Mining() {
-        // below are two real predicates from ABF300 dataset
+        // below we define two real predicates from ABF300 dataset
         // first predicate is "donor is MALE", negation is "donor is FEMALE"
         // second predicate is "donors Creatinine > 1", negation is "donors Creatinine <= 1"
         // the values of confidence, coverage, lift and conviction
@@ -44,6 +24,47 @@ class ABF300FeatureSetExperimentTest {
         // rules                               support confidence  coverage     lift count conviction
         // 1 {Creatinine_gt_1} => {Gender_M} 0.4733333  0.9861111 0.4800000 1.183333    71  12.000000
         // 2 {Gender_M} => {Creatinine_gt_1} 0.4733333  0.5680000 0.8333333 1.183333    71   1.203704
+        //
+        // Corresponding files for these predicates (Gender_M and Creatinine_gt_1) are also present in the test resources
+        // As well as the database.txt
+        //
+        // Contingency table for the predicates
+        //        Creatinine_gt_1
+        // Gender_M FALSE TRUE
+        //    FALSE    24    1
+        //    TRUE     54   71
+        // `chisq.test(contingency_table)$p.value`
+        //  4.133496e-06
+        //  Must be a productive rule
+        //
+        //
+        //
+        // fisher.test(contingency_table)
+        // Fisher's Exact Test for Count Data
+        // data:  contingency_table
+        // p-value = 3.322e-07
+        // alternative hypothesis: true odds ratio is not equal to 1
+        // 95 percent confidence interval:
+        // 4.759189 1306.929589
+        // sample estimates:
+        // odds ratio
+        // 31.03686
+
+        private val tempDir = createTempDir("temp-${System.currentTimeMillis()}")
+        val experiment = FeaturesSetExperiment(tempDir.absolutePath)
+        val request = MineRulesRequest(
+            experiment = ExperimentType.FEATURE_SET,
+            genome = "",
+            predicates = listOf(this::class.java.classLoader.getResource("abf300_creatinine_test/Gender_M").toURI().toPath().toString()),
+            targets = listOf(this::class.java.classLoader.getResource("abf300_creatinine_test/Creatinine_gt_1").toURI().toPath().toString()),
+            database = this::class.java.classLoader.getResource("abf300_creatinine_test/database.txt").toURI().toPath().toString(),
+            miners = HashSet(listOf(MiningAlgorithm.FISHBONE)),
+            criterion = "conviction",
+            significanceLevel = 0.05,
+            runName = "test-abf300",
+            settings = ExperimentSettings(),
+        )
+
 
         val database = (1..150).toList()
         val isMale = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125)
@@ -55,7 +76,15 @@ class ABF300FeatureSetExperimentTest {
         val creatinineHighPredicate = OverlapSamplePredicate("high_creatinine", creatinineGt1, creatinineLet1)
         val creatinineLowPredicate = OverlapSamplePredicate("low_creatinine", creatinineLet1, creatinineGt1)
 
+        @JvmStatic
+        @AfterClass
+        fun cleanup(): Unit {
+            tempDir.deleteRecursively()
+        }
+    }
 
+    @Test
+    fun testABF300Mining() {
         var rules = FishboneMiner.mine(
             listOf(malePredicate),
             creatinineHighPredicate,
@@ -69,8 +98,6 @@ class ABF300FeatureSetExperimentTest {
         )
         assertEquals(3, rules.size)
 
-
-
         // best rule
         var rule = rules.first()
         assertEquals("is_male => high_creatinine", rule.rule.toString())
@@ -81,6 +108,7 @@ class ABF300FeatureSetExperimentTest {
 
         rule = rules[2]
         assertEquals("TRUE => high_creatinine", rule.rule.toString())
+
 
         rules = FishboneMiner.mine(
             listOf(malePredicate),
@@ -107,6 +135,70 @@ class ABF300FeatureSetExperimentTest {
         assertEquals("TRUE => low_creatinine", rule.rule.toString())
 
 
+    }
+
+    @Test
+    fun testRuleProductivity () {
+        val rules = FishboneMiner.mine(
+            listOf(malePredicate),
+            creatinineHighPredicate,
+            database,
+            maxComplexity = 10,
+            topPerComplexity = FishboneMiner.TOP_PER_COMPLEXITY,
+            function = Rule<Int>::conviction,
+            functionDelta = FishboneMiner.FUNCTION_DELTA,
+            klDelta = FishboneMiner.KL_DELTA
+
+        )
+
+        val productiveRules = experiment.getProductiveRules(
+            MiningAlgorithm.FISHBONE,
+            rules,
+            alpha = 0.05,
+            db = database,
+            adjust = false
+        )
+
+        assertEquals(3, productiveRules.size)
+        // best rule
+        val rule = productiveRules.first()
+        assertEquals("is_male => high_creatinine", rule.rule.toString())
+        assertEquals(1.2037, rule.rule.conviction, 1e-3)
+    }
+
+    @Test
+    fun testPredicatesConstructor () {
+        // let's check if Predicates Constructor properly build the predicates
+        val databasePath = Paths.get(request.database)
+        val database = databasePath.toFile().useLines { outer -> outer.map { it.toInt() }.toList() }
+        val predicates = PredicatesConstructor.createOverlapSamplePredicates(request.predicates)
+        val targets = PredicatesConstructor.createOverlapSamplePredicates(request.targets)
+
+        var rules = FishboneMiner.mine(
+            predicates,
+            targets[0],
+            database,
+            maxComplexity = 10,
+            topPerComplexity = FishboneMiner.TOP_PER_COMPLEXITY,
+            function = Rule<Int>::conviction,
+            functionDelta = FishboneMiner.FUNCTION_DELTA,
+            klDelta = FishboneMiner.KL_DELTA
+
+        )
+        assertEquals(3, rules.size)
+
+        // best rule
+        var rule = rules.first()
+        assertEquals("Gender_M => Creatinine_gt_1", rule.rule.toString())
+        assertEquals(1.2037, rule.rule.conviction, 1e-3)
+
+    }
+
+    @Test
+    fun testABF300RequestProcessing () {
+        val result = experiment.run(request)
+        val what = result[MiningAlgorithm.FISHBONE]
+        assertEquals(1, result.size)
     }
 
 }
