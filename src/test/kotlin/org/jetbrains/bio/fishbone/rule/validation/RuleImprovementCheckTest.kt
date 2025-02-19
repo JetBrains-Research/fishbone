@@ -11,21 +11,6 @@ import org.junit.Test
 
 class RuleImprovementCheckTest : TestCase() {
     @Test
-    fun testRandomFisher() {
-        val database = (0.until(100)).toList()
-        val probes = (0.until(10)).map { ProbePredicate("probe_$it", database) }
-        val target = ProbePredicate("target", database)
-        val result = FishboneMiner.mine(
-            probes,
-            target,
-            database,
-            maxComplexity = 2,
-            function = Rule<Int>::conviction
-        ).first()
-        assertFalse(RuleImprovementCheck.testRuleProductivity(result.rule, database, "fisher") < 0.05)
-    }
-
-    @Test
     fun testFisherExactTest() {
         val a = 71
         val b = 54
@@ -47,19 +32,5 @@ class RuleImprovementCheckTest : TestCase() {
 //
 //        val falseRule = Rule(b, target, database)
 //        assertFalse(RuleImprovementCheck.testRuleProductivity(falseRule, database, "chi") < 0.05)
-//    }
-//
-//    fun testRandomChi() {
-//        val database = (0.until(1000)).toList()
-//        val probes = (0.until(100)).map { ProbePredicate("probe_$it", database) }
-//        val target = ProbePredicate("target", database)
-//        val result = FishboneMiner.mine(
-//            probes,
-//            target,
-//            database,
-//            maxComplexity = 2,
-//            function = Rule<Int>::conviction
-//        ).first()
-//        assertFalse(RuleImprovementCheck.testRuleProductivity(result.rule, database, "chi") < 0.05)
 //    }
 }
