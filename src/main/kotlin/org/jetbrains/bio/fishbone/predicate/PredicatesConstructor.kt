@@ -4,6 +4,7 @@ import org.jetbrains.bio.genome.GenomeQuery
 import org.jetbrains.bio.genome.Location
 import org.jetbrains.bio.genome.containers.LocationsMergingList
 import java.io.File
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -42,7 +43,8 @@ class PredicatesConstructor {
                         }
                     }
                 }
-                val name = filename.split("/").last().split(".")[0]
+                val fileSeparator = FileSystems.getDefault().separator
+                val name = filename.split(fileSeparator).last().split(".")[0]
                 OverlapSamplePredicate(name, samples, notSamples)
             }
         }
