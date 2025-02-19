@@ -127,6 +127,6 @@ interface Miner {
             return newNode
         }
 
-        fun timestamp(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH:mm:ss"))
+        fun timestamp(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd__HH_mm_ss"))
     }
 }
