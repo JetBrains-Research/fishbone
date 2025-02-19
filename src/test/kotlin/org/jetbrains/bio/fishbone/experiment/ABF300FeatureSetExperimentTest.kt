@@ -55,9 +55,9 @@ class ABF300FeatureSetExperimentTest {
         val request = MineRulesRequest(
             experiment = ExperimentType.FEATURE_SET,
             genome = "",
-            predicates = listOf(this::class.java.classLoader.getResource("abf300_creatinine_test/Gender_M").toURI().toPath().toString()),
-            targets = listOf(this::class.java.classLoader.getResource("abf300_creatinine_test/Creatinine_gt_1").toURI().toPath().toString()),
-            database = this::class.java.classLoader.getResource("abf300_creatinine_test/database.txt").toURI().toPath().toString(),
+            predicates = listOf(this::class.java.classLoader.getResource("Gender_M").toURI().toPath().toString()),
+            targets = listOf(this::class.java.classLoader.getResource("Creatinine_gt_1").toURI().toPath().toString()),
+            database = this::class.java.classLoader.getResource("database.txt").toURI().toPath().toString(),
             miners = HashSet(listOf(MiningAlgorithm.FISHBONE)),
             criterion = "conviction",
             significanceLevel = 0.05,
