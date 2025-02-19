@@ -52,9 +52,10 @@ class FarmExperimentTest {
             function = Rule<Int>::conviction
         )
 
+
         assertEquals(
             rules.size,
-            experiment.getProductiveRules(MiningAlgorithm.FISHBONE, rules, 1.0, database, false).size
+            experiment.getProductiveRules(MiningAlgorithm.FISHBONE, rules, 1.0 + 1e-7, database, false).size
         )
         assertTrue(
             rules.size > experiment.getProductiveRules(

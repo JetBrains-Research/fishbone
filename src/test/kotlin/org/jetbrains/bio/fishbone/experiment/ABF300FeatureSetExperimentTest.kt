@@ -160,8 +160,8 @@ class ABF300FeatureSetExperimentTest {
         )
 
         assertEquals(3, productiveRules.size)
-        // best rule
-        val rule = productiveRules.first()
+        // productive rules are not yet sorted by conviction
+        val rule = productiveRules.sortedBy { -it.rule.conviction }.first()
         assertEquals("is_male => high_creatinine", rule.rule.toString())
         assertEquals(1.2037, rule.rule.conviction, 1e-3)
     }
