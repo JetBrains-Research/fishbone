@@ -56,6 +56,10 @@ class MineRulesRequest(
                             (requestMap.getOrDefault(name, listOf<String>()) as List<String>) + file.absolutePath
                         }
                     }
+
+                    else -> {
+                        throw IllegalArgumentException("Unsupported multi part data type: $part")
+                    }
                 }
             }
             if (settingsMap.isNotEmpty()) {

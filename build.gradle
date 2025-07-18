@@ -1,6 +1,6 @@
 buildscript {
-    ext.kotlin_version = "1.6.10"
-    ext.ktor_version = "1.6.8"
+    ext.kotlin_version = "2.2.0"
+    ext.ktor_version = "2.3.7"
 
     repositories {
         maven { url("https://repo1.maven.org/maven2") }
@@ -25,7 +25,7 @@ if (rootProject == project) {
     }
 }
 
-sourceCompatibility = 11
+sourceCompatibility = 21
 targetCompatibility = sourceCompatibility
 compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
 compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
@@ -40,8 +40,22 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 
     // Server: Ktor dependencies
+    implementation("io.ktor:ktor-client-core:${ktor_version}")
+    implementation("io.ktor:ktor-client-core-jvm:${ktor_version}")
+    implementation("io.ktor:ktor-client-cio:${ktor_version}")
+    implementation("io.ktor:ktor-client-cio-jvm:${ktor_version}")
+    implementation("io.ktor:ktor-client-encoding:${ktor_version}")
+    implementation("io.ktor:ktor-client-encoding-jvm:${ktor_version}")
+    implementation("io.ktor:ktor-http:${ktor_version}")
+    implementation("io.ktor:ktor-http-jvm:${ktor_version}")
     implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-jackson:$ktor_version")
+    implementation("io.ktor:ktor-server-core:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
+    implementation("io.ktor:ktor-server-cors:$ktor_version")
+    implementation("io.ktor:ktor-server-status-pages:$ktor_version")
+    implementation("io.ktor:ktor-server-resources:$ktor_version")
+    implementation("io.ktor:ktor-server-call-logging:$ktor_version")
 
     // Logging dependencies
     implementation("ch.qos.logback:logback-classic:1.4.12")
@@ -100,7 +114,7 @@ test {
 }
 
 task sourcesJar(type: Jar) {
-    classifier = "sources"
+    archiveClassifier = "sources"
     from sourceSets.main.allSource
 }
 
@@ -109,10 +123,10 @@ artifacts {
 }
 
 shadowJar {
-    // File name: "$baseName-$version-$classifier.jar"
-    baseName = "fishbone"
-    version = "${version}.${project.buildCounter}"
-    classifier = ""
+    // File name: "$archiveBaseName-$archiveVersion-$archiveClassifier.jar"
+    archiveBaseName = "fishbone"
+    archiveVersion = "${version}.${project.buildCounter}"
+    archiveClassifier = ""
 
     manifest {
         attributes "Main-Class": "org.jetbrains.bio.fishbone.FishboneApp"
@@ -131,6 +145,6 @@ jar {
 // https://github.com/gradle/gradle/issues/5816
 if (rootProject == project) {
     wrapper {
-        gradleVersion = "6.8"
+        gradleVersion = "8.5"
     }
 }
