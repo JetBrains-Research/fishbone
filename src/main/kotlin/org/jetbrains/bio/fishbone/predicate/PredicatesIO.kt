@@ -6,6 +6,8 @@ import org.jetbrains.bio.dataframe.BitList
 import org.jetbrains.bio.dataframe.DataFrame
 import org.jetbrains.bio.dataframe.DataFrameMappers
 import org.jetbrains.bio.dataframe.DataFrameSpec
+import org.jetbrains.bio.fishbone.predicate.PredicatesIO.loadPredicates
+import org.jetbrains.bio.fishbone.predicate.PredicatesIO.savePredicates
 import org.jetbrains.bio.util.Progress
 import org.jetbrains.bio.util.bufferedReader
 import org.jetbrains.bio.util.bufferedWriter

@@ -1,10 +1,6 @@
 package org.jetbrains.bio.fishbone.rule.validation
 
 import junit.framework.TestCase
-import org.jetbrains.bio.fishbone.miner.FishboneMiner
-import org.jetbrains.bio.fishbone.predicate.OverlapSamplePredicate
-import org.jetbrains.bio.fishbone.predicate.ProbePredicate
-import org.jetbrains.bio.fishbone.rule.Rule
 import org.jetbrains.bio.statistics.hypothesis.Alternative
 import org.jetbrains.bio.statistics.hypothesis.FisherExactTest
 import org.junit.Test

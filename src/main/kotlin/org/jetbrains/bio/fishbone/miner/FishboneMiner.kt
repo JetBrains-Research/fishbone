@@ -1,10 +1,11 @@
 package org.jetbrains.bio.fishbone.miner
 
-import org.jetbrains.bio.fishbone.miner.FishboneMiner.Node
 import org.jetbrains.bio.fishbone.miner.FishboneMiner.mine
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
-import org.jetbrains.bio.fishbone.rule.*
+import org.jetbrains.bio.fishbone.rule.PredicatesInjector
+import org.jetbrains.bio.fishbone.rule.Rule
+import org.jetbrains.bio.fishbone.rule.RulesBoundedPriorityQueue
 import org.jetbrains.bio.fishbone.rule.visualize.Combinations
 import org.jetbrains.bio.fishbone.rule.visualize.RuleVisualizeInfo
 import org.jetbrains.bio.fishbone.rule.visualize.TargetVisualizeInfo

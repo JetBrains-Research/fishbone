@@ -4,8 +4,11 @@ import org.jetbrains.bio.fishbone.api.MiningAlgorithm
 import org.jetbrains.bio.fishbone.predicate.NotPredicate
 import org.jetbrains.bio.fishbone.predicate.Predicate
 import org.jetbrains.bio.fishbone.predicate.TruePredicate
-import org.jetbrains.bio.fishbone.rule.*
-import org.jetbrains.bio.fishbone.rule.visualize.*
+import org.jetbrains.bio.fishbone.rule.Rule
+import org.jetbrains.bio.fishbone.rule.visualize.Combinations
+import org.jetbrains.bio.fishbone.rule.visualize.Heatmap
+import org.jetbrains.bio.fishbone.rule.visualize.RuleVisualizeInfo
+import org.jetbrains.bio.fishbone.rule.visualize.TargetVisualizeInfo
 import org.jetbrains.bio.fishbone.rule.visualize.upset.Upset
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

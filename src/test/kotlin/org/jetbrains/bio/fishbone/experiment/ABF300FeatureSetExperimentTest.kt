@@ -1,11 +1,13 @@
 package org.jetbrains.bio.fishbone.experiment
 
-import org.jetbrains.bio.fishbone.api.*
+import org.jetbrains.bio.fishbone.api.ExperimentSettings
+import org.jetbrains.bio.fishbone.api.ExperimentType
+import org.jetbrains.bio.fishbone.api.MineRulesRequest
+import org.jetbrains.bio.fishbone.api.MiningAlgorithm
 import org.jetbrains.bio.fishbone.miner.FishboneMiner
 import org.jetbrains.bio.fishbone.predicate.OverlapSamplePredicate
 import org.jetbrains.bio.fishbone.predicate.PredicatesConstructor
 import org.jetbrains.bio.fishbone.rule.Rule
-import org.jetbrains.bio.fishbone.experiment.FarmExperiment
 import org.junit.AfterClass
 import org.junit.Test
 import java.nio.file.Paths
